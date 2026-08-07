@@ -1,10 +1,13 @@
 <?php
 
+use App\Http\Controllers\PurchaseController;
+use App\Http\Controllers\SupplierController;
 use App\Modules\Dashboard\Presentation\Http\Controllers\DashboardController;
 use App\Modules\Identity\Presentation\Http\Controllers\AuthController;
 use App\Modules\Inventory\Presentation\Http\Controllers\BrandController;
 use App\Modules\Inventory\Presentation\Http\Controllers\CategoryController;
 use App\Modules\Inventory\Presentation\Http\Controllers\ProductController;
+use App\Modules\Inventory\Presentation\Http\Controllers\StockController;
 use Illuminate\Support\Facades\Route;
 
 // Rutas para Usuarios Invitados (Guest)
@@ -42,4 +45,13 @@ Route::middleware('auth')->group(function () {
     Route::get('/brands', [BrandController::class, 'index'])->name('brands.index');
     Route::post('/brands', [BrandController::class, 'store'])->name('brands.store');
     Route::post('/api/brands/quick-store', [BrandController::class, 'quickStore'])->name('brands.quick-store');
+    // Inventario - Existencias
+    Route::get('/stock', [StockController::class, 'index'])->name('stock.index');
+    Route::post('/stock/adjust', [StockController::class, 'adjust'])->name('stock.adjust');
+
+    Route::resource('purchases', PurchaseController::class);
+    Route::post('purchases/{purchase}/receive', [PurchaseController::class, 'receive'])->name('purchases.receive');
+    Route::post('purchases/{purchase}/cancel', [PurchaseController::class, 'cancel'])->name('purchases.cancel');
+
+    Route::resource('suppliers', SupplierController::class);
 });

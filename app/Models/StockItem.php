@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 final class StockItem extends Model
 {
@@ -54,4 +55,18 @@ final class StockItem extends Model
     {
         return $this->hasMany(ProductPrice::class);
     }
+
+    public function inventoryBalance(): HasOne
+    {
+        return $this->hasOne(InventoryBalance::class, 'stock_item_id');
+    }
+
+    public function reorderLevel(): HasOne
+    {
+        return $this->hasOne(StockReorderLevel::class, 'stock_item_id');
+    }
+    public function units(): HasMany
+{
+    return $this->hasMany(ProductUnit::class);
+}
 }

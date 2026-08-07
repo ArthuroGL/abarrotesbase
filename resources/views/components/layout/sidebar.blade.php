@@ -19,9 +19,9 @@
             'label' => 'Inventario',
             'items' => [
                 ['label' => 'Productos', 'route' => 'products.index', 'icon' => 'cube'],
-                ['label' => 'Existencias', 'route' => null, 'icon' => 'boxes'],
-                ['label' => 'Compras', 'route' => null, 'icon' => 'cart'],
-                ['label' => 'Proveedores', 'route' => null, 'icon' => 'truck'],
+                ['label' => 'Existencias', 'route' => 'stock.index', 'icon' => 'boxes'],
+                ['label' => 'Compras', 'route' => 'purchases.index', 'icon' => 'cart'],
+                ['label' => 'Proveedores', 'route' => 'suppliers.index', 'icon' => 'truck'],
             ],
         ],
         [

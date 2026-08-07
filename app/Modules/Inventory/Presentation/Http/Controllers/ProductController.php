@@ -29,6 +29,9 @@ final class ProductController extends Controller
     {
         $search = $request->input('search');
         $categoryId = $request->input('category_id');
+        // Capturamos las nuevas variables de filtro para persistirlas en la vista
+        $brandId = $request->input('brand_id');
+        $stockFilter = $request->input('stock_filter');
 
         $products = Product::query()
             ->with([
@@ -39,6 +42,7 @@ final class ProductController extends Controller
                     $query->where('is_active', true);
                 },
                 'stockItem.inventoryUnit',
+                // Eliminamos la carga de relaciones que daban error (inventoryBalance, reorderLevel)
             ])
             ->when($search, function ($query, $search) {
                 $query->where(function ($q) use ($search) {
@@ -52,13 +56,30 @@ final class ProductController extends Controller
             ->when($categoryId, function ($query, $categoryId) {
                 $query->where('category_id', $categoryId);
             })
+            // Agregamos el filtro por marca si está presente
+            ->when($brandId, function ($query, $brandId) {
+                $query->where('brand_id', $brandId);
+            })
+            // Nota: El filtro de stock ($stockFilter) no se aplica aquí
+            // porque no cargamos las relaciones de inventario.
             ->latest()
             ->paginate(15)
             ->withQueryString();
 
         $categories = Category::query()->where('is_active', true)->orderBy('name')->get();
+        // Cargamos las marcas para el filtro
+        $brands = Brand::query()->where('is_active', true)->orderBy('name')->get();
 
-        return view('modules.inventory.products.index', compact('products', 'categories', 'search', 'categoryId'));
+        // IMPORTANTE: Asegúrate de incluir 'brandId' y 'stockFilter' en el compact
+        return view('modules.inventory.products.index', compact(
+            'products',
+            'categories',
+            'brands', // <--- Agregada
+            'search',
+            'categoryId',
+            'brandId', // <--- Agregada
+            'stockFilter' // <--- ESTA ES LA QUE FALTABA
+        ));
     }
 
     public function create(): View
