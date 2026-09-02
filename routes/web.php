@@ -8,6 +8,8 @@ use App\Modules\Inventory\Presentation\Http\Controllers\BrandController;
 use App\Modules\Inventory\Presentation\Http\Controllers\CategoryController;
 use App\Modules\Inventory\Presentation\Http\Controllers\ProductController;
 use App\Modules\Inventory\Presentation\Http\Controllers\StockController;
+use App\Modules\Operation\Presentation\Http\Controllers\CashController;
+use App\Modules\Operation\Presentation\Http\Controllers\SaleController;
 use Illuminate\Support\Facades\Route;
 
 // Rutas para Usuarios Invitados (Guest)
@@ -54,4 +56,34 @@ Route::middleware('auth')->group(function () {
     Route::post('purchases/{purchase}/cancel', [PurchaseController::class, 'cancel'])->name('purchases.cancel');
 
     Route::resource('suppliers', SupplierController::class);
+
+
+    // Rutas para Caja
+    Route::get('/cash', [CashController::class, 'index'])
+        ->name('cash.index');
+
+    Route::post('/cash/open', [CashController::class, 'open'])
+        ->name('cash.open');
+    // Rutas para Ventas
+
+    Route::get('/sales', [SaleController::class, 'index'])
+        ->name('sales.index');
+
+    Route::get('/api/sales/lookup', [SaleController::class, 'lookup'])
+        ->name('sales.lookup');
+
+    Route::post('/sales', [SaleController::class, 'store'])
+        ->name('sales.store');
+
+    Route::get('/sales/history', [SaleController::class, 'history'])
+        ->name('sales.history');
+
+    Route::get('/sales/{sale}/ticket', [SaleController::class, 'ticket'])
+        ->name('sales.ticket');
+
+    Route::post('/sales/{sale}/cancel', [SaleController::class, 'cancel'])
+        ->name('sales.cancel');
+
+    Route::get('/sales/{sale}', [SaleController::class, 'show'])
+        ->name('sales.show');
 });

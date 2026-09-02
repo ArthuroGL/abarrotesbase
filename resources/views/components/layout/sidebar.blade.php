@@ -10,8 +10,8 @@
         [
             'label' => 'Operación',
             'items' => [
-                ['label' => 'Ventas', 'route' => null, 'icon' => 'receipt'],
-                ['label' => 'Caja', 'route' => null, 'icon' => 'cash'],
+                ['label' => 'Ventas', 'route' => 'sales.index', 'icon' => 'receipt'],
+                ['label' => 'Caja', 'route' => 'cash.index', 'icon' => 'cash'],
                 ['label' => 'Gastos', 'route' => null, 'icon' => 'wallet'],
             ],
         ],

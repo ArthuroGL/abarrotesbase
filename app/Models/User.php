@@ -3,8 +3,12 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+
+use App\Modules\Operation\Infrastructure\Persistence\Models\CashMovement;
+use App\Modules\Operation\Infrastructure\Persistence\Models\CashSession;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
@@ -49,5 +53,21 @@ class User extends Authenticatable
             'is_active' => 'boolean',
             'last_login_at' => 'datetime',
         ];
+    }
+
+    public function cashSessions(): HasMany
+    {
+        return $this->hasMany(
+            CashSession::class,
+            'responsible_user_id'
+        );
+    }
+
+    public function cashMovements(): HasMany
+    {
+        return $this->hasMany(
+            CashMovement::class,
+            'created_by'
+        );
     }
 }
