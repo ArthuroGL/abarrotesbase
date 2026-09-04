@@ -15,6 +15,7 @@ final class CashMovement extends Model
     use HasUuids;
 
     public $timestamps = false;
+
     protected $fillable = [
         'organization_id',
         'branch_id',

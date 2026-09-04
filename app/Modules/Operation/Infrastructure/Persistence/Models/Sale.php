@@ -51,6 +51,10 @@ final class Sale extends Model
             'cancelled_at' => 'datetime',
         ];
     }
+    public function customer(): BelongsTo
+    {
+        return $this->belongsTo(Customer::class);
+    }
 
     public function branch(): BelongsTo
     {

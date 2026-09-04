@@ -7,6 +7,12 @@
 
         <x-slot:actions>
 
+            <a
+                href="{{ route('sales.history') }}"
+                class="inline-flex items-center rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-bold text-slate-700 transition hover:border-slate-400 hover:bg-slate-50">
+                Historial
+            </a>
+
             @if ($activeSession)
             <span class="inline-flex items-center gap-2 rounded-xl bg-emerald-50 px-3 py-2 text-xs font-bold text-emerald-700">
                 <span class="h-2 w-2 rounded-full bg-emerald-500"></span>
@@ -19,6 +25,7 @@
             @endif
 
         </x-slot:actions>
+
     </x-layout.page-header>
 
 
@@ -511,12 +518,12 @@
             try {
 
                 const response = await fetch(
-    `{{ route('sales.lookup') }}?q=${encodeURIComponent(query)}`, {
-        headers: {
-            'Accept': 'application/json'
-        }
-    }
-);
+                    `{{ route('sales.lookup') }}?q=${encodeURIComponent(query)}`, {
+                        headers: {
+                            'Accept': 'application/json'
+                        }
+                    }
+                );
                 const data = await response.json();
 
                 if (!response.ok) {
@@ -904,25 +911,25 @@
 
             try {
 
-              const response = await fetch("{{ route('sales.store') }}", {
-    method: 'POST',
-    headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-        'X-CSRF-TOKEN': document
-            .querySelector('meta[name="csrf-token"]')
-            .content
-    },
-    body: JSON.stringify({
-        items: state.cart.map(item => ({
-            stock_item_id: item.stock_item_id,
-            product_unit_id: item.product_unit_id,
-            quantity: item.quantity
-        })),
-        payment_method_id: paymentMethod.value,
-        amount_received: received
-    })
-});
+                const response = await fetch("{{ route('sales.store') }}", {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': document
+                            .querySelector('meta[name="csrf-token"]')
+                            .content
+                    },
+                    body: JSON.stringify({
+                        items: state.cart.map(item => ({
+                            stock_item_id: item.stock_item_id,
+                            product_unit_id: item.product_unit_id,
+                            quantity: item.quantity
+                        })),
+                        payment_method_id: paymentMethod.value,
+                        amount_received: received
+                    })
+                });
 
                 const data = await response.json();
 

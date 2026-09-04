@@ -59,11 +59,28 @@ Route::middleware('auth')->group(function () {
 
 
     // Rutas para Caja
+    // Rutas para Caja
+
     Route::get('/cash', [CashController::class, 'index'])
         ->name('cash.index');
 
     Route::post('/cash/open', [CashController::class, 'open'])
         ->name('cash.open');
+
+    Route::post('/cash/movements', [CashController::class, 'storeMovement'])
+        ->name('cash.movements.store');
+
+    Route::post('/cash/{cashSession}/counting', [CashController::class, 'startCounting'])
+        ->name('cash.counting');
+
+    Route::post('/cash/{cashSession}/close', [CashController::class, 'close'])
+        ->name('cash.close');
+
+    Route::get('/cash/history', [CashController::class, 'history'])
+        ->name('cash.history');
+
+    Route::get('/cash/{cashSession}', [CashController::class, 'show'])
+        ->name('cash.show');
     // Rutas para Ventas
 
     Route::get('/sales', [SaleController::class, 'index'])

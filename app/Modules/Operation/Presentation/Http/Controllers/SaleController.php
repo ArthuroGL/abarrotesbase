@@ -657,4 +657,211 @@ final class SaleController
             compact('sales', 'stats')
         );
     }
+    public function cancel(
+    Request $request,
+    Sale $sale
+): JsonResponse {
+    $validated = $request->validate([
+        'reason' => ['required', 'string', 'max:500'],
+    ]);
+
+    $user = $request->user();
+
+    $result = DB::transaction(function () use (
+        $sale,
+        $validated,
+        $user
+    ) {
+        $orgId = DB::table('organizations')->value('id');
+
+        if ($sale->organization_id !== $orgId) {
+            abort(404);
+        }
+
+        /*
+         * Bloqueamos la venta para evitar dos cancelaciones
+         * simultáneas sobre el mismo folio.
+         */
+        $sale = Sale::query()
+            ->where('id', $sale->id)
+            ->where('organization_id', $orgId)
+            ->lockForUpdate()
+            ->first();
+
+        if (!$sale) {
+            abort(404);
+        }
+
+        if ($sale->status !== 'confirmed') {
+            throw ValidationException::withMessages([
+                'sale' => 'La venta no puede cancelarse porque no está confirmada.',
+            ]);
+        }
+
+        /*
+         * Cargamos las líneas y pagos dentro de la misma
+         * transacción.
+         */
+        $sale->load([
+            'lines',
+            'payments.paymentMethod',
+        ]);
+
+        /*
+         * Si existe un pago que afecta efectivo, necesitamos
+         * una caja abierta para registrar la devolución.
+         */
+        $cashPayments = $sale->payments
+            ->filter(fn ($payment) =>
+                $payment->paymentMethod?->affects_cash
+            );
+
+        if ($cashPayments->isNotEmpty()) {
+            $session = CashSession::query()
+                ->where('responsible_user_id', $user->id)
+                ->where('status', 'open')
+                ->where('branch_id', $sale->branch_id)
+                ->lockForUpdate()
+                ->first();
+
+            if (!$session) {
+                throw ValidationException::withMessages([
+                    'cash' =>
+                        'Debes tener una sesión de caja abierta en la sucursal de la venta para realizar la devolución.',
+                ]);
+            }
+        } else {
+            $session = null;
+        }
+
+        /*
+         * 1. REVERTIR INVENTARIO
+         */
+        foreach ($sale->lines as $line) {
+
+            if (!$line->inventory_movement_id) {
+                continue;
+            }
+
+            $originalMovement = \App\Models\InventoryMovement::query()
+                ->where('id', $line->inventory_movement_id)
+                ->where('organization_id', $sale->organization_id)
+                ->where('branch_id', $sale->branch_id)
+                ->where('stock_item_id', $line->stock_item_id)
+                ->lockForUpdate()
+                ->first();
+
+            if (!$originalMovement) {
+                throw ValidationException::withMessages([
+                    'inventory' =>
+                        "No se encontró el movimiento de inventario de la línea {$line->line_number}.",
+                ]);
+            }
+
+            /*
+             * La venta original tuvo quantity_delta negativo.
+             * La cancelación crea el movimiento inverso positivo.
+             */
+            $reversalQuantity = abs(
+                (float) $originalMovement->quantity_delta
+            );
+
+            \App\Models\InventoryMovement::create([
+                'organization_id' => $sale->organization_id,
+                'branch_id' => $sale->branch_id,
+                'stock_item_id' => $line->stock_item_id,
+                'movement_type' => 'void_reversal',
+                'quantity_delta' => $reversalQuantity,
+                'unit_cost' => $originalMovement->unit_cost,
+                'total_cost' => $originalMovement->total_cost,
+                'source_type' => 'SALE_CANCELLATION',
+                'source_id' => $sale->id,
+                'reason_code' => 'SALE_CANCELLATION',
+                'notes' => 'Reversión de inventario por cancelación de venta',
+                'created_by' => $user->id,
+                'occurred_at' => now(),
+            ]);
+
+            /*
+             * Actualizamos la proyección de inventario.
+             */
+            $balance = DB::table('inventory_balances')
+                ->where('organization_id', $sale->organization_id)
+                ->where('branch_id', $sale->branch_id)
+                ->where('stock_item_id', $line->stock_item_id)
+                ->lockForUpdate()
+                ->first();
+
+            if ($balance) {
+                DB::table('inventory_balances')
+                    ->where('organization_id', $sale->organization_id)
+                    ->where('branch_id', $sale->branch_id)
+                    ->where('stock_item_id', $line->stock_item_id)
+                    ->update([
+                        'on_hand_quantity' =>
+                            (float) $balance->on_hand_quantity
+                            + $reversalQuantity,
+
+                        'version' =>
+                            ((int) $balance->version) + 1,
+                    ]);
+            }
+        }
+
+        /*
+         * 2. REVERTIR EFECTIVO
+         *
+         * Se devuelve únicamente lo aplicado a la venta,
+         * no el importe originalmente recibido.
+         *
+         * Ejemplo:
+         * Venta = $28
+         * Recibido = $30
+         * Cambio = $2
+         * Devolución = $28
+         */
+        foreach ($cashPayments as $payment) {
+
+            $refundAmount = (float) $payment->amount_applied;
+
+            if ($refundAmount <= 0) {
+                continue;
+            }
+
+            CashMovement::create([
+                'organization_id' => $sale->organization_id,
+                'branch_id' => $sale->branch_id,
+                'cash_session_id' => $session->id,
+                'payment_method_id' => $payment->payment_method_id,
+                'movement_type' => 'return_payment',
+                'amount' => $refundAmount,
+                'source_type' => 'SALE_CANCELLATION',
+                'source_id' => $sale->id,
+                'reason_code' => 'SALE_CANCELLATION',
+                'notes' => 'Devolución por cancelación de venta',
+                'created_by' => $user->id,
+                'occurred_at' => now(),
+            ]);
+        }
+
+        /*
+         * 3. MARCAR VENTA COMO CANCELADA
+         */
+        $sale->update([
+            'status' => 'cancelled',
+            'cancelled_at' => now(),
+            'cancelled_by' => $user->id,
+            'cancellation_reason' => $validated['reason'],
+        ]);
+
+        return $sale->fresh();
+    });
+
+    return response()->json([
+        'success' => true,
+        'message' => 'La venta fue cancelada correctamente.',
+        'sale_id' => $result->id,
+        'sale_number' => $result->sale_number,
+    ]);
+}
 }
