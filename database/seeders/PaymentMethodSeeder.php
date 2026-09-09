@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Database\Seeders;
 
+use App\Modules\Operation\Infrastructure\Persistence\Models\PaymentMethod;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -23,6 +24,8 @@ final class PaymentMethodSeeder extends Seeder
                 'code' => 'CASH',
                 'name' => 'Efectivo',
                 'type' => 'cash',
+                'provider' => 'internal',
+                'provider_code' => 'cash',
                 'requires_reference' => false,
                 'affects_cash' => true,
             ],
@@ -30,6 +33,8 @@ final class PaymentMethodSeeder extends Seeder
                 'code' => 'CARD',
                 'name' => 'Tarjeta',
                 'type' => 'card',
+                'provider' => 'internal',
+                'provider_code' => 'card',
                 'requires_reference' => false,
                 'affects_cash' => false,
             ],
@@ -37,31 +42,36 @@ final class PaymentMethodSeeder extends Seeder
                 'code' => 'TRANSFER',
                 'name' => 'Transferencia',
                 'type' => 'transfer',
+                'provider' => 'internal',
+                'provider_code' => 'transfer',
                 'requires_reference' => true,
+                'affects_cash' => false,
+            ],
+            [
+                'code' => 'MP_POINT',
+                'name' => 'Mercado Pago Point',
+                'type' => 'card',
+                'provider' => 'mercadopago',
+                'provider_code' => 'point',
+                'requires_reference' => false,
                 'affects_cash' => false,
             ],
         ];
 
         foreach ($methods as $method) {
-
-            DB::table('payment_methods')->updateOrInsert(
+            PaymentMethod::updateOrCreate(
                 [
                     'organization_id' => $organizationId,
                     'code' => $method['code'],
                 ],
                 [
-                    'id' => DB::table('payment_methods')
-                        ->where('organization_id', $organizationId)
-                        ->where('code', $method['code'])
-                        ->value('id') ?? (string) Str::uuid(),
-
                     'name' => $method['name'],
                     'type' => $method['type'],
+                    'provider' => $method['provider'],
+                    'provider_code' => $method['provider_code'],
                     'requires_reference' => $method['requires_reference'],
                     'affects_cash' => $method['affects_cash'],
                     'is_active' => true,
-                    'updated_at' => now(),
-                    'created_at' => now(),
                 ]
             );
         }

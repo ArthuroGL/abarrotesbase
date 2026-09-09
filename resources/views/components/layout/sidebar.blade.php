@@ -12,7 +12,7 @@
             'items' => [
                 ['label' => 'Ventas', 'route' => 'sales.index', 'icon' => 'receipt'],
                 ['label' => 'Caja', 'route' => 'cash.index', 'icon' => 'cash'],
-                ['label' => 'Gastos', 'route' => null, 'icon' => 'wallet'],
+                ['label' => 'Gastos', 'route' => 'expenses.index', 'icon' => 'wallet'],
             ],
         ],
         [

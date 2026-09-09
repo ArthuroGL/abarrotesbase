@@ -17,6 +17,8 @@ final class PaymentMethod extends Model
         'code',
         'name',
         'type',
+        'provider',
+        'provider_code',
         'requires_reference',
         'affects_cash',
         'is_active',

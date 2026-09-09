@@ -35,4 +35,16 @@ return [
         ],
     ],
 
+
+
+    'mercadopago' => [
+    'access_token' => env('MERCADOPAGO_ACCESS_TOKEN'),
+    'base_url' => env(
+        'MERCADOPAGO_BASE_URL',
+        'https://api.mercadopago.com'
+    ),
+    'point_terminal_id' => env('MERCADOPAGO_POINT_TERMINAL_ID'),
+    'currency' => env('MERCADOPAGO_CURRENCY', 'MXN'),
+],
+
 ];

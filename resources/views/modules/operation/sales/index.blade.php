@@ -246,7 +246,8 @@
                     @foreach ($paymentMethods as $method)
                     <option
                         value="{{ $method->id }}"
-                        data-affects-cash="{{ $method->affects_cash ? '1' : '0' }}">
+                        data-affects-cash="{{ $method->affects_cash ? '1' : '0' }}"
+                        data-requires-reference="{{ $method->requires_reference ? '1' : '0' }}">
                         {{ $method->name }}
                     </option>
                     @endforeach
@@ -271,6 +272,30 @@
                     min="0"
                     class="app-input text-xl font-bold"
                     value="0">
+
+            </div>
+
+            <div
+                id="reference-group"
+                class="mt-5 hidden">
+
+                <label
+                    for="payment-reference"
+                    class="mb-2 block text-xs font-bold uppercase tracking-wider text-slate-600">
+                    Referencia
+                </label>
+
+                <input
+                    id="payment-reference"
+                    type="text"
+                    maxlength="120"
+                    autocomplete="off"
+                    class="app-input"
+                    placeholder="Ej. TRX-123456789">
+
+                <p class="mt-2 text-xs text-slate-400">
+                    Captura la referencia de la transferencia.
+                </p>
 
             </div>
 
@@ -438,11 +463,38 @@
         const paymentMethod = $('payment-method');
         const amountReceived = $('amount-received');
 
+        const referenceGroup = $('reference-group');
+        const paymentReference = $('payment-reference');
+
         function money(value) {
             return Number(value || 0).toLocaleString('es-MX', {
                 style: 'currency',
                 currency: 'MXN'
             });
+        }
+
+        function updatePaymentFields() {
+            const option =
+                paymentMethod.options[paymentMethod.selectedIndex];
+
+            const affectsCash =
+                option?.dataset.affectsCash === '1';
+
+            const requiresReference =
+                option?.dataset.requiresReference === '1';
+
+            referenceGroup.classList.toggle(
+                'hidden',
+                !requiresReference
+            );
+
+            paymentReference.required = requiresReference;
+
+            if (!requiresReference) {
+                paymentReference.value = '';
+            }
+
+            updateChange();
         }
 
         function showMessage(message, type = 'ok') {
@@ -843,7 +895,9 @@
             paymentModal.classList.remove('hidden');
             paymentModal.classList.add('flex');
 
-            updateChange();
+            /* updateChange(); */
+
+            updatePaymentFields();
 
             amountReceived.focus();
             amountReceived.select();
@@ -899,11 +953,49 @@
             const received =
                 Number(amountReceived.value || 0);
 
-            if (received < total) {
+            const option =
+                paymentMethod.options[paymentMethod.selectedIndex];
+
+            const affectsCash =
+                option?.dataset.affectsCash === '1';
+
+            if (affectsCash && received < total) {
                 showMessage(
                     'El importe recibido es menor al total.',
                     'error'
                 );
+                return;
+            }
+
+            if (!affectsCash && received !== total) {
+                showMessage(
+                    'Para este método de pago, el importe debe ser exactamente igual al total.',
+                    'error'
+                );
+                return;
+            }
+
+            /*  if (received < total) {
+                 showMessage(
+                     'El importe recibido es menor al total.',
+                     'error'
+                 );
+                 return;
+             } */
+
+            const requiresReference =
+                option?.dataset.requiresReference === '1';
+
+            const reference =
+                paymentReference.value.trim();
+
+            if (requiresReference && !reference) {
+                showMessage(
+                    'Debes capturar la referencia del pago.',
+                    'error'
+                );
+
+                paymentReference.focus();
                 return;
             }
 
@@ -927,7 +1019,8 @@
                             quantity: item.quantity
                         })),
                         payment_method_id: paymentMethod.value,
-                        amount_received: received
+                        amount_received: received,
+                        reference: paymentReference.value.trim() || null
                     })
                 });
 
@@ -1024,7 +1117,7 @@
 
         paymentMethod.addEventListener(
             'change',
-            updateChange
+            updatePaymentFields
         );
 
 
