@@ -19,6 +19,19 @@ final class PaymentPointService
         private readonly PaymentService $paymentService,
     ) {}
 
+    public function findByProviderOrderId(
+        string $providerOrderId,
+    ): PaymentTransaction {
+        return PaymentTransaction::query()
+            ->where(
+                'organization_id',
+                $this->context->organizationId()
+            )
+            ->where('provider', 'mercadopago')
+            ->where('provider_order_id', $providerOrderId)
+            ->firstOrFail();
+    }
+
     public function createPendingPayment(
         string $saleId,
         float $amount,
@@ -78,6 +91,8 @@ final class PaymentPointService
             ]);
         });
     }
+
+
 
 
     public function getPaymentMethodByCode(string $code): PaymentMethod

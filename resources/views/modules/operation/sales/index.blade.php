@@ -939,6 +939,98 @@
             );
         }
 
+
+        async function waitForPointPayment(transactionId) {
+    const maxAttempts = 60;
+    const interval = 2000;
+
+    for (let attempt = 0; attempt < maxAttempts; attempt++) {
+        try {
+            const response = await fetch(
+                `/sales/point/${transactionId}/finalize`,
+                {
+                    method: 'POST',
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': document
+                            .querySelector(
+                                'meta[name="csrf-token"]'
+                            )
+                            .content
+                    }
+                }
+            );
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(
+                    data.message ||
+                    'No fue posible consultar el estado del pago.'
+                );
+            }
+
+            /*
+             * Pago confirmado.
+             */
+            if (data.status === 'approved') {
+                state.cart = [];
+
+                renderCart();
+
+                openCompletedSaleModal(data);
+
+                return;
+            }
+
+            /*
+             * Pago rechazado, cancelado o expirado.
+             */
+            if (
+                data.status === 'rejected' ||
+                data.status === 'cancelled' ||
+                data.status === 'expired' ||
+                data.status === 'refunded'
+            ) {
+                showMessage(
+                    data.message ||
+                    'El pago no pudo completarse.',
+                    'error'
+                );
+
+                return;
+            }
+
+            /*
+             * Sigue esperando.
+             */
+            if (attempt % 3 === 0) {
+                showMessage(
+                    'Esperando confirmación del pago en Mercado Pago...',
+                    'ok'
+                );
+            }
+
+            await new Promise(resolve =>
+                setTimeout(resolve, interval)
+            );
+
+        } catch (error) {
+            showMessage(
+                error.message,
+                'error'
+            );
+
+            return;
+        }
+    }
+
+    showMessage(
+        'No se recibió confirmación del pago. Revisa el estado de la operación antes de intentar cobrar nuevamente.',
+        'error'
+    );
+}
+
        async function confirmPayment() {
     if (state.submitting || !state.cart.length) {
         return;
@@ -1051,14 +1143,13 @@
              */
             closePaymentModal();
 
-            showMessage(
-                'Pago enviado a Mercado Pago Point. Espera la pantalla de cobro en la terminal.',
-                'ok'
-            );
+showMessage(
+    'Pago enviado a Mercado Pago Point. Esperando confirmación...',
+    'ok'
+);
 
-            console.log('Mercado Pago Point:', data);
-
-            return;
+await waitForPointPayment(data.transaction_id);
+return;
         }
 
         /*

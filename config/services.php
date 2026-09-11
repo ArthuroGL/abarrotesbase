@@ -38,13 +38,27 @@ return [
 
 
     'mercadopago' => [
-    'access_token' => env('MERCADOPAGO_ACCESS_TOKEN'),
-    'base_url' => env(
-        'MERCADOPAGO_BASE_URL',
-        'https://api.mercadopago.com'
-    ),
-    'point_terminal_id' => env('MERCADOPAGO_POINT_TERMINAL_ID'),
-    'currency' => env('MERCADOPAGO_CURRENCY', 'MXN'),
-],
+        'base_url' => env(
+            'MERCADOPAGO_BASE_URL',
+            'https://api.mercadopago.com'
+        ),
+
+        'access_token' => env(
+            'MERCADOPAGO_ACCESS_TOKEN'
+        ),
+
+        'point_terminal_id' => env(
+            'MERCADOPAGO_POINT_TERMINAL_ID'
+        ),
+
+        'currency' => env(
+            'MERCADOPAGO_CURRENCY',
+            'MXN'
+        ),
+
+        'webhook_secret' => env(
+            'MERCADOPAGO_WEBHOOK_SECRET'
+        ),
+    ],
 
 ];

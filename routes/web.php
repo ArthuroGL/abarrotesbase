@@ -12,6 +12,7 @@ use App\Modules\Operation\Presentation\Http\Controllers\CashController;
 use App\Modules\Operation\Presentation\Http\Controllers\ExpenseCategoryController;
 use App\Modules\Operation\Presentation\Http\Controllers\ExpenseController;
 use App\Modules\Operation\Presentation\Http\Controllers\SaleController;
+use App\Modules\Payment\Presentation\Http\Controllers\MercadoPagoWebhookController;
 use Illuminate\Support\Facades\Route;
 
 // Rutas para Usuarios Invitados (Guest)
@@ -110,7 +111,17 @@ Route::middleware('auth')->group(function () {
         '/sales/point/start',
         [SaleController::class, 'startPointPayment']
     )->name('sales.point.start');
+
+    Route::post(
+        '/sales/point/{paymentTransaction}/finalize',
+        [SaleController::class, 'finalizePointPayment']
+    )->name('sales.point.finalize');
 });
+
+Route::post(
+    '/webhooks/mercadopago',
+    [MercadoPagoWebhookController::class, 'handle']
+)->name('webhooks.mercadopago');
 
 Route::middleware('auth')->group(function () {
     Route::get('/expenses', [ExpenseController::class, 'index'])->name('expenses.index');

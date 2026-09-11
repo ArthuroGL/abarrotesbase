@@ -23,6 +23,7 @@ use Illuminate\View\View;
 use App\Modules\Payment\Application\Services\MercadoPagoService;
 use App\Modules\Payment\Application\Services\PaymentPointService;
 use App\Modules\Payment\Infrastructure\Persistence\Models\PaymentTransaction;
+use App\Modules\Payment\Application\Services\PointPaymentFinalizer;
 use RuntimeException;
 
 final class SaleController
@@ -30,6 +31,7 @@ final class SaleController
 
     public function __construct(
         private readonly PaymentPointService $paymentPointService,
+        private readonly PointPaymentFinalizer $pointPaymentFinalizer,
     ) {}
 
 
@@ -193,6 +195,7 @@ final class SaleController
             'items' => $results,
         ]);
     }
+
 
     public function startPointPayment(Request $request): JsonResponse
     {
@@ -945,6 +948,34 @@ final class SaleController
             'modules.operation.sales.history',
             compact('sales', 'stats')
         );
+    }
+
+    public function finalizePointPayment(
+        Request $request,
+        PaymentTransaction $paymentTransaction,
+    ): JsonResponse {
+        $sale = $this->pointPaymentFinalizer->finalize(
+            $paymentTransaction,
+            $request->user()->id,
+        );
+
+        if (!$sale) {
+            return response()->json([
+                'success' => true,
+                'status' => $paymentTransaction->fresh()->status,
+                'message' => 'El pago todavía no ha terminado.',
+            ]);
+        }
+
+        return response()->json([
+            'success' => true,
+            'status' => 'approved',
+            'message' => 'Pago confirmado y venta registrada correctamente.',
+            'sale_id' => $sale->id,
+            'sale_number' => $sale->sale_number,
+            'total' => (float) $sale->total,
+            'change' => (float) $sale->change_total,
+        ]);
     }
     public function cancel(
         Request $request,
