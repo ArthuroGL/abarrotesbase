@@ -31,23 +31,6 @@ final class PaymentService
         return $method;
     }
 
-    public function getPaymentMethodByCode(string $code): PaymentMethod
-    {
-        $method = PaymentMethod::query()
-            ->where('organization_id', $this->context->organizationId())
-            ->where('code', $code)
-            ->where('is_active', true)
-            ->first();
-
-        if (!$method) {
-            throw ValidationException::withMessages([
-                'payment_method_id' => "El método de pago {$code} no está disponible.",
-            ]);
-        }
-
-        return $method;
-    }
-
     public function requiresReference(PaymentMethod $method): bool
     {
         return $method->requires_reference;

@@ -939,7 +939,7 @@
             );
         }
 
-       async function confirmPayment() {
+        async function confirmPayment() {
     if (state.submitting || !state.cart.length) {
         return;
     }
@@ -1009,7 +1009,7 @@
          * Este flujo NO registra todavía la venta como confirmada.
          * Primero crea la orden en Mercado Pago y la envía al Point.
          */
-        if (option?.dataset.code === 'MP_POINT') {
+        if (option?.textContent?.trim() === 'Mercado Pago Point') {
             const response = await fetch(
                 "{{ route('sales.point.start') }}",
                 {
@@ -1123,6 +1123,90 @@
         state.submitting = false;
     }
 }
+
+            /*  if (received < total) {
+                 showMessage(
+                     'El importe recibido es menor al total.',
+                     'error'
+                 );
+                 return;
+             } */
+
+            const requiresReference =
+                option?.dataset.requiresReference === '1';
+
+            const reference =
+                paymentReference.value.trim();
+
+            if (requiresReference && !reference) {
+                showMessage(
+                    'Debes capturar la referencia del pago.',
+                    'error'
+                );
+
+                paymentReference.focus();
+                return;
+            }
+
+            state.submitting = true;
+
+            try {
+
+                const response = await fetch("{{ route('sales.store') }}", {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': document
+                            .querySelector('meta[name="csrf-token"]')
+                            .content
+                    },
+                    body: JSON.stringify({
+                        items: state.cart.map(item => ({
+                            stock_item_id: item.stock_item_id,
+                            product_unit_id: item.product_unit_id,
+                            quantity: item.quantity
+                        })),
+                        payment_method_id: paymentMethod.value,
+                        amount_received: received,
+                        reference: paymentReference.value.trim() || null
+                    })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+
+                    const firstError =
+                        data.errors ?
+                        Object.values(data.errors).flat()[0] :
+                        data.message;
+
+                    throw new Error(
+                        firstError || 'No fue posible registrar la venta.'
+                    );
+                }
+
+                closePaymentModal();
+
+                state.cart = [];
+
+                renderCart();
+
+                openCompletedSaleModal(data);
+
+            } catch (error) {
+
+                showMessage(
+                    error.message,
+                    'error'
+                );
+
+            } finally {
+
+                state.submitting = false;
+            }
+        }
 
 
         searchInput.addEventListener('input', () => {

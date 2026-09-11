@@ -105,25 +105,23 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/sales/{sale}', [SaleController::class, 'show'])
         ->name('sales.show');
-
-    Route::post(
-        '/sales/point/start',
-        [SaleController::class, 'startPointPayment']
-    )->name('sales.point.start');
 });
 
 Route::middleware('auth')->group(function () {
-    Route::get('/expenses', [ExpenseController::class, 'index'])->name('expenses.index');
-    Route::get('/expenses/create', [ExpenseController::class, 'create'])->name('expenses.create');
-    Route::post('/expenses', [ExpenseController::class, 'store'])->name('expenses.store');
-    Route::get('/expenses/{expense}', [ExpenseController::class, 'show'])->name('expenses.show');
-    Route::get('/expenses/{expense}/edit', [ExpenseController::class, 'edit'])->name('expenses.edit');
-    Route::put('/expenses/{expense}', [ExpenseController::class, 'update'])->name('expenses.update');
-    Route::post('/expenses/{expense}/approve', [ExpenseController::class, 'approve'])->name('expenses.approve');
-    Route::post('/expenses/{expense}/reject', [ExpenseController::class, 'reject'])->name('expenses.reject');
-    Route::post('/expenses/{expense}/pay', [ExpenseController::class, 'pay'])->name('expenses.pay');
-    Route::post('/expenses/{expense}/cancel', [ExpenseController::class, 'cancel'])->name('expenses.cancel');
+    Route::get('/expenses',[ExpenseController::class,'index'])->name('expenses.index');
+    Route::get('/expenses/create',[ExpenseController::class,'create'])->name('expenses.create');
+    Route::post('/expenses',[ExpenseController::class,'store'])->name('expenses.store');
+    Route::get('/expenses/{expense}',[ExpenseController::class,'show'])->name('expenses.show');
+    Route::get('/expenses/{expense}/edit',[ExpenseController::class,'edit'])->name('expenses.edit');
+    Route::put('/expenses/{expense}',[ExpenseController::class,'update'])->name('expenses.update');
+    Route::post('/expenses/{expense}/approve',[ExpenseController::class,'approve'])->name('expenses.approve');
+    Route::post('/expenses/{expense}/reject',[ExpenseController::class,'reject'])->name('expenses.reject');
+    Route::post('/expenses/{expense}/pay',[ExpenseController::class,'pay'])->name('expenses.pay');
+    Route::post('/expenses/{expense}/cancel',[ExpenseController::class,'cancel'])->name('expenses.cancel');
 
-    Route::get('/expense-categories', [ExpenseCategoryController::class, 'index'])->name('expenses.categories.index');
-    Route::post('/expense-categories', [ExpenseCategoryController::class, 'store'])->name('expenses.categories.store');
+    Route::get('/expense-categories',[ExpenseCategoryController::class,'index'])->name('expenses.categories.index');
+    Route::post('/expense-categories',[ExpenseCategoryController::class,'store'])->name('expenses.categories.store');
 });
+
+
+

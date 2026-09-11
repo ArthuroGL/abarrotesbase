@@ -1009,7 +1009,7 @@
          * Este flujo NO registra todavía la venta como confirmada.
          * Primero crea la orden en Mercado Pago y la envía al Point.
          */
-        if (option?.dataset.code === 'MP_POINT') {
+        if (option?.textContent?.trim() === 'Mercado Pago Point') {
             const response = await fetch(
                 "{{ route('sales.point.start') }}",
                 {

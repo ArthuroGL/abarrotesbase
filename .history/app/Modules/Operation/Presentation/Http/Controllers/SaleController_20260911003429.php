@@ -23,7 +23,6 @@ use Illuminate\View\View;
 use App\Modules\Payment\Application\Services\MercadoPagoService;
 use App\Modules\Payment\Application\Services\PaymentPointService;
 use App\Modules\Payment\Infrastructure\Persistence\Models\PaymentTransaction;
-use RuntimeException;
 
 final class SaleController
 {

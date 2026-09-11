@@ -23,16 +23,9 @@ use Illuminate\View\View;
 use App\Modules\Payment\Application\Services\MercadoPagoService;
 use App\Modules\Payment\Application\Services\PaymentPointService;
 use App\Modules\Payment\Infrastructure\Persistence\Models\PaymentTransaction;
-use RuntimeException;
 
 final class SaleController
 {
-
-    public function __construct(
-        private readonly PaymentPointService $paymentPointService,
-    ) {}
-
-
     public function index(Request $request): View
     {
         $session = $this->activeCashSession($request);
@@ -191,284 +184,6 @@ final class SaleController
 
         return response()->json([
             'items' => $results,
-        ]);
-    }
-
-    public function startPointPayment(Request $request): JsonResponse
-    {
-        $validated = $request->validate([
-            'items' => ['required', 'array', 'min:1'],
-            'items.*.stock_item_id' => ['required', 'uuid'],
-            'items.*.product_unit_id' => ['required', 'uuid'],
-            'items.*.quantity' => ['required', 'numeric', 'gt:0'],
-        ]);
-
-        $user = $request->user();
-
-        $result = DB::transaction(function () use ($validated, $user) {
-            $session = CashSession::query()
-                ->where('responsible_user_id', $user->id)
-                ->where('status', 'open')
-                ->lockForUpdate()
-                ->first();
-
-            if (!$session) {
-                throw ValidationException::withMessages([
-                    'cash' => 'No tienes una sesión de caja abierta.',
-                ]);
-            }
-
-            $paymentMethod = PaymentMethod::query()
-                ->where('organization_id', $session->organization_id)
-                ->where('code', 'MP_POINT')
-                ->where('is_active', true)
-                ->first();
-
-            if (!$paymentMethod) {
-                throw ValidationException::withMessages([
-                    'payment_method_id' =>
-                    'Mercado Pago Point no está disponible.',
-                ]);
-            }
-
-            $subtotal = 0.0;
-            $discountTotal = 0.0;
-            $taxTotal = 0.0;
-            $total = 0.0;
-
-            $preparedLines = [];
-
-            foreach ($validated['items'] as $index => $item) {
-                $stockItem = StockItem::query()
-                    ->where('organization_id', $session->organization_id)
-                    ->where('id', $item['stock_item_id'])
-                    ->where('is_active', true)
-                    ->with('product')
-                    ->lockForUpdate()
-                    ->first();
-
-                if (!$stockItem) {
-                    throw ValidationException::withMessages([
-                        "items.{$index}.stock_item_id" =>
-                        'El producto ya no está disponible.',
-                    ]);
-                }
-
-                $unit = ProductUnit::query()
-                    ->where('organization_id', $session->organization_id)
-                    ->where('stock_item_id', $stockItem->id)
-                    ->where('id', $item['product_unit_id'])
-                    ->where('is_active', true)
-                    ->where('is_sale_unit', true)
-                    ->with('unit')
-                    ->first();
-
-                if (!$unit) {
-                    throw ValidationException::withMessages([
-                        "items.{$index}.product_unit_id" =>
-                        'La unidad de venta no es válida.',
-                    ]);
-                }
-
-                $quantity = (float) $item['quantity'];
-
-                if (
-                    !$unit->allow_decimal
-                    && $quantity != floor($quantity)
-                ) {
-                    throw ValidationException::withMessages([
-                        "items.{$index}.quantity" =>
-                        'Este producto solo puede venderse en cantidades enteras.',
-                    ]);
-                }
-
-                $price = $this->resolvePrice(
-                    $session->organization_id,
-                    $stockItem->id,
-                    $unit->id,
-                    $quantity
-                );
-
-                if (!$price) {
-                    throw ValidationException::withMessages([
-                        "items.{$index}.quantity" =>
-                        'El producto no tiene un precio vigente.',
-                    ]);
-                }
-
-                $balance = DB::table('inventory_balances')
-                    ->where('organization_id', $session->organization_id)
-                    ->where('branch_id', $session->branch_id)
-                    ->where('stock_item_id', $stockItem->id)
-                    ->lockForUpdate()
-                    ->first();
-
-                $inventoryQuantity =
-                    $quantity * (float) $unit->conversion_factor;
-
-                $currentStock =
-                    (float) ($balance->on_hand_quantity ?? 0);
-
-                if (
-                    $stockItem->product?->track_inventory
-                    && !$stockItem->product?->allow_negative_stock
-                    && $currentStock < $inventoryQuantity
-                ) {
-                    throw ValidationException::withMessages([
-                        "items.{$index}.quantity" =>
-                        "Existencia insuficiente para {$stockItem->product->name}. Disponible: {$currentStock}.",
-                    ]);
-                }
-
-                $gross = $quantity * (float) $price->amount;
-
-                $taxRate = 0.0;
-                $taxIncluded = false;
-
-                if ($stockItem->product?->tax_rate_id) {
-                    $tax = DB::table('tax_rates')
-                        ->where(
-                            'organization_id',
-                            $session->organization_id
-                        )
-                        ->where(
-                            'id',
-                            $stockItem->product->tax_rate_id
-                        )
-                        ->where('is_active', true)
-                        ->where(function ($query) {
-                            $query->whereNull('starts_at')
-                                ->orWhere('starts_at', '<=', now());
-                        })
-                        ->where(function ($query) {
-                            $query->whereNull('ends_at')
-                                ->orWhere('ends_at', '>=', now());
-                        })
-                        ->first();
-
-                    if ($tax) {
-                        $taxRate = (float) $tax->rate;
-                        $taxIncluded = (bool) $tax->is_included;
-                    }
-                }
-
-                if ($taxIncluded && $taxRate > 0) {
-                    $lineTax = $gross - ($gross / (1 + $taxRate));
-                    $lineSubtotal = $gross - $lineTax;
-                    $lineTotal = $gross;
-                } else {
-                    $lineSubtotal = $gross;
-                    $lineTax = $gross * $taxRate;
-                    $lineTotal = $gross + $lineTax;
-                }
-
-                $unitCost =
-                    (float) ($balance->weighted_average_cost ?? 0);
-
-                $subtotal += $lineSubtotal;
-                $taxTotal += $lineTax;
-                $total += $lineTotal;
-
-                $preparedLines[] = [
-                    'stockItem' => $stockItem,
-                    'unit' => $unit,
-                    'quantity' => $quantity,
-                    'inventoryQuantity' => $inventoryQuantity,
-                    'unitPrice' => (float) $price->amount,
-                    'tax' => $lineTax,
-                    'total' => $lineTotal,
-                    'unitCost' => $unitCost,
-                ];
-            }
-
-            $sale = Sale::create([
-                'organization_id' => $session->organization_id,
-                'branch_id' => $session->branch_id,
-                'register_id' => $session->register_id,
-                'cash_session_id' => $session->id,
-                'sale_number' => $this->generateSaleNumber(
-                    $session->organization_id
-                ),
-                'status' => 'draft',
-                'currency_code' => 'MXN',
-                'subtotal' => $subtotal,
-                'discount_total' => $discountTotal,
-                'tax_total' => $taxTotal,
-                'total' => $total,
-                'change_total' => 0,
-                'created_by' => $user->id,
-            ]);
-
-            foreach ($preparedLines as $index => $line) {
-                SaleLine::create([
-                    'sale_id' => $sale->id,
-                    'line_number' => $index + 1,
-                    'stock_item_id' => $line['stockItem']->id,
-                    'product_unit_id' => $line['unit']->id,
-                    'sku' => $line['stockItem']->product?->sku,
-                    'description' =>
-                    $line['stockItem']->product?->name
-                        ?? $line['stockItem']->productVariant?->name
-                        ?? 'Producto',
-                    'quantity' => $line['quantity'],
-                    'conversion_factor' =>
-                    $line['unit']->conversion_factor,
-                    'unit_price' => $line['unitPrice'],
-                    'discount_amount' => 0,
-                    'tax_amount' => $line['tax'],
-                    'unit_cost' => $line['unitCost'],
-                    'line_total' => $line['total'],
-                    'inventory_movement_id' => null,
-                ]);
-            }
-
-            return $sale;
-        });
-
-        $externalReference =
-            'ABARROTESBASE-' . $result->sale_number;
-
-        $transaction = $this->paymentPointService
-            ->createPendingPayment(
-                $result->id,
-                (float) $result->total,
-                $externalReference
-            );
-
-        $mercadoPago = app(MercadoPagoService::class);
-
-        $order = $mercadoPago->createPointOrder(
-            (float) $result->total,
-            $externalReference,
-            $transaction->idempotency_key
-        );
-
-        $orderId = $order['id'] ?? null;
-
-        if (!$orderId) {
-            throw new RuntimeException(
-                'Mercado Pago no devolvió el ID de la orden.'
-            );
-        }
-
-        $transaction->update([
-            'provider_order_id' => $orderId,
-            'request_payload' => [
-                'external_reference' => $externalReference,
-                'amount' => (float) $result->total,
-            ],
-            'response_payload' => $order,
-            'status' => 'processing',
-        ]);
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Pago enviado a Mercado Pago Point.',
-            'sale_id' => $result->id,
-            'sale_number' => $result->sale_number,
-            'transaction_id' => $transaction->id,
-            'order_id' => $orderId,
-            'total' => (float) $result->total,
         ]);
     }
 
@@ -947,157 +662,157 @@ final class SaleController
         );
     }
     public function cancel(
-        Request $request,
-        Sale $sale
-    ): JsonResponse {
-        $validated = $request->validate([
-            'reason' => ['required', 'string', 'max:500'],
-        ]);
+    Request $request,
+    Sale $sale
+): JsonResponse {
+    $validated = $request->validate([
+        'reason' => ['required', 'string', 'max:500'],
+    ]);
 
-        $user = $request->user();
+    $user = $request->user();
 
-        $result = DB::transaction(function () use (
-            $sale,
-            $validated,
-            $user
-        ) {
-            $orgId = DB::table('organizations')->value('id');
+    $result = DB::transaction(function () use (
+        $sale,
+        $validated,
+        $user
+    ) {
+        $orgId = DB::table('organizations')->value('id');
 
-            if ($sale->organization_id !== $orgId) {
-                abort(404);
-            }
+        if ($sale->organization_id !== $orgId) {
+            abort(404);
+        }
 
-            /*
+        /*
          * Bloqueamos la venta para evitar dos cancelaciones
          * simultáneas sobre el mismo folio.
          */
-            $sale = Sale::query()
-                ->where('id', $sale->id)
-                ->where('organization_id', $orgId)
-                ->lockForUpdate()
-                ->first();
+        $sale = Sale::query()
+            ->where('id', $sale->id)
+            ->where('organization_id', $orgId)
+            ->lockForUpdate()
+            ->first();
 
-            if (!$sale) {
-                abort(404);
-            }
+        if (!$sale) {
+            abort(404);
+        }
 
-            if ($sale->status !== 'confirmed') {
-                throw ValidationException::withMessages([
-                    'sale' => 'La venta no puede cancelarse porque no está confirmada.',
-                ]);
-            }
+        if ($sale->status !== 'confirmed') {
+            throw ValidationException::withMessages([
+                'sale' => 'La venta no puede cancelarse porque no está confirmada.',
+            ]);
+        }
 
-            /*
+        /*
          * Cargamos las líneas y pagos dentro de la misma
          * transacción.
          */
-            $sale->load([
-                'lines',
-                'payments.paymentMethod',
-            ]);
+        $sale->load([
+            'lines',
+            'payments.paymentMethod',
+        ]);
 
-            /*
+        /*
          * Si existe un pago que afecta efectivo, necesitamos
          * una caja abierta para registrar la devolución.
          */
-            $cashPayments = $sale->payments
-                ->filter(
-                    fn($payment) =>
-                    $payment->paymentMethod?->affects_cash
-                );
+        $cashPayments = $sale->payments
+            ->filter(fn ($payment) =>
+                $payment->paymentMethod?->affects_cash
+            );
 
-            if ($cashPayments->isNotEmpty()) {
-                $session = CashSession::query()
-                    ->where('responsible_user_id', $user->id)
-                    ->where('status', 'open')
-                    ->where('branch_id', $sale->branch_id)
-                    ->lockForUpdate()
-                    ->first();
+        if ($cashPayments->isNotEmpty()) {
+            $session = CashSession::query()
+                ->where('responsible_user_id', $user->id)
+                ->where('status', 'open')
+                ->where('branch_id', $sale->branch_id)
+                ->lockForUpdate()
+                ->first();
 
-                if (!$session) {
-                    throw ValidationException::withMessages([
-                        'cash' =>
+            if (!$session) {
+                throw ValidationException::withMessages([
+                    'cash' =>
                         'Debes tener una sesión de caja abierta en la sucursal de la venta para realizar la devolución.',
-                    ]);
-                }
-            } else {
-                $session = null;
+                ]);
+            }
+        } else {
+            $session = null;
+        }
+
+        /*
+         * 1. REVERTIR INVENTARIO
+         */
+        foreach ($sale->lines as $line) {
+
+            if (!$line->inventory_movement_id) {
+                continue;
+            }
+
+            $originalMovement = \App\Models\InventoryMovement::query()
+                ->where('id', $line->inventory_movement_id)
+                ->where('organization_id', $sale->organization_id)
+                ->where('branch_id', $sale->branch_id)
+                ->where('stock_item_id', $line->stock_item_id)
+                ->lockForUpdate()
+                ->first();
+
+            if (!$originalMovement) {
+                throw ValidationException::withMessages([
+                    'inventory' =>
+                        "No se encontró el movimiento de inventario de la línea {$line->line_number}.",
+                ]);
             }
 
             /*
-         * 1. REVERTIR INVENTARIO
-         */
-            foreach ($sale->lines as $line) {
-
-                if (!$line->inventory_movement_id) {
-                    continue;
-                }
-
-                $originalMovement = \App\Models\InventoryMovement::query()
-                    ->where('id', $line->inventory_movement_id)
-                    ->where('organization_id', $sale->organization_id)
-                    ->where('branch_id', $sale->branch_id)
-                    ->where('stock_item_id', $line->stock_item_id)
-                    ->lockForUpdate()
-                    ->first();
-
-                if (!$originalMovement) {
-                    throw ValidationException::withMessages([
-                        'inventory' =>
-                        "No se encontró el movimiento de inventario de la línea {$line->line_number}.",
-                    ]);
-                }
-
-                /*
              * La venta original tuvo quantity_delta negativo.
              * La cancelación crea el movimiento inverso positivo.
              */
-                $reversalQuantity = abs(
-                    (float) $originalMovement->quantity_delta
-                );
+            $reversalQuantity = abs(
+                (float) $originalMovement->quantity_delta
+            );
 
-                \App\Models\InventoryMovement::create([
-                    'organization_id' => $sale->organization_id,
-                    'branch_id' => $sale->branch_id,
-                    'stock_item_id' => $line->stock_item_id,
-                    'movement_type' => 'void_reversal',
-                    'quantity_delta' => $reversalQuantity,
-                    'unit_cost' => $originalMovement->unit_cost,
-                    'total_cost' => $originalMovement->total_cost,
-                    'source_type' => 'SALE_CANCELLATION',
-                    'source_id' => $sale->id,
-                    'reason_code' => 'SALE_CANCELLATION',
-                    'notes' => 'Reversión de inventario por cancelación de venta',
-                    'created_by' => $user->id,
-                    'occurred_at' => now(),
-                ]);
+            \App\Models\InventoryMovement::create([
+                'organization_id' => $sale->organization_id,
+                'branch_id' => $sale->branch_id,
+                'stock_item_id' => $line->stock_item_id,
+                'movement_type' => 'void_reversal',
+                'quantity_delta' => $reversalQuantity,
+                'unit_cost' => $originalMovement->unit_cost,
+                'total_cost' => $originalMovement->total_cost,
+                'source_type' => 'SALE_CANCELLATION',
+                'source_id' => $sale->id,
+                'reason_code' => 'SALE_CANCELLATION',
+                'notes' => 'Reversión de inventario por cancelación de venta',
+                'created_by' => $user->id,
+                'occurred_at' => now(),
+            ]);
 
-                /*
+            /*
              * Actualizamos la proyección de inventario.
              */
-                $balance = DB::table('inventory_balances')
+            $balance = DB::table('inventory_balances')
+                ->where('organization_id', $sale->organization_id)
+                ->where('branch_id', $sale->branch_id)
+                ->where('stock_item_id', $line->stock_item_id)
+                ->lockForUpdate()
+                ->first();
+
+            if ($balance) {
+                DB::table('inventory_balances')
                     ->where('organization_id', $sale->organization_id)
                     ->where('branch_id', $sale->branch_id)
                     ->where('stock_item_id', $line->stock_item_id)
-                    ->lockForUpdate()
-                    ->first();
-
-                if ($balance) {
-                    DB::table('inventory_balances')
-                        ->where('organization_id', $sale->organization_id)
-                        ->where('branch_id', $sale->branch_id)
-                        ->where('stock_item_id', $line->stock_item_id)
-                        ->update([
-                            'on_hand_quantity' =>
+                    ->update([
+                        'on_hand_quantity' =>
                             (float) $balance->on_hand_quantity
-                                + $reversalQuantity,
+                            + $reversalQuantity,
 
-                            'version' => ((int) $balance->version) + 1,
-                        ]);
-                }
+                        'version' =>
+                            ((int) $balance->version) + 1,
+                    ]);
             }
+        }
 
-            /*
+        /*
          * 2. REVERTIR EFECTIVO
          *
          * Se devuelve únicamente lo aplicado a la venta,
@@ -1109,48 +824,48 @@ final class SaleController
          * Cambio = $2
          * Devolución = $28
          */
-            foreach ($cashPayments as $payment) {
+        foreach ($cashPayments as $payment) {
 
-                $refundAmount = (float) $payment->amount_applied;
+            $refundAmount = (float) $payment->amount_applied;
 
-                if ($refundAmount <= 0) {
-                    continue;
-                }
-
-                CashMovement::create([
-                    'organization_id' => $sale->organization_id,
-                    'branch_id' => $sale->branch_id,
-                    'cash_session_id' => $session->id,
-                    'payment_method_id' => $payment->payment_method_id,
-                    'movement_type' => 'return_payment',
-                    'amount' => $refundAmount,
-                    'source_type' => 'SALE_CANCELLATION',
-                    'source_id' => $sale->id,
-                    'reason_code' => 'SALE_CANCELLATION',
-                    'notes' => 'Devolución por cancelación de venta',
-                    'created_by' => $user->id,
-                    'occurred_at' => now(),
-                ]);
+            if ($refundAmount <= 0) {
+                continue;
             }
 
-            /*
+            CashMovement::create([
+                'organization_id' => $sale->organization_id,
+                'branch_id' => $sale->branch_id,
+                'cash_session_id' => $session->id,
+                'payment_method_id' => $payment->payment_method_id,
+                'movement_type' => 'return_payment',
+                'amount' => $refundAmount,
+                'source_type' => 'SALE_CANCELLATION',
+                'source_id' => $sale->id,
+                'reason_code' => 'SALE_CANCELLATION',
+                'notes' => 'Devolución por cancelación de venta',
+                'created_by' => $user->id,
+                'occurred_at' => now(),
+            ]);
+        }
+
+        /*
          * 3. MARCAR VENTA COMO CANCELADA
          */
-            $sale->update([
-                'status' => 'cancelled',
-                'cancelled_at' => now(),
-                'cancelled_by' => $user->id,
-                'cancellation_reason' => $validated['reason'],
-            ]);
-
-            return $sale->fresh();
-        });
-
-        return response()->json([
-            'success' => true,
-            'message' => 'La venta fue cancelada correctamente.',
-            'sale_id' => $result->id,
-            'sale_number' => $result->sale_number,
+        $sale->update([
+            'status' => 'cancelled',
+            'cancelled_at' => now(),
+            'cancelled_by' => $user->id,
+            'cancellation_reason' => $validated['reason'],
         ]);
-    }
+
+        return $sale->fresh();
+    });
+
+    return response()->json([
+        'success' => true,
+        'message' => 'La venta fue cancelada correctamente.',
+        'sale_id' => $result->id,
+        'sale_number' => $result->sale_number,
+    ]);
+}
 }

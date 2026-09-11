@@ -939,190 +939,126 @@
             );
         }
 
-       async function confirmPayment() {
-    if (state.submitting || !state.cart.length) {
-        return;
-    }
+        async function confirmPayment() {
 
-    const total = state.cart.reduce(
-        (sum, item) =>
-            sum + (item.price * item.quantity),
-        0
-    );
+            if (state.submitting || !state.cart.length) {
+                return;
+            }
 
-    const received =
-        Number(amountReceived.value || 0);
+            const total = state.cart.reduce(
+                (sum, item) =>
+                sum + (item.price * item.quantity),
+                0
+            );
 
-    const option =
-        paymentMethod.options[paymentMethod.selectedIndex];
+            const received =
+                Number(amountReceived.value || 0);
 
-    const affectsCash =
-        option?.dataset.affectsCash === '1';
+            const option =
+                paymentMethod.options[paymentMethod.selectedIndex];
 
-    const requiresReference =
-        option?.dataset.requiresReference === '1';
+            const affectsCash =
+                option?.dataset.affectsCash === '1';
 
-    const reference =
-        paymentReference.value.trim();
+            if (affectsCash && received < total) {
+                showMessage(
+                    'El importe recibido es menor al total.',
+                    'error'
+                );
+                return;
+            }
 
-    /*
-     * Validaciones normales de efectivo / transferencia.
-     */
-    if (affectsCash && received < total) {
-        showMessage(
-            'El importe recibido es menor al total.',
-            'error'
-        );
-        return;
-    }
+            if (!affectsCash && received !== total) {
+                showMessage(
+                    'Para este método de pago, el importe debe ser exactamente igual al total.',
+                    'error'
+                );
+                return;
+            }
 
-    if (!affectsCash && received !== total) {
-        showMessage(
-            'Para este método de pago, el importe debe ser exactamente igual al total.',
-            'error'
-        );
-        return;
-    }
+            /*  if (received < total) {
+                 showMessage(
+                     'El importe recibido es menor al total.',
+                     'error'
+                 );
+                 return;
+             } */
 
-    if (requiresReference && !reference) {
-        showMessage(
-            'Debes capturar la referencia del pago.',
-            'error'
-        );
+            const requiresReference =
+                option?.dataset.requiresReference === '1';
 
-        paymentReference.focus();
-        return;
-    }
+            const reference =
+                paymentReference.value.trim();
 
-    state.submitting = true;
+            if (requiresReference && !reference) {
+                showMessage(
+                    'Debes capturar la referencia del pago.',
+                    'error'
+                );
 
-    try {
-        const items = state.cart.map(item => ({
-            stock_item_id: item.stock_item_id,
-            product_unit_id: item.product_unit_id,
-            quantity: item.quantity,
-        }));
+                paymentReference.focus();
+                return;
+            }
 
-        /*
-         * MERCADO PAGO POINT
-         *
-         * Este flujo NO registra todavía la venta como confirmada.
-         * Primero crea la orden en Mercado Pago y la envía al Point.
-         */
-        if (option?.dataset.code === 'MP_POINT') {
-            const response = await fetch(
-                "{{ route('sales.point.start') }}",
-                {
+            state.submitting = true;
+
+            try {
+
+                const response = await fetch("{{ route('sales.store') }}", {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                         'Accept': 'application/json',
                         'X-CSRF-TOKEN': document
-                            .querySelector(
-                                'meta[name="csrf-token"]'
-                            )
+                            .querySelector('meta[name="csrf-token"]')
                             .content
                     },
                     body: JSON.stringify({
-                        items: items
+                        items: state.cart.map(item => ({
+                            stock_item_id: item.stock_item_id,
+                            product_unit_id: item.product_unit_id,
+                            quantity: item.quantity
+                        })),
+                        payment_method_id: paymentMethod.value,
+                        amount_received: received,
+                        reference: paymentReference.value.trim() || null
                     })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+
+                    const firstError =
+                        data.errors ?
+                        Object.values(data.errors).flat()[0] :
+                        data.message;
+
+                    throw new Error(
+                        firstError || 'No fue posible registrar la venta.'
+                    );
                 }
-            );
 
-            const data = await response.json();
+                closePaymentModal();
 
-            if (!response.ok) {
-                const firstError =
-                    data.errors
-                        ? Object.values(data.errors).flat()[0]
-                        : data.message;
+                state.cart = [];
 
-                throw new Error(
-                    firstError ||
-                    'No fue posible iniciar el pago con Mercado Pago Point.'
+                renderCart();
+
+                openCompletedSaleModal(data);
+
+            } catch (error) {
+
+                showMessage(
+                    error.message,
+                    'error'
                 );
+
+            } finally {
+
+                state.submitting = false;
             }
-
-            /*
-             * IMPORTANTE:
-             * Aquí todavía NO mostramos "Venta completada".
-             *
-             * La venta está esperando la confirmación de Mercado Pago.
-             */
-            closePaymentModal();
-
-            showMessage(
-                'Pago enviado a Mercado Pago Point. Espera la pantalla de cobro en la terminal.',
-                'ok'
-            );
-
-            console.log('Mercado Pago Point:', data);
-
-            return;
         }
-
-        /*
-         * FLUJO NORMAL
-         *
-         * Efectivo, transferencia, etc.
-         */
-        const response = await fetch(
-            "{{ route('sales.store') }}",
-            {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json',
-                    'X-CSRF-TOKEN': document
-                        .querySelector(
-                            'meta[name="csrf-token"]'
-                        )
-                        .content
-                },
-                body: JSON.stringify({
-                    items: items,
-                    payment_method_id: paymentMethod.value,
-                    amount_received: received,
-                    reference:
-                        paymentReference.value.trim() || null
-                })
-            }
-        );
-
-        const data = await response.json();
-
-        if (!response.ok) {
-            const firstError =
-                data.errors
-                    ? Object.values(data.errors).flat()[0]
-                    : data.message;
-
-            throw new Error(
-                firstError ||
-                'No fue posible registrar la venta.'
-            );
-        }
-
-        closePaymentModal();
-
-        state.cart = [];
-
-        renderCart();
-
-        openCompletedSaleModal(data);
-
-    } catch (error) {
-
-        showMessage(
-            error.message,
-            'error'
-        );
-
-    } finally {
-
-        state.submitting = false;
-    }
-}
 
 
         searchInput.addEventListener('input', () => {
