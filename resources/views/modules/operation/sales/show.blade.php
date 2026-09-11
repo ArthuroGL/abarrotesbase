@@ -455,99 +455,23 @@
 
     {{-- Modal de cancelación --}}
     @if ($sale->status === 'confirmed')
-
-        <div
-            id="cancel-sale-modal"
-            class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-950/50 px-4"
-        >
-
-            <div class="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
-
-                <div class="flex items-start justify-between gap-4">
-
-                    <div>
-
-                        <h2 class="text-lg font-black text-slate-900">
-                            Cancelar venta
-                        </h2>
-
-                        <p class="mt-1 text-sm text-slate-500">
-                            Folio {{ $sale->sale_number }}
-                        </p>
-
-                    </div>
-
-                    <button
-                        type="button"
-                        id="close-cancel-modal"
-                        class="rounded-lg px-2 py-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
-                    >
-                        ✕
-                    </button>
-
+        <x-ui.modal id="cancel-sale-modal" size="sm" title="Cancelar venta" description="Confirma que deseas revertir esta operación." close-id="close-cancel-modal">
+            <div class="px-5 py-5 sm:px-6">
+                <div class="rounded-2xl border border-amber-200 bg-amber-50 p-5">
+                    <p class="text-xs font-bold uppercase tracking-[0.14em] text-amber-800">Venta seleccionada</p>
+                    <p class="mt-1 text-xl font-black text-amber-950">{{ $sale->sale_number }}</p>
+                    <p class="mt-3 text-sm leading-6 text-amber-900">Esta operación revertirá la venta y realizará los movimientos correspondientes de inventario y caja.</p>
                 </div>
-
-
-                <div class="mt-5 rounded-xl border border-amber-200 bg-amber-50 p-4">
-
-                    <p class="text-sm font-semibold text-amber-800">
-                        Esta operación revertirá la venta y realizará los movimientos
-                        correspondientes de inventario y caja.
-                    </p>
-
-                </div>
-
-
-                <form
-                    method="POST"
-                    action="{{ route('sales.cancel', $sale) }}"
-                    class="mt-5"
-                >
-
+                <form id="cancel-sale-form" method="POST" action="{{ route('sales.cancel', $sale) }}" class="mt-6">
                     @csrf
-
-                    <label
-                        for="reason"
-                        class="mb-2 block text-sm font-bold text-slate-700"
-                    >
-                        Motivo de cancelación
-                    </label>
-
-                    <textarea
-                        id="reason"
-                        name="reason"
-                        required
-                        maxlength="500"
-                        rows="4"
-                        class="app-input resize-none"
-                        placeholder="Indica el motivo de la cancelación..."
-                    ></textarea>
-
-
-                    <div class="mt-5 flex justify-end gap-3">
-
-                        <button
-                            type="button"
-                            id="cancel-modal-back"
-                            class="rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-bold text-slate-700 hover:bg-slate-50"
-                        >
-                            Regresar
-                        </button>
-
-                        <button
-                            type="submit"
-                            class="rounded-xl bg-rose-600 px-5 py-2.5 text-sm font-bold text-white hover:bg-rose-700"
-                        >
-                            Confirmar cancelación
-                        </button>
-
-                    </div>
-
+                    <label for="reason" class="mb-2 block text-sm font-black text-slate-900">Motivo de cancelación</label>
+                    <textarea id="reason" name="reason" required maxlength="500" rows="5" class="app-input min-h-32 resize-none" placeholder="Indica el motivo de la cancelación..."></textarea>
                 </form>
-
             </div>
-
-        </div>
+            <x-slot:footer>
+                <div class="grid gap-3 sm:grid-cols-2"><button type="button" id="cancel-modal-back" class="min-h-12 rounded-xl border-2 border-slate-300 bg-white px-5 py-3 text-base font-bold text-slate-700 hover:bg-slate-50">Regresar</button><button type="submit" form="cancel-sale-form" class="min-h-12 rounded-xl bg-rose-600 px-5 py-3 text-base font-black text-white hover:bg-rose-700">Confirmar cancelación</button></div>
+            </x-slot:footer>
+        </x-ui.modal>
 
     @endif
 

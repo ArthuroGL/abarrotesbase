@@ -1,418 +1,1069 @@
-<x-layouts.app title="Nuevo Producto - ABARROTESBASE">
-    {{-- Librería HTML5-QRCode --}}
+<x-layouts.app title="Nuevo producto | ABARROTESBASE">
+
     <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 
-    <div class="mx-auto max-w-4xl space-y-6">
-        {{-- Header --}}
-        <div class="flex items-center justify-between border-b border-slate-200 pb-5">
-            <div>
-                <h1 class="text-2xl font-black text-slate-900">Alta de Nuevo Producto</h1>
-                <p class="mt-1 text-xs font-semibold text-slate-500">Ingresa la información comercial y técnica de tu producto.</p>
-            </div>
-            <a href="{{ route('products.index') }}" class="rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-bold text-slate-700 shadow-sm transition hover:bg-slate-50">
-                ← Volver al catálogo
-            </a>
-        </div>
+    <div class="mx-auto max-w-5xl space-y-6">
 
-        <form method="POST" action="{{ route('products.store') }}" class="space-y-6">
+        {{-- HEADER --}}
+        <x-layout.page-header
+            eyebrow="Inventario"
+            title="Nuevo producto"
+            description="Registra la información necesaria para identificar, vender y controlar este producto."
+        >
+            <x-slot:actions>
+                <a
+                    href="{{ route('products.index') }}"
+                    class="inline-flex min-h-11 items-center justify-center rounded-xl border border-slate-300 bg-white px-4 text-sm font-bold text-slate-700 transition hover:bg-slate-50"
+                >
+                    Volver al catálogo
+                </a>
+            </x-slot:actions>
+        </x-layout.page-header>
+
+
+        {{-- MENSAJE GENERAL DE ERRORES --}}
+        @if ($errors->any())
+            <div class="rounded-2xl border border-rose-200 bg-rose-50 px-5 py-4">
+                <p class="font-bold text-rose-800">
+                    Revisa la información del producto.
+                </p>
+
+                <p class="mt-1 text-sm text-rose-700">
+                    Hay uno o más campos que necesitan corrección antes de guardar.
+                </p>
+            </div>
+        @endif
+
+
+        <form
+            method="POST"
+            action="{{ route('products.store') }}"
+            class="space-y-6"
+        >
             @csrf
 
-            {{-- Bloque 1: Información Básica --}}
-            <x-ui.card padding="p-6 sm:p-8" class="shadow-sm border-slate-200 bg-white space-y-5">
-                <h2 class="text-xs font-bold uppercase tracking-wider text-emerald-700">1. Identificación del Producto</h2>
+            {{-- ========================================================= --}}
+            {{-- IDENTIFICACIÓN --}}
+            {{-- ========================================================= --}}
+            <x-ui.card padding="p-0" class="overflow-hidden">
 
-                <div class="grid gap-5 sm:grid-cols-2">
-                    {{-- Código de Barras con Botón de Escáner --}}
+                <div class="border-b border-slate-200 bg-slate-50/70 px-5 py-4 sm:px-6">
+                    <p class="text-xs font-black uppercase tracking-[0.14em] text-emerald-700">
+                        Paso 1
+                    </p>
+
+                    <h2 class="mt-1 text-lg font-black text-slate-900">
+                        Identificación del producto
+                    </h2>
+
+                    <p class="mt-1 text-sm text-slate-500">
+                        Escanea el código o escríbelo manualmente. Intentaremos completar la información disponible.
+                    </p>
+                </div>
+
+
+                <div class="space-y-6 p-5 sm:p-6">
+
+                    {{-- BARCODE --}}
                     <div>
-                        <div class="flex items-center justify-between mb-1.5">
-                            <label for="barcode" class="block text-xs font-bold uppercase tracking-wider text-slate-700">
-                                Código de Barras *
+                        <div class="mb-2 flex flex-wrap items-center justify-between gap-2">
+                            <label
+                                for="barcode"
+                                class="text-sm font-bold text-slate-800"
+                            >
+                                Código de barras
+                                <span class="text-rose-600">*</span>
                             </label>
-                            <button type="button" onclick="startScanner()" class="inline-flex items-center gap-1 text-xs font-bold text-emerald-600 hover:text-emerald-700 transition">
-                                📷 Escanear con Cámara
+
+                            <button
+                                type="button"
+                                id="open-scanner"
+                                class="inline-flex min-h-10 items-center justify-center rounded-xl border border-emerald-200 bg-emerald-50 px-3 text-sm font-bold text-emerald-700 transition hover:bg-emerald-100"
+                            >
+                                Escanear con cámara
                             </button>
                         </div>
+
                         <div class="relative">
-                            <x-ui.input id="barcode" name="barcode" :value="old('barcode')" required placeholder="7501000000000" onchange="fetchProductInfo(this.value)" :error="$errors->has('barcode')" />
-                            <div id="barcodeLoader" class="absolute right-3 top-2.5 hidden">
-                                <svg class="animate-spin h-4 w-4 text-emerald-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                </svg>
+                            <x-ui.input
+                                id="barcode"
+                                name="barcode"
+                                :value="old('barcode', $initialBarcode ?? '')"
+                                required
+                                autocomplete="off"
+                                inputmode="numeric"
+                                placeholder="Escanea o escribe el código..."
+                                class="pr-12 font-mono text-lg font-bold"
+                                :error="$errors->has('barcode')"
+                            />
+
+                            <div
+                                id="barcode-loader"
+                                class="pointer-events-none absolute inset-y-0 right-4 hidden items-center"
+                            >
+                                <span class="h-5 w-5 animate-spin rounded-full border-2 border-slate-200 border-t-emerald-600"></span>
                             </div>
                         </div>
-                        @error('barcode')<p class="mt-1 text-xs font-medium text-rose-600">{{ $message }}</p>@enderror
+
+                        <p class="mt-2 text-sm text-slate-500">
+                            También puedes usar un lector físico y presionar Enter.
+                        </p>
+
+                        @error('barcode')
+                            <p class="mt-2 text-sm font-semibold text-rose-600">
+                                {{ $message }}
+                            </p>
+                        @enderror
                     </div>
 
-                    {{-- SKU --}}
-                    <div>
-                        <label for="sku" class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
-                            Código Interno / SKU
-                        </label>
-                        <x-ui.input id="sku" name="sku" :value="old('sku')" placeholder="Ej. GAL-001" :error="$errors->has('sku')" />
-                        @error('sku')<p class="mt-1 text-xs font-medium text-rose-600">{{ $message }}</p>@enderror
+
+                    {{-- ESTADO DE CONSULTA --}}
+                    <div
+                        id="lookup-status"
+                        class="hidden rounded-xl border px-4 py-3 text-sm"
+                    ></div>
+
+
+                    {{-- PREVIEW EXTERNO --}}
+                    <div
+                        id="product-preview"
+                        class="hidden rounded-2xl border border-slate-200 bg-slate-50 p-4"
+                    >
+                        <div class="flex items-center gap-4">
+
+                            <img
+                                id="product-preview-image"
+                                src=""
+                                alt=""
+                                class="hidden h-16 w-16 shrink-0 rounded-xl border border-slate-200 bg-white object-contain"
+                            >
+
+                            <div class="min-w-0">
+                                <p class="font-bold text-slate-900">
+                                    Información encontrada
+                                </p>
+
+                                <p
+                                    id="product-preview-description"
+                                    class="mt-1 text-sm text-slate-600"
+                                ></p>
+
+                                <p class="mt-1 text-xs text-slate-400">
+                                    Verifica los datos antes de guardar el producto.
+                                </p>
+                            </div>
+
+                        </div>
                     </div>
 
-                    {{-- Nombre del Producto --}}
-                    <div class="sm:col-span-2">
-                        <label for="name" class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
-                            Nombre del producto *
-                        </label>
-                        <x-ui.input id="name" name="name" :value="old('name')" required placeholder="Ej. Galletas Chokis 100g" :error="$errors->has('name')" />
-                        @error('name')<p class="mt-1 text-xs font-medium text-rose-600">{{ $message }}</p>@enderror
+
+                    <div class="grid gap-5 sm:grid-cols-2">
+
+                        {{-- NOMBRE --}}
+                        <div class="sm:col-span-2">
+                            <label
+                                for="name"
+                                class="mb-2 block text-sm font-bold text-slate-800"
+                            >
+                                Nombre del producto
+                                <span class="text-rose-600">*</span>
+                            </label>
+
+                            <x-ui.input
+                                id="name"
+                                name="name"
+                                :value="old('name')"
+                                required
+                                placeholder="Ej. Coca-Cola Original 600 ml"
+                                :error="$errors->has('name')"
+                            />
+
+                            @error('name')
+                                <p class="mt-2 text-sm font-semibold text-rose-600">
+                                    {{ $message }}
+                                </p>
+                            @enderror
+                        </div>
+
+
+                        {{-- SKU --}}
+                        <div>
+                            <label
+                                for="sku"
+                                class="mb-2 block text-sm font-bold text-slate-800"
+                            >
+                                Código interno / SKU
+                            </label>
+
+                            <x-ui.input
+                                id="sku"
+                                name="sku"
+                                :value="old('sku')"
+                                placeholder="Ej. COC-7890"
+                                :error="$errors->has('sku')"
+                            />
+
+                            <p class="mt-2 text-xs text-slate-500">
+                                Si lo dejas vacío durante la consulta, intentaremos generar uno.
+                            </p>
+
+                            @error('sku')
+                                <p class="mt-2 text-sm font-semibold text-rose-600">
+                                    {{ $message }}
+                                </p>
+                            @enderror
+                        </div>
+
                     </div>
+
                 </div>
             </x-ui.card>
 
-            {{-- Bloque 2: Clasificación y Precios --}}
-            <x-ui.card padding="p-6 sm:p-8" class="shadow-sm border-slate-200 bg-white space-y-5">
-                <h2 class="text-xs font-bold uppercase tracking-wider text-emerald-700">2. Clasificación & Venta</h2>
 
-                <div class="grid gap-5 sm:grid-cols-2">
-                    {{-- Categoría --}}
+            {{-- ========================================================= --}}
+            {{-- CLASIFICACIÓN Y VENTA --}}
+            {{-- ========================================================= --}}
+            <x-ui.card padding="p-0" class="overflow-hidden">
+
+                <div class="border-b border-slate-200 bg-slate-50/70 px-5 py-4 sm:px-6">
+                    <p class="text-xs font-black uppercase tracking-[0.14em] text-emerald-700">
+                        Paso 2
+                    </p>
+
+                    <h2 class="mt-1 text-lg font-black text-slate-900">
+                        Clasificación y venta
+                    </h2>
+
+                    <p class="mt-1 text-sm text-slate-500">
+                        Define cómo se clasifica y cómo será vendido el producto.
+                    </p>
+                </div>
+
+
+                <div class="grid gap-5 p-5 sm:grid-cols-2 sm:p-6">
+
+                    {{-- CATEGORÍA --}}
                     <div>
-                        <div class="flex items-center justify-between mb-1.5">
-                            <label for="category_id" class="block text-xs font-bold uppercase tracking-wider text-slate-700">
+                        <div class="mb-2 flex items-center justify-between gap-3">
+                            <label
+                                for="category_id"
+                                class="text-sm font-bold text-slate-800"
+                            >
                                 Categoría
                             </label>
-                            <button type="button" onclick="openQuickModal('category')" class="text-xs font-bold text-emerald-600 hover:text-emerald-700 transition">
+
+                            <button
+                                type="button"
+                                data-quick-create="category"
+                                class="text-sm font-bold text-emerald-700 hover:text-emerald-800"
+                            >
                                 + Nueva
                             </button>
                         </div>
-                        <select id="category_id" name="category_id" class="app-input">
-                            <option value="">-- Sin categoría --</option>
-                            @foreach ($categories as $cat)
-                            <option value="{{ $cat->id }}" @selected(old('category_id')===$cat->id)>{{ $cat->name }}</option>
+
+                        <select
+                            id="category_id"
+                            name="category_id"
+                            class="app-input"
+                        >
+                            <option value="">Sin categoría</option>
+
+                            @foreach ($categories as $category)
+                                <option
+                                    value="{{ $category->id }}"
+                                    @selected(old('category_id') === $category->id)
+                                >
+                                    {{ $category->name }}
+                                </option>
                             @endforeach
                         </select>
                     </div>
 
-                    {{-- Marca --}}
+
+                    {{-- MARCA --}}
                     <div>
-                        <div class="flex items-center justify-between mb-1.5">
-                            <label for="brand_id" class="block text-xs font-bold uppercase tracking-wider text-slate-700">
+                        <div class="mb-2 flex items-center justify-between gap-3">
+                            <label
+                                for="brand_id"
+                                class="text-sm font-bold text-slate-800"
+                            >
                                 Marca
                             </label>
-                            <button type="button" onclick="openQuickModal('brand')" class="text-xs font-bold text-emerald-600 hover:text-emerald-700 transition">
+
+                            <button
+                                type="button"
+                                data-quick-create="brand"
+                                class="text-sm font-bold text-emerald-700 hover:text-emerald-800"
+                            >
                                 + Nueva
                             </button>
                         </div>
-                        <select id="brand_id" name="brand_id" class="app-input">
-                            <option value="">-- Sin marca --</option>
-                            @foreach ($brands as $b)
-                            <option value="{{ $b->id }}" @selected(old('brand_id')===$b->id)>{{ $b->name }}</option>
+
+                        <select
+                            id="brand_id"
+                            name="brand_id"
+                            class="app-input"
+                        >
+                            <option value="">Sin marca</option>
+
+                            @foreach ($brands as $brand)
+                                <option
+                                    value="{{ $brand->id }}"
+                                    @selected(old('brand_id') === $brand->id)
+                                >
+                                    {{ $brand->name }}
+                                </option>
                             @endforeach
                         </select>
                     </div>
 
-                    {{-- Unidad de medida --}}
+
+                    {{-- UNIDAD --}}
                     <div>
-                        <label for="unit_id" class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
-                            Unidad de venta *
+                        <label
+                            for="unit_id"
+                            class="mb-2 block text-sm font-bold text-slate-800"
+                        >
+                            Unidad de venta
+                            <span class="text-rose-600">*</span>
                         </label>
-                        <select id="unit_id" name="unit_id" required class="app-input">
-                            @foreach ($units as $u)
-                            <option value="{{ $u->id }}" @selected(old('unit_id')===$u->id)>{{ $u->name }} ({{ $u->code }})</option>
+
+                        <select
+                            id="unit_id"
+                            name="unit_id"
+                            required
+                            class="app-input"
+                        >
+                            @foreach ($units as $unit)
+                                <option
+                                    value="{{ $unit->id }}"
+                                    @selected(old('unit_id') === $unit->id)
+                                >
+                                    {{ $unit->name }} ({{ $unit->code }})
+                                </option>
                             @endforeach
                         </select>
                     </div>
 
-                    {{-- Tipo de Producto --}}
+
+                    {{-- TIPO --}}
                     <div>
-                        <label for="product_type" class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
-                            Tipo de Producto *
+                        <label
+                            for="product_type"
+                            class="mb-2 block text-sm font-bold text-slate-800"
+                        >
+                            Forma de venta
+                            <span class="text-rose-600">*</span>
                         </label>
-                        <select id="product_type" name="product_type" required class="app-input">
-                            <option value="simple" @selected(old('product_type')==='simple' )>Pieza Individual (Entero)</option>
-                            <option value="bulk" @selected(old('product_type')==='bulk' )>Granel / Fraccionado (Permite decimales)</option>
+
+                        <select
+                            id="product_type"
+                            name="product_type"
+                            required
+                            class="app-input"
+                        >
+                            <option
+                                value="simple"
+                                @selected(old('product_type', 'simple') === 'simple')
+                            >
+                                Por pieza
+                            </option>
+
+                            <option
+                                value="bulk"
+                                @selected(old('product_type') === 'bulk')
+                            >
+                                A granel / permite decimales
+                            </option>
                         </select>
                     </div>
 
-                    {{-- Precio Venta --}}
+
+                    {{-- PRECIO --}}
                     <div>
-                        <label for="price" class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
-                            Precio Público (MXN) *
+                        <label
+                            for="price"
+                            class="mb-2 block text-sm font-bold text-slate-800"
+                        >
+                            Precio público
+                            <span class="text-rose-600">*</span>
                         </label>
-                        <x-ui.input id="price" type="number" step="0.01" name="price" :value="old('price')" required placeholder="0.00" :error="$errors->has('price')" />
-                        @error('price')<p class="mt-1 text-xs font-medium text-rose-600">{{ $message }}</p>@enderror
+
+                        <div class="relative">
+                            <span class="pointer-events-none absolute inset-y-0 left-4 flex items-center font-black text-slate-500">
+                                $
+                            </span>
+
+                            <x-ui.input
+                                id="price"
+                                type="number"
+                                step="0.01"
+                                min="0"
+                                name="price"
+                                :value="old('price')"
+                                required
+                                placeholder="0.00"
+                                class="pl-9 text-lg font-black"
+                                :error="$errors->has('price')"
+                            />
+                        </div>
+
+                        <p class="mt-2 text-xs font-semibold text-slate-500">
+                            Precio de venta en MXN.
+                        </p>
+
+                        @error('price')
+                            <p class="mt-2 text-sm font-semibold text-rose-600">
+                                {{ $message }}
+                            </p>
+                        @enderror
                     </div>
 
-                    {{-- Impuesto --}}
+
+                    {{-- IMPUESTO --}}
                     <div>
-                        <label for="tax_rate_id" class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
-                            Tasa de Impuesto
+                        <label
+                            for="tax_rate_id"
+                            class="mb-2 block text-sm font-bold text-slate-800"
+                        >
+                            Impuesto
                         </label>
-                        <select id="tax_rate_id" name="tax_rate_id" class="app-input">
-                            <option value="">-- Sin impuesto aplicable --</option>
+
+                        <select
+                            id="tax_rate_id"
+                            name="tax_rate_id"
+                            class="app-input"
+                        >
+                            <option value="">Sin impuesto aplicable</option>
+
                             @foreach ($taxRates as $tax)
-                            <option value="{{ $tax->id }}" @selected(old('tax_rate_id')===$tax->id)>{{ $tax->name }}</option>
+                                <option
+                                    value="{{ $tax->id }}"
+                                    @selected(old('tax_rate_id') === $tax->id)
+                                >
+                                    {{ $tax->name }}
+                                </option>
                             @endforeach
                         </select>
                     </div>
+
                 </div>
             </x-ui.card>
 
-            {{-- Submit --}}
-            <div class="flex items-center justify-end gap-3 pt-2">
-                <a href="{{ route('products.index') }}" class="rounded-xl border border-slate-300 bg-white px-5 py-2.5 text-xs font-bold text-slate-700 transition hover:bg-slate-50">
+
+            {{-- ACCIONES --}}
+            <div class="flex flex-col-reverse gap-3 border-t border-slate-200 pt-5 sm:flex-row sm:justify-end">
+
+                <a
+                    href="{{ route('products.index') }}"
+                    class="inline-flex min-h-12 items-center justify-center rounded-xl border border-slate-300 bg-white px-5 text-base font-bold text-slate-700 transition hover:bg-slate-50"
+                >
                     Cancelar
                 </a>
-                <x-ui.button type="submit" variant="primary" class="px-6 py-2.5">
-                    Guardar Producto
+
+                <x-ui.button
+                    type="submit"
+                    variant="primary"
+                    size="md"
+                    class="sm:min-w-48"
+                >
+                    Guardar producto
                 </x-ui.button>
+
             </div>
+
         </form>
     </div>
 
-    <!-- MODAL CÁMARA ESCÁNER (AJUSTADO) -->
-    <div id="scannerModal" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-slate-950/70 backdrop-blur-sm p-4">
-        <div class="w-full max-w-sm rounded-2xl bg-white p-5 shadow-2xl border border-slate-100 space-y-4 text-center">
-            <div class="flex items-center justify-between border-b border-slate-100 pb-3">
-                <h3 class="text-sm font-bold text-slate-900 flex items-center gap-2">
-                    <span class="relative flex h-2 w-2">
-                        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                        <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-                    </span>
-                    Escaneando Código
-                </h3>
-                <button type="button" onclick="stopScanner()" class="text-slate-400 hover:text-slate-600 text-sm font-bold">✕</button>
+
+    {{-- ============================================================= --}}
+    {{-- MODAL ESCÁNER --}}
+    {{-- ============================================================= --}}
+    <x-ui.modal
+        id="scanner-modal"
+        size="sm"
+        title="Escanear código de barras"
+        description="Coloca el código de barras frente a la cámara."
+        close-id="close-scanner"
+    >
+        <div class="space-y-4 p-5 sm:p-6">
+
+            <div class="relative flex min-h-[260px] items-center justify-center overflow-hidden rounded-2xl bg-slate-950">
+                <div
+                    id="reader"
+                    class="w-full [&>video]:max-h-[320px] [&>video]:object-cover"
+                ></div>
             </div>
 
-            {{-- Contenedor con dimensiones estrictas para evitar desbordes --}}
-            <div class="relative w-full overflow-hidden rounded-xl border border-slate-200 bg-slate-950 min-h-[220px] max-h-[300px] flex items-center justify-center">
-                <div id="reader" class="w-full h-full [&>video]:max-h-[280px] [&>video]:object-cover"></div>
+            <div
+                id="scanner-feedback"
+                class="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-center text-sm font-semibold text-slate-600"
+            >
+                Apunta al código de barras.
             </div>
 
-            {{-- Retroalimentación visual de lectura --}}
-            <div id="scannerFeedback" class="min-h-[38px] flex items-center justify-center rounded-xl bg-slate-50 border border-slate-100 px-3 py-1.5 text-xs font-mono text-slate-600">
-                Apunta al código de barras...
-            </div>
-
-            <button type="button" onclick="stopScanner()" class="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-xs font-bold text-slate-700 hover:bg-slate-100 transition">
-                Cerrar Escáner
-            </button>
         </div>
-    </div>
 
-    <!-- Modal Rápido Categoría/Marca -->
-    <div id="quickModal" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-slate-950/40 backdrop-blur-sm p-4">
-        <div class="w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl border border-slate-100 space-y-4">
-            <h3 id="quickModalTitle" class="text-sm font-bold text-slate-900">Crear Nuevo Registro</h3>
-            <div>
-                <label for="quickModalInput" class="block text-xs font-semibold text-slate-500 mb-1">Nombre</label>
-                <input type="text" id="quickModalInput" class="app-input w-full" placeholder="Nombre...">
-            </div>
-            <div class="flex justify-end gap-2 pt-2">
-                <button type="button" onclick="closeQuickModal()" class="rounded-xl px-4 py-2 text-xs font-bold text-slate-500 transition hover:bg-slate-100">
+        <x-slot:footer>
+            <button
+                type="button"
+                id="cancel-scanner"
+                class="inline-flex min-h-11 w-full items-center justify-center rounded-xl border border-slate-300 bg-white px-4 text-sm font-bold text-slate-700 transition hover:bg-slate-100"
+            >
+                Cerrar escáner
+            </button>
+        </x-slot:footer>
+    </x-ui.modal>
+
+
+    {{-- ============================================================= --}}
+    {{-- MODAL CATEGORÍA / MARCA --}}
+    {{-- ============================================================= --}}
+    <x-ui.modal
+        id="quick-modal"
+        size="sm"
+        title="Nuevo registro"
+        description="Agrega el registro sin abandonar el producto."
+        close-id="close-quick-modal"
+    >
+        <div class="p-5 sm:p-6">
+
+            <label
+                for="quick-modal-input"
+                class="mb-2 block text-sm font-bold text-slate-800"
+            >
+                Nombre
+            </label>
+
+            <x-ui.input
+                id="quick-modal-input"
+                type="text"
+                placeholder="Escribe el nombre..."
+                autocomplete="off"
+            />
+
+            <p
+                id="quick-modal-error"
+                class="mt-2 hidden text-sm font-semibold text-rose-600"
+            ></p>
+
+        </div>
+
+        <x-slot:footer>
+            <div class="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+
+                <button
+                    type="button"
+                    id="cancel-quick-modal"
+                    class="inline-flex min-h-11 items-center justify-center rounded-xl border border-slate-300 bg-white px-4 text-sm font-bold text-slate-700 transition hover:bg-slate-100"
+                >
                     Cancelar
                 </button>
-                <button type="button" onclick="submitQuickModal()" class="rounded-xl bg-emerald-500 px-4 py-2 text-xs font-bold text-slate-950 shadow-sm transition hover:bg-emerald-400">
+
+                <x-ui.button
+                    type="button"
+                    id="save-quick-modal"
+                    variant="primary"
+                    size="sm"
+                >
                     Guardar
-                </button>
+                </x-ui.button>
+
             </div>
-        </div>
-    </div>
-</x-layouts.app>
+        </x-slot:footer>
+    </x-ui.modal>
 
-<script>
-    let html5QrCode = null;
 
-    // --- CÁMARA Y ESCÁNER ---
-    function startScanner() {
-        const modal = document.getElementById('scannerModal');
-        const feedback = document.getElementById('scannerFeedback');
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
 
-        feedback.className = "min-h-[38px] flex items-center justify-center rounded-xl bg-slate-50 border border-slate-100 px-3 py-1.5 text-xs font-mono text-slate-600";
-        feedback.innerText = "Buscando código...";
+            const barcodeInput = document.getElementById('barcode');
+            const barcodeLoader = document.getElementById('barcode-loader');
+            const lookupStatus = document.getElementById('lookup-status');
 
-        modal.classList.remove('hidden');
+            const scannerModal = document.getElementById('scanner-modal');
+            const scannerFeedback = document.getElementById('scanner-feedback');
 
-        if (!html5QrCode) {
-            html5QrCode = new Html5Qrcode("reader");
-        }
+            const quickModal = document.getElementById('quick-modal');
+            const quickModalInput = document.getElementById('quick-modal-input');
+            const quickModalError = document.getElementById('quick-modal-error');
 
-        const config = {
-            fps: 15,
-            qrbox: {
-                width: 220,
-                height: 120
-            },
-            aspectRatio: 1.0
-        };
+            let html5QrCode = null;
+            let activeQuickType = null;
 
-        html5QrCode.start({
-                facingMode: "environment"
-            },
-            config,
-            (decodedText) => {
-                // Retroalimentación visual inmediata
-                feedback.className = "min-h-[38px] flex items-center justify-center rounded-xl bg-emerald-50 border border-emerald-200 px-3 py-1.5 text-xs font-bold text-emerald-700 animate-pulse";
-                feedback.innerText = `¡Leído!: ${decodedText}`;
 
-                document.getElementById('barcode').value = decodedText;
+            /*
+             * ---------------------------------------------------------
+             * HELPERS DE MODAL
+             * ---------------------------------------------------------
+             */
 
-                // Pequeño delay para que el usuario perciba la confirmación
-                setTimeout(() => {
-                    stopScanner();
-                    fetchProductInfo(decodedText);
-                }, 400);
-            },
-            (errorMessage) => {
-                // Cuadro activo buscando barras
+            function openModal(modal) {
+                modal.classList.remove('hidden');
+                modal.classList.add('flex');
+                document.body.classList.add('overflow-hidden');
             }
-        ).catch(err => {
-            console.error("Error al iniciar cámara:", err);
-            alert("No se pudo acceder a la cámara. Verifica los permisos de tu navegador.");
-            stopScanner();
-        });
-    }
 
-    function stopScanner() {
-        const modal = document.getElementById('scannerModal');
-        if (html5QrCode && html5QrCode.isScanning) {
-            html5QrCode.stop().then(() => {
-                html5QrCode.clear();
+            function closeModal(modal) {
                 modal.classList.add('hidden');
-            }).catch(err => {
-                console.error("Error al detener cámara:", err);
-                modal.classList.add('hidden');
-            });
-        } else {
-            modal.classList.add('hidden');
-        }
-    }
+                modal.classList.remove('flex');
+                document.body.classList.remove('overflow-hidden');
+            }
 
-    // --- CONSULTA A API (AUTO-LLENADO) ---
-    async function fetchProductInfo(barcode) {
-        barcode = barcode.trim();
-        if (!barcode) return;
 
-        const loader = document.getElementById('barcodeLoader');
-        loader.classList.remove('hidden');
+            /*
+             * ---------------------------------------------------------
+             * CONSULTA DE PRODUCTO
+             * ---------------------------------------------------------
+             */
 
-        try {
-            const response = await fetch(`/api/products/lookup/${barcode}`);
-            const data = await response.json();
+            async function fetchProductInfo(rawBarcode) {
 
-            if (data.found) {
-                // 1. Nombre del Producto
-                const nameInput = document.getElementById('name');
-                if (!nameInput.value && data.name) {
-                    nameInput.value = data.name;
+                const barcode = String(rawBarcode || '').trim();
+
+                if (!barcode) {
+                    return;
                 }
 
-                // 2. Auto-generar SKU si está vacío (ej. BON-1.5L-7581)
-                const skuInput = document.getElementById('sku');
-                if (!skuInput.value && data.name) {
-                    const prefix = data.name.substring(0, 3).toUpperCase();
-                    const suffix = barcode.slice(-4);
-                    skuInput.value = `${prefix}-${suffix}`;
-                }
+                barcodeLoader.classList.remove('hidden');
+                barcodeLoader.classList.add('flex');
 
-                // 3. Mapeo Automático de MARCA (Busca coincidencia por texto en tu <select>)
-                if (data.brand) {
-                    const brandSelect = document.getElementById('brand_id');
-                    const brandOption = Array.from(brandSelect.options).find(
-                        opt => opt.text.toLowerCase().includes(data.brand.toLowerCase())
+                lookupStatus.classList.add('hidden');
+
+                try {
+
+                    const response = await fetch(
+                        `/api/products/lookup/${encodeURIComponent(barcode)}`,
+                        {
+                            headers: {
+                                'Accept': 'application/json'
+                            }
+                        }
                     );
-                    if (brandOption) {
-                        brandSelect.value = brandOption.value;
+
+                    const data = await response.json();
+
+                    if (!response.ok) {
+                        throw new Error('No se pudo consultar el producto.');
                     }
-                }
 
-                // 4. Ajuste Inteligente de Unidad de Venta (evitar que quede en KG por defecto)
-                const unitSelect = document.getElementById('unit_id');
-                const unitOptions = Array.from(unitSelect.options);
+                    if (!data.found) {
 
-                // Buscar unidad "Pieza" / "Unidad" para abarrotes empaquetados
-                const defaultPieceOption = unitOptions.find(opt =>
-                    opt.text.toLowerCase().includes('pieza') ||
-                    opt.text.toLowerCase().includes('pza') ||
-                    opt.text.toLowerCase().includes('unidad')
-                );
+                        lookupStatus.className =
+                            'rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-800';
 
-                if (defaultPieceOption) {
-                    unitSelect.value = defaultPieceOption.value;
-                }
+                        lookupStatus.textContent =
+                            'No encontramos información pública para este código. Puedes registrar el producto manualmente.';
 
-                // 5. Previsualización de Imagen (Si existe)
-                if (data.image) {
-                    showProductPreviewImage(data.image);
+                        return;
+                    }
+
+
+                    lookupStatus.className =
+                        'rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-800';
+
+                    lookupStatus.textContent =
+                        'Encontramos información del producto. Verifica los datos antes de guardar.';
+
+
+                    /*
+                     * Nombre
+                     */
+                    const nameInput = document.getElementById('name');
+
+                    if (!nameInput.value && data.name) {
+                        nameInput.value = data.name;
+                    }
+
+
+                    /*
+                     * SKU sugerido
+                     */
+                    const skuInput = document.getElementById('sku');
+
+                    if (!skuInput.value && data.name) {
+
+                        const prefix = data.name
+                            .replace(/[^a-zA-Z0-9]/g, '')
+                            .substring(0, 3)
+                            .toUpperCase();
+
+                        const suffix = barcode.slice(-4);
+
+                        skuInput.value = `${prefix}-${suffix}`;
+                    }
+
+
+                    /*
+                     * Marca
+                     */
+                    selectMatchingOption(
+                        document.getElementById('brand_id'),
+                        data.brand
+                    );
+
+
+                    /*
+                     * Categoría
+                     */
+                    selectMatchingOption(
+                        document.getElementById('category_id'),
+                        data.category_suggestion
+                    );
+
+
+                    /*
+                     * Unidad por defecto
+                     */
+                    const unitSelect = document.getElementById('unit_id');
+
+                    const pieceOption = Array.from(unitSelect.options).find(option => {
+
+                        const text = normalize(option.text);
+
+                        return text.includes('pieza')
+                            || text.includes('pza')
+                            || text.includes('unidad');
+                    });
+
+                    if (pieceOption) {
+                        unitSelect.value = pieceOption.value;
+                    }
+
+
+                    /*
+                     * Preview
+                     */
+                    showProductPreview(data);
+
+                } catch (error) {
+
+                    console.error(error);
+
+                    lookupStatus.className =
+                        'rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700';
+
+                    lookupStatus.textContent =
+                        'No fue posible consultar la información del código. Puedes continuar manualmente.';
+
+                } finally {
+
+                    barcodeLoader.classList.add('hidden');
+                    barcodeLoader.classList.remove('flex');
                 }
             }
-        } catch (e) {
-            console.error("Error al consultar producto:", e);
-        } finally {
-            loader.classList.add('hidden');
-        }
-    }
 
-    // Función auxiliar para mostrar la miniatura del producto escaneado
-    function showProductPreviewImage(imageUrl) {
-        let previewBox = document.getElementById('productImagePreview');
-        if (!previewBox) {
-            previewBox = document.createElement('div');
-            previewBox.id = 'productImagePreview';
-            previewBox.className = 'mt-3 flex items-center gap-3 rounded-xl border border-emerald-200 bg-emerald-50/50 p-2.5 text-xs text-emerald-800';
 
-            document.getElementById('name').parentNode.appendChild(previewBox);
-        }
+            function normalize(value) {
+                return String(value || '')
+                    .normalize('NFD')
+                    .replace(/[\u0300-\u036f]/g, '')
+                    .toLowerCase()
+                    .trim();
+            }
 
-        previewBox.innerHTML = `
-        <img src="${imageUrl}" class="h-12 w-12 rounded-lg object-cover border border-slate-200 shadow-sm bg-white" alt="Vista previa">
-        <div>
-            <p class="font-bold text-emerald-900">Producto verificado en base pública</p>
-        </div>
-    `;
-    }
 
-    // --- MODALES CATEGORIA/MARCA ---
-    let activeType = null;
+            function selectMatchingOption(select, value) {
 
-    function openQuickModal(type) {
-        activeType = type;
-        document.getElementById('quickModalTitle').innerText = type === 'category' ? 'Nueva Categoría' : 'Nueva Marca';
-        document.getElementById('quickModalInput').value = '';
-        document.getElementById('quickModal').classList.remove('hidden');
-        setTimeout(() => document.getElementById('quickModalInput').focus(), 50);
-    }
+                if (!select || !value) {
+                    return;
+                }
 
-    function closeQuickModal() {
-        document.getElementById('quickModal').classList.add('hidden');
-    }
+                const target = normalize(value);
 
-    async function submitQuickModal() {
-        const name = document.getElementById('quickModalInput').value.trim();
-        if (!name) return;
+                const option = Array.from(select.options).find(item => {
 
-        const url = activeType === 'category' ? "{{ route('categories.quick-store') }}" : "{{ route('brands.quick-store') }}";
+                    const text = normalize(item.text);
 
-        try {
-            const res = await fetch(url, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json',
-                    'X-CSRF-TOKEN': "{{ csrf_token() }}"
-                },
-                body: JSON.stringify({
-                    name
-                })
+                    return text === target
+                        || text.includes(target)
+                        || target.includes(text);
+                });
+
+                if (option && option.value) {
+                    select.value = option.value;
+                }
+            }
+
+
+            function showProductPreview(data) {
+
+                const preview = document.getElementById('product-preview');
+                const image = document.getElementById('product-preview-image');
+                const description = document.getElementById('product-preview-description');
+
+                const details = [
+                    data.brand,
+                    data.quantity,
+                    data.category_suggestion
+                ].filter(Boolean);
+
+                description.textContent =
+                    details.length
+                        ? details.join(' · ')
+                        : 'Se encontró información asociada al código.';
+
+                if (data.image) {
+                    image.src = data.image;
+                    image.alt = data.name || 'Producto encontrado';
+                    image.classList.remove('hidden');
+                } else {
+                    image.classList.add('hidden');
+                }
+
+                preview.classList.remove('hidden');
+            }
+
+
+            /*
+             * Enter / lector físico
+             */
+            barcodeInput.addEventListener('keydown', event => {
+
+                if (event.key !== 'Enter') {
+                    return;
+                }
+
+                event.preventDefault();
+
+                fetchProductInfo(barcodeInput.value);
             });
 
-            const data = await res.json();
 
-            if (res.ok && data.success) {
-                const select = document.getElementById(activeType === 'category' ? 'category_id' : 'brand_id');
-                const newOption = new Option(data[activeType].name, data[activeType].id, true, true);
-                select.add(newOption);
-                closeQuickModal();
-            } else {
-                alert('Error: ' + (data.message || 'No se pudo guardar'));
+            /*
+             * Si se escribió manualmente y se abandona el campo.
+             */
+            barcodeInput.addEventListener('change', () => {
+                fetchProductInfo(barcodeInput.value);
+            });
+
+
+            /*
+             * ---------------------------------------------------------
+             * ESCÁNER
+             * ---------------------------------------------------------
+             */
+
+            async function startScanner() {
+
+                scannerFeedback.className =
+                    'rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-center text-sm font-semibold text-slate-600';
+
+                scannerFeedback.textContent = 'Buscando código...';
+
+                openModal(scannerModal);
+
+                try {
+
+                    if (!html5QrCode) {
+                        html5QrCode = new Html5Qrcode('reader');
+                    }
+
+                    await html5QrCode.start(
+                        {
+                            facingMode: 'environment'
+                        },
+                        {
+                            fps: 15,
+                            qrbox: {
+                                width: 240,
+                                height: 120
+                            }
+                        },
+                        async decodedText => {
+
+                            scannerFeedback.className =
+                                'rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-center text-sm font-bold text-emerald-700';
+
+                            scannerFeedback.textContent =
+                                `Código leído: ${decodedText}`;
+
+                            barcodeInput.value = decodedText;
+
+                            await stopScanner();
+
+                            fetchProductInfo(decodedText);
+                        },
+                        () => {}
+                    );
+
+                } catch (error) {
+
+                    console.error(error);
+
+                    scannerFeedback.className =
+                        'rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-center text-sm font-semibold text-rose-700';
+
+                    scannerFeedback.textContent =
+                        'No se pudo iniciar la cámara. Revisa los permisos del navegador.';
+                }
             }
-        } catch (e) {
-            console.error('Error:', e);
-            alert('Ocurrió una falla en el servidor.');
-        }
-    }
-</script>
+
+
+            async function stopScanner() {
+
+                try {
+
+                    if (html5QrCode?.isScanning) {
+                        await html5QrCode.stop();
+                    }
+
+                    html5QrCode?.clear();
+
+                } catch (error) {
+                    console.error(error);
+                }
+
+                closeModal(scannerModal);
+            }
+
+
+            document
+                .getElementById('open-scanner')
+                .addEventListener('click', startScanner);
+
+            document
+                .getElementById('close-scanner')
+                .addEventListener('click', stopScanner);
+
+            document
+                .getElementById('cancel-scanner')
+                .addEventListener('click', stopScanner);
+
+
+            /*
+             * ---------------------------------------------------------
+             * CATEGORÍA / MARCA RÁPIDA
+             * ---------------------------------------------------------
+             */
+
+            document.querySelectorAll('[data-quick-create]').forEach(button => {
+
+                button.addEventListener('click', () => {
+
+                    activeQuickType = button.dataset.quickCreate;
+
+                    quickModalInput.value = '';
+                    quickModalError.classList.add('hidden');
+
+                    openModal(quickModal);
+
+                    setTimeout(() => {
+                        quickModalInput.focus();
+                    }, 50);
+                });
+            });
+
+
+            function closeQuickModal() {
+                closeModal(quickModal);
+                activeQuickType = null;
+            }
+
+
+            document
+                .getElementById('close-quick-modal')
+                .addEventListener('click', closeQuickModal);
+
+            document
+                .getElementById('cancel-quick-modal')
+                .addEventListener('click', closeQuickModal);
+
+
+            async function saveQuickRecord() {
+
+                const name = quickModalInput.value.trim();
+
+                if (!name || !activeQuickType) {
+
+                    quickModalError.textContent = 'Escribe un nombre.';
+                    quickModalError.classList.remove('hidden');
+
+                    return;
+                }
+
+                const url = activeQuickType === 'category'
+                    ? "{{ route('categories.quick-store') }}"
+                    : "{{ route('brands.quick-store') }}";
+
+                try {
+
+                    const response = await fetch(url, {
+                        method: 'POST',
+
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json',
+                            'X-CSRF-TOKEN': "{{ csrf_token() }}"
+                        },
+
+                        body: JSON.stringify({
+                            name
+                        })
+                    });
+
+                    const data = await response.json();
+
+                    if (!response.ok || !data.success) {
+                        throw new Error(
+                            data.message || 'No se pudo guardar el registro.'
+                        );
+                    }
+
+                    const select = document.getElementById(
+                        activeQuickType === 'category'
+                            ? 'category_id'
+                            : 'brand_id'
+                    );
+
+                    const record = data[activeQuickType];
+
+                    select.add(
+                        new Option(
+                            record.name,
+                            record.id,
+                            true,
+                            true
+                        )
+                    );
+
+                    closeQuickModal();
+
+                } catch (error) {
+
+                    quickModalError.textContent = error.message;
+                    quickModalError.classList.remove('hidden');
+                }
+            }
+
+
+            document
+                .getElementById('save-quick-modal')
+                .addEventListener('click', saveQuickRecord);
+
+
+            quickModalInput.addEventListener('keydown', event => {
+
+                if (event.key === 'Enter') {
+                    event.preventDefault();
+                    saveQuickRecord();
+                }
+            });
+
+
+            /*
+             * ---------------------------------------------------------
+             * BARCODE PRECARGADO
+             * ---------------------------------------------------------
+             */
+
+            if (barcodeInput.value.trim()) {
+                fetchProductInfo(barcodeInput.value);
+            } else {
+                barcodeInput.focus();
+            }
+
+        });
+    </script>
+
+</x-layouts.app>

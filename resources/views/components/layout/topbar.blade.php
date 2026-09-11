@@ -1,6 +1,18 @@
 <header class="sticky top-0 z-20 flex h-20 items-center gap-4 border-b border-slate-200 bg-white/90 px-4 backdrop-blur sm:px-6 lg:px-8">
-    <button type="button" class="rounded-lg p-2 text-slate-600 hover:bg-slate-100 lg:hidden" data-sidebar-open aria-label="Abrir menú">
-        <span aria-hidden="true">☰</span>
+    <button
+        type="button"
+        id="sidebar-toggle"
+        class="grid h-11 w-11 shrink-0 place-items-center rounded-xl text-slate-600 transition hover:bg-slate-100 hover:text-slate-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-600"
+        aria-label="Contraer menú"
+        title="Contraer menú">
+
+        <span
+            id="sidebar-toggle-icon"
+            class="text-xl leading-none"
+            aria-hidden="true">
+            ☰
+        </span>
+
     </button>
 
     <div class="min-w-0 flex-1">

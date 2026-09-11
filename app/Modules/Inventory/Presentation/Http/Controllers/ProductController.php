@@ -82,7 +82,39 @@ final class ProductController extends Controller
         ));
     }
 
-    public function create(): View
+    public function create(Request $request): View
+    {
+        $categories = Category::query()
+            ->where('is_active', true)
+            ->orderBy('name')
+            ->get();
+
+        $brands = Brand::query()
+            ->where('is_active', true)
+            ->orderBy('name')
+            ->get();
+
+        $units = Unit::query()
+            ->where('is_active', true)
+            ->orderBy('name')
+            ->get();
+
+        $taxRates = TaxRate::query()
+            ->where('is_active', true)
+            ->get();
+
+        $initialBarcode = trim((string) $request->query('barcode', ''));
+
+        return view('modules.inventory.products.create', compact(
+            'categories',
+            'brands',
+            'units',
+            'taxRates',
+            'initialBarcode'
+        ));
+    }
+
+    /* public function create(): View
     {
         $categories = Category::query()->where('is_active', true)->orderBy('name')->get();
         $brands = Brand::query()->where('is_active', true)->orderBy('name')->get();
@@ -90,14 +122,15 @@ final class ProductController extends Controller
         $taxRates = TaxRate::query()->where('is_active', true)->get();
 
         return view('modules.inventory.products.create', compact('categories', 'brands', 'units', 'taxRates'));
-    }
+    } */
 
     public function store(Request $request): RedirectResponse
     {
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'sku' => ['nullable', 'string', 'max:80'],
-            'barcode' => ['required', 'string', 'max:80'],
+            /* 'barcode' => ['required', 'string', 'max:80'], */
+            'barcode' => ['required', 'string', 'max:80', 'unique:product_barcodes,barcode',],
             'category_id' => ['nullable', 'uuid', 'exists:categories,id'],
             'brand_id' => ['nullable', 'uuid', 'exists:brands,id'],
             'unit_id' => ['required', 'uuid', 'exists:units,id'],
@@ -217,7 +250,8 @@ final class ProductController extends Controller
                 'sku' => $validated['sku'] ?? null,
                 'name' => $validated['name'],
                 'product_type' => $validated['product_type'],
-                'is_active' => $request->has('is_active'),
+                'is_active' => $validated['is_active'] ?? false,
+                /* 'is_active' => $request->has('is_active'), */
             ]);
 
             // 2. Obtener / Actualizar Stock Item

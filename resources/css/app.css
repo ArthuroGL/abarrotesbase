@@ -1,35 +1,101 @@
-@import 'tailwindcss';
+@import "tailwindcss";
 
 @theme {
-    --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
+    --font-sans: "Instrument Sans", ui-sans-serif, system-ui, sans-serif;
 }
 
 @layer components {
+    /*
+     * INPUT BASE
+     *
+     * Altura y tipografía pensadas para uso con mouse,
+     * teclado y pantalla táctil.
+     */
     .app-input {
-        @apply block w-full rounded-xl border-0 bg-slate-100 px-4 py-2.5 text-sm text-slate-900 outline-none ring-1 ring-inset ring-slate-200 placeholder:text-slate-400 focus:bg-white focus:ring-2 focus:ring-emerald-500 disabled:cursor-not-allowed disabled:opacity-60;
+        @apply block min-h-12 w-full rounded-xl border-0 bg-slate-100 px-4 py-3 text-base font-medium text-slate-900 outline-none ring-1 ring-inset ring-slate-200 placeholder:text-slate-400 focus:bg-white focus:ring-2 focus:ring-emerald-500 disabled:cursor-not-allowed disabled:opacity-60;
     }
 
+    /*
+     * NAVEGACIÓN
+     */
     .nav-link {
-        @apply flex min-h-10 items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold text-slate-400 transition hover:bg-slate-900 hover:text-white;
+        @apply flex min-h-11 items-center gap-3 rounded-xl px-3 py-3 text-sm font-semibold text-slate-400 transition hover:bg-slate-900 hover:text-white;
+    }
+    .sidebar-nav-link {
+        transition:
+            background-color 180ms ease,
+            color 180ms ease,
+            padding 300ms ease,
+            justify-content 300ms ease;
+    }
+
+    .sidebar-label {
+        transition: opacity 180ms ease;
     }
 
     .nav-link-active {
         @apply bg-emerald-500/15 text-emerald-300 hover:bg-emerald-500/20 hover:text-emerald-200;
     }
 
+    /*
+     * TARJETAS KPI
+     */
     .metric-card {
         @apply relative overflow-hidden;
     }
 
     .metric-card::before {
-        content: '';
+        content: "";
         @apply absolute inset-y-0 left-0 w-1;
     }
 
-    .metric-card-emerald::before { @apply bg-emerald-500; }
-    .metric-card-sky::before { @apply bg-sky-500; }
-    .metric-card-amber::before { @apply bg-amber-500; }
-    .metric-card-violet::before { @apply bg-violet-500; }
+    .metric-card-emerald::before {
+        @apply bg-emerald-500;
+    }
+
+    .metric-card-sky::before {
+        @apply bg-sky-500;
+    }
+
+    .metric-card-amber::before {
+        @apply bg-amber-500;
+    }
+
+    .metric-card-violet::before {
+        @apply bg-violet-500;
+    }
+}
+
+@keyframes modal-backdrop-in {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes modal-panel-in {
+    from {
+        opacity: 0;
+        transform: translateY(8px) scale(0.97);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+@layer components {
+    .animate-modal-backdrop {
+        animation: modal-backdrop-in 160ms ease-out;
+    }
+
+    .animate-modal-panel {
+        animation: modal-panel-in 180ms ease-out;
+    }
 }
 
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
@@ -37,8 +103,3 @@
 @source "../**/*.blade.php";
 @source "../**/*.js";
 @source "../**/*.vue";
-
-@theme {
-    --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
-        'Segoe UI Symbol', 'Noto Color Emoji';
-}
