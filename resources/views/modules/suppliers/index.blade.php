@@ -1,269 +1,1365 @@
-<x-layouts.app title="Proveedores - SUMA">
-    <div class="space-y-6" x-data="supplierModal()">
-        {{-- Header & Botón Nuevo --}}
-        <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-            <div>
-                <h1 class="text-2xl font-bold tracking-tight text-slate-900">Catálogo de Proveedores</h1>
-                <p class="mt-1 text-sm text-slate-500">
-                    Administra las empresas y distribuidores a quienes compras tus productos.
-                </p>
-            </div>
-            <div class="flex items-center gap-3">
-                <a href="{{ route('suppliers.create') }}" class="inline-flex items-center gap-2 rounded-xl bg-emerald-500 px-4 py-2.5 text-sm font-bold text-slate-950 shadow-sm transition hover:bg-emerald-400">
-                    <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-                    </svg>
-                    Nuevo Proveedor
+<x-layouts.app title="Proveedores | ABARROTESBASE">
+
+    <div class="space-y-6">
+
+        {{-- =========================================================
+             HEADER
+        ========================================================== --}}
+        <x-layout.page-header
+            eyebrow="Catálogo"
+            title="Proveedores"
+            description="Administra las empresas y distribuidores utilizados para abastecer el inventario.">
+            <x-slot:actions>
+                <a
+                    href="{{ route('suppliers.create') }}"
+                    class="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 text-sm font-bold text-white shadow-sm transition hover:bg-emerald-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-600">
+                    <span class="text-lg leading-none">+</span>
+                    Nuevo proveedor
                 </a>
-            </div>
+            </x-slot:actions>
+        </x-layout.page-header>
+
+
+        {{-- =========================================================
+             FLASH MESSAGE
+        ========================================================== --}}
+        @if (session('success'))
+        <div
+            class="flex items-start gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-4 text-sm font-semibold text-emerald-800"
+            role="status">
+            <span class="mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-full bg-emerald-600 text-xs font-black text-white">
+                ✓
+            </span>
+
+            <span>{{ session('success') }}</span>
+        </div>
+        @endif
+
+
+        {{-- =========================================================
+             VALIDATION ERRORS
+        ========================================================== --}}
+        @if ($errors->any())
+        <div
+            class="rounded-2xl border border-rose-200 bg-rose-50 px-5 py-4"
+            role="alert">
+            <p class="text-sm font-black text-rose-900">
+                No se pudo completar la operación.
+            </p>
+
+            <ul class="mt-2 space-y-1 text-sm font-medium text-rose-700">
+                @foreach ($errors->all() as $error)
+                <li>• {{ $error }}</li>
+                @endforeach
+            </ul>
+        </div>
+        @endif
+
+
+        {{-- =========================================================
+             RESUMEN
+        ========================================================== --}}
+        <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+
+            <x-ui.card padding="p-5" class="relative overflow-hidden">
+
+                <div class="absolute inset-y-0 left-0 w-1 bg-slate-400"></div>
+
+                <p class="text-xs font-black uppercase tracking-[0.12em] text-slate-500">
+                    Proveedores registrados
+                </p>
+
+                <p class="mt-2 text-3xl font-black tracking-tight text-slate-950">
+                    {{ number_format($suppliers->total()) }}
+                </p>
+
+                <p class="mt-1 text-sm font-medium text-slate-500">
+                    Coincidencias del catálogo
+                </p>
+
+            </x-ui.card>
+
+
+            <x-ui.card padding="p-5" class="relative overflow-hidden">
+
+                <div class="absolute inset-y-0 left-0 w-1 bg-emerald-500"></div>
+
+                <p class="text-xs font-black uppercase tracking-[0.12em] text-slate-500">
+                    Página actual
+                </p>
+
+                <p class="mt-2 text-3xl font-black tracking-tight text-slate-950">
+                    {{ number_format($suppliers->count()) }}
+                </p>
+
+                <p class="mt-1 text-sm font-medium text-slate-500">
+                    Proveedores mostrados
+                </p>
+
+            </x-ui.card>
+
+
+            <x-ui.card padding="p-5" class="relative overflow-hidden sm:col-span-2 lg:col-span-1">
+
+                <div class="absolute inset-y-0 left-0 w-1 bg-sky-500"></div>
+
+                <p class="text-xs font-black uppercase tracking-[0.12em] text-slate-500">
+                    Vista
+                </p>
+
+                <p class="mt-2 text-2xl font-black tracking-tight text-slate-950">
+                    Catálogo
+                </p>
+
+                <p class="mt-1 text-sm font-medium text-slate-500">
+                    Ordenado por razón social
+                </p>
+
+            </x-ui.card>
+
         </div>
 
-        {{-- Filtros y Buscador --}}
-        <x-ui.card padding="p-4" class="shadow-sm border-slate-200 bg-white">
-            <form method="GET" action="{{ route('suppliers.index') }}" class="grid gap-3 sm:grid-cols-12">
-                <div class="sm:col-span-12 lg:col-span-8">
+
+        {{-- =========================================================
+             FILTROS
+        ========================================================== --}}
+        <x-ui.card padding="p-5 sm:p-6">
+
+            <div class="mb-5">
+
+                <p class="text-sm font-black text-slate-950">
+                    Buscar y filtrar
+                </p>
+
+                <p class="mt-1 text-sm text-slate-500">
+                    Localiza proveedores por razón social, código, RFC o contacto.
+                </p>
+
+            </div>
+
+
+            <form
+                method="GET"
+                action="{{ route('suppliers.index') }}"
+                class="grid gap-4 lg:grid-cols-12">
+
+                {{-- Buscador --}}
+                <div class="lg:col-span-8">
+
+                    <label
+                        for="search"
+                        class="mb-2 block text-sm font-bold text-slate-700">
+                        Proveedor, código, RFC o contacto
+                    </label>
+
                     <div class="relative">
-                        <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
-                            <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
+
+                        <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4 text-slate-400">
+                            <svg
+                                class="h-5 w-5"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke-width="2"
+                                stroke="currentColor"
+                                aria-hidden="true">
+                                <path
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
                             </svg>
                         </div>
-                        <input
-                            type="text"
+
+                        <x-ui.input
+                            id="search"
                             name="search"
-                            value="{{ $search }}"
-                            placeholder="Buscar por Razón Social, Código, RFC o Contacto..."
-                            class="app-input pl-10 text-xs">
+                            type="search"
+                            :value="$search"
+                            placeholder="Ej. Coca-Cola, PRV-0001, RFC o Carlos..."
+                            autocomplete="off"
+                            class="pl-11" />
+
                     </div>
+
                 </div>
 
-                <div class="sm:col-span-12 lg:col-span-4">
-                    <select name="status" class="app-input text-xs" onchange="this.form.submit()">
-                        <option value="">Todos los estatus</option>
-                        <option value="active" @selected($status === 'active')>Activos</option>
-                        <option value="inactive" @selected($status === 'inactive')>Inactivos</option>
+
+                {{-- Estado --}}
+                <div class="lg:col-span-4">
+
+                    <label
+                        for="status"
+                        class="mb-2 block text-sm font-bold text-slate-700">
+                        Estado
+                    </label>
+
+                    <select
+                        id="status"
+                        name="status"
+                        class="app-input"
+                        onchange="this.form.submit()">
+                        <option value="">
+                            Todos los estados
+                        </option>
+
+                        <option
+                            value="active"
+                            @selected($status==='active' )>
+                            Activos
+                        </option>
+
+                        <option
+                            value="inactive"
+                            @selected($status==='inactive' )>
+                            Inactivos
+                        </option>
                     </select>
+
                 </div>
+
+
+                {{-- Acciones --}}
+                @if ($search || $status)
+                <div class="flex justify-end lg:col-span-12">
+
+                    <a
+                        href="{{ route('suppliers.index') }}"
+                        class="inline-flex min-h-11 items-center justify-center rounded-xl px-4 text-sm font-bold text-rose-600 transition hover:bg-rose-50">
+                        Limpiar filtros
+                    </a>
+
+                </div>
+                @endif
+
             </form>
+
         </x-ui.card>
 
-        {{-- Tabla de Proveedores --}}
-        <div class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-            <div class="overflow-x-auto">
-                <table class="w-full text-left text-sm text-slate-700">
-                    <thead class="border-b border-slate-200 bg-slate-50 text-[11px] font-bold uppercase tracking-wider text-slate-500">
-                        <tr>
-                            <th scope="col" class="px-6 py-3.5">Código / Empresa</th>
-                            <th scope="col" class="px-6 py-3.5">RFC</th>
-                            <th scope="col" class="px-6 py-3.5">Contacto / Teléfono</th>
-                            <th scope="col" class="px-6 py-3.5 text-center">Términos de Pago</th>
-                            <th scope="col" class="px-6 py-3.5 text-center">Estatus</th>
-                            <th scope="col" class="px-6 py-3.5 text-right">Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-slate-100 font-medium">
-                        @forelse ($suppliers as $supplier)
-                            <tr class="transition hover:bg-slate-50/80">
-                                {{-- Razón Social y Código --}}
-                                <td class="px-6 py-4">
-                                    <div class="font-bold text-slate-900">{{ $supplier->business_name }}</div>
-                                    <div class="text-xs text-slate-400 font-mono">Cód: {{ $supplier->code }}</div>
-                                </td>
 
-                                {{-- RFC --}}
-                                <td class="px-6 py-4 font-mono text-xs text-slate-600">
-                                    {{ $supplier->rfc ?? '—' }}
-                                </td>
+        {{-- =========================================================
+             LISTADO
+        ========================================================== --}}
+        <x-ui.card padding="p-0" class="overflow-hidden">
 
-                                {{-- Contacto y Teléfono --}}
-                                <td class="px-6 py-4">
-                                    <div class="text-slate-800 font-bold text-xs">{{ $supplier->contact_name ?? 'Sin contacto' }}</div>
-                                    <div class="text-xs text-slate-400">{{ $supplier->phone ?? $supplier->email ?? 'Sin datos' }}</div>
-                                </td>
+            {{-- Header --}}
+            <div class="flex flex-col gap-3 border-b border-slate-200 bg-white px-5 py-5 sm:px-6 lg:flex-row lg:items-center lg:justify-between">
 
-                                {{-- Términos de Pago --}}
-                                <td class="px-6 py-4 text-center">
-                                    @if($supplier->payment_terms_days > 0)
-                                        <span class="inline-flex items-center gap-1 rounded-full bg-blue-50 px-2.5 py-0.5 text-xs font-bold text-blue-700 border border-blue-200">
-                                            💳 {{ $supplier->payment_terms_days }} días crédito
-                                        </span>
-                                    @else
-                                        <span class="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-semibold text-slate-600">
-                                            Contado (0 días)
-                                        </span>
-                                    @endif
-                                </td>
+                <div>
 
-                                {{-- Estatus --}}
-                                <td class="px-6 py-4 text-center">
-                                    @if ($supplier->is_active)
-                                        <span class="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-semibold text-emerald-700 border border-emerald-200">
-                                            <span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
-                                            Activo
-                                        </span>
-                                    @else
-                                        <span class="inline-flex items-center gap-1.5 rounded-full bg-rose-50 px-2.5 py-0.5 text-xs font-semibold text-rose-700 border border-rose-200">
-                                            <span class="h-1.5 w-1.5 rounded-full bg-rose-500"></span>
-                                            Inactivo
-                                        </span>
-                                    @endif
-                                </td>
+                    <p class="text-base font-black text-slate-950">
+                        Proveedores registrados
+                    </p>
 
-                                {{-- Acciones --}}
-                                <td class="px-6 py-4 text-right">
-                                    <button
-                                        type="button"
-                                        @click='openEdit(@json($supplier))'
-                                        class="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-2.5 py-1 text-xs font-semibold text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition">
-                                        ✏️ Editar
-                                    </button>
-                                </td>
-                            </tr>
-                        @empty
-                            <tr>
-                                <td colspan="6" class="px-6 py-12 text-center text-slate-400 font-medium">
-                                    No se encontraron proveedores registrados.
-                                </td>
-                            </tr>
-                        @endforelse
-                    </tbody>
-                </table>
+                    <p class="mt-1 text-sm text-slate-500">
+                        {{ number_format($suppliers->total()) }} proveedores encontrados
+                    </p>
+
+                </div>
+
+
+                @if ($search || $status)
+                <span class="inline-flex w-fit items-center rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-700">
+                    Filtros activos
+                </span>
+                @endif
+
             </div>
 
-            @if ($suppliers->hasPages())
-                <div class="border-t border-slate-100 px-6 py-4 bg-slate-50/50">
-                    {{ $suppliers->links() }}
-                </div>
-            @endif
-        </div>
 
-        {{-- Modal Modal Crear/Editar Proveedor --}}
-        <template x-teleport="body">
-            <div
-                x-show="showModal"
-                x-cloak
-                class="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-slate-950/60 p-4 backdrop-blur-sm"
-                x-transition:enter="transition ease-out duration-200"
-                x-transition:enter-start="opacity-0"
-                x-transition:enter-end="opacity-100">
+            {{-- =====================================================
+                 TABLA DESKTOP
+            ====================================================== --}}
+            <div class="hidden overflow-x-auto lg:block">
 
-                <div
-                    @click.away="showModal = false"
-                    class="relative w-full max-w-xl rounded-2xl bg-white p-6 shadow-2xl space-y-4 border border-slate-100"
-                    x-transition:enter="transition ease-out duration-200"
-                    x-transition:enter-start="opacity-0 scale-95"
-                    x-transition:enter-end="opacity-100 scale-100">
+                <table class="min-w-[1050px] w-full text-left">
 
-                    <div class="flex items-center justify-between border-b border-slate-100 pb-3">
-                        <h3 class="font-bold text-slate-900 text-base" x-text="isEdit ? 'Editar Proveedor' : 'Nuevo Proveedor'"></h3>
-                        <button type="button" @click="showModal = false" class="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition">✕</button>
+                    <caption class="sr-only">
+                        Catálogo de proveedores
+                    </caption>
+
+                    <thead class="border-b border-slate-200 bg-slate-50">
+
+                        <tr class="text-xs font-black uppercase tracking-[0.08em] text-slate-500">
+
+                            <th scope="col" class="px-6 py-4">
+                                Proveedor
+                            </th>
+
+                            <th scope="col" class="px-6 py-4">
+                                RFC
+                            </th>
+
+                            <th scope="col" class="px-6 py-4">
+                                Contacto
+                            </th>
+
+                            <th scope="col" class="px-6 py-4 text-center">
+                                Crédito
+                            </th>
+
+                            <th scope="col" class="px-6 py-4 text-center">
+                                Estado
+                            </th>
+
+                            <th scope="col" class="px-6 py-4 text-right">
+                                Acción
+                            </th>
+
+                        </tr>
+
+                    </thead>
+
+
+                    <tbody class="divide-y divide-slate-100">
+
+                        @forelse ($suppliers as $supplier)
+
+                        <tr class="transition hover:bg-slate-50/70">
+
+                            {{-- Proveedor --}}
+                            <td class="px-6 py-5 align-middle">
+
+                                <div class="max-w-md">
+
+                                    <p class="text-sm font-black text-slate-950">
+                                        {{ $supplier->business_name }}
+                                    </p>
+
+                                    <div class="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1">
+
+                                        <span class="font-mono text-xs font-semibold text-slate-500">
+                                            {{ $supplier->code }}
+                                        </span>
+
+                                        @if ($supplier->address)
+                                        <span class="text-xs text-slate-400">
+                                            Dirección registrada
+                                        </span>
+                                        @endif
+
+                                    </div>
+
+                                </div>
+
+                            </td>
+
+
+                            {{-- RFC --}}
+                            <td class="px-6 py-5 align-middle">
+
+                                @if ($supplier->rfc)
+
+                                <span class="font-mono text-xs font-bold text-slate-700">
+                                    {{ $supplier->rfc }}
+                                </span>
+
+                                @else
+
+                                <span class="text-xs font-medium text-slate-400">
+                                    No registrado
+                                </span>
+
+                                @endif
+
+                            </td>
+
+
+                            {{-- Contacto --}}
+                            <td class="px-6 py-5 align-middle">
+
+                                <p class="text-sm font-bold text-slate-800">
+                                    {{ $supplier->contact_name ?: 'Sin contacto' }}
+                                </p>
+
+                                <div class="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-xs text-slate-400">
+
+                                    @if ($supplier->phone)
+                                    <span>{{ $supplier->phone }}</span>
+                                    @endif
+
+                                    @if ($supplier->email)
+                                    <span>{{ $supplier->email }}</span>
+                                    @endif
+
+                                    @if (!$supplier->phone && !$supplier->email)
+                                    <span>Sin datos de contacto</span>
+                                    @endif
+
+                                </div>
+
+                            </td>
+
+
+                            {{-- Crédito --}}
+                            <td class="px-6 py-5 text-center align-middle">
+
+                                @if ((int) $supplier->payment_terms_days > 0)
+
+                                <span class="inline-flex items-center rounded-full border border-sky-200 bg-sky-50 px-3 py-1.5 text-xs font-black text-sky-700">
+                                    {{ $supplier->payment_terms_days }} días
+                                </span>
+
+                                @else
+
+                                <span class="inline-flex items-center rounded-full border border-slate-200 bg-slate-100 px-3 py-1.5 text-xs font-bold text-slate-600">
+                                    Contado
+                                </span>
+
+                                @endif
+
+                            </td>
+
+
+                            {{-- Estado --}}
+                            <td class="px-6 py-5 text-center align-middle">
+
+                                @if ($supplier->is_active)
+
+                                <span class="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-black text-emerald-700">
+
+                                    <span class="h-2 w-2 rounded-full bg-emerald-500"></span>
+
+                                    Activo
+
+                                </span>
+
+                                @else
+
+                                <span class="inline-flex items-center gap-2 rounded-full border border-rose-200 bg-rose-50 px-3 py-1.5 text-xs font-black text-rose-700">
+
+                                    <span class="h-2 w-2 rounded-full bg-rose-500"></span>
+
+                                    Inactivo
+
+                                </span>
+
+                                @endif
+
+                            </td>
+
+
+                            {{-- Acción --}}
+                            <td class="px-6 py-5 text-right align-middle">
+
+                                <button
+                                    type="button"
+                                    onclick="openSupplierEditModal(
+                                            @js($supplier->id),
+                                            @js($supplier->code),
+                                            @js($supplier->business_name),
+                                            @js($supplier->rfc),
+                                            @js($supplier->contact_name),
+                                            @js($supplier->phone),
+                                            @js($supplier->email),
+                                            @js($supplier->payment_terms_days),
+                                            @js($supplier->address),
+                                            @js((bool) $supplier->is_active)
+                                        )"
+                                    class="inline-flex min-h-10 items-center justify-center rounded-xl border border-slate-300 bg-white px-4 text-sm font-bold text-slate-700 shadow-sm transition hover:border-slate-400 hover:bg-slate-50 hover:text-slate-950 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-600">
+                                    Editar
+                                </button>
+
+                            </td>
+
+                        </tr>
+
+                        @empty
+
+                        <tr>
+
+                            <td colspan="6" class="px-6 py-16 text-center">
+
+                                <div class="mx-auto max-w-md">
+
+                                    <div class="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-slate-100 text-xl font-black text-slate-400">
+                                        ∅
+                                    </div>
+
+                                    <p class="mt-4 text-base font-black text-slate-900">
+                                        No encontramos proveedores
+                                    </p>
+
+                                    <p class="mt-2 text-sm leading-6 text-slate-500">
+                                        No existen proveedores que coincidan con los filtros seleccionados.
+                                    </p>
+
+                                    @if ($search || $status)
+
+                                    <a
+                                        href="{{ route('suppliers.index') }}"
+                                        class="mt-5 inline-flex min-h-11 items-center justify-center rounded-xl bg-slate-900 px-5 text-sm font-bold text-white transition hover:bg-slate-800">
+                                        Limpiar filtros
+                                    </a>
+
+                                    @endif
+
+                                </div>
+
+                            </td>
+
+                        </tr>
+
+                        @endforelse
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+
+            {{-- =====================================================
+                 CARDS MOBILE / TABLET
+            ====================================================== --}}
+            <div class="divide-y divide-slate-100 lg:hidden">
+
+                @forelse ($suppliers as $supplier)
+
+                <article class="p-5">
+
+                    {{-- Cabecera --}}
+                    <div class="flex items-start justify-between gap-4">
+
+                        <div class="min-w-0">
+
+                            <h2 class="text-base font-black text-slate-950">
+                                {{ $supplier->business_name }}
+                            </h2>
+
+                            <p class="mt-1 font-mono text-xs font-semibold text-slate-500">
+                                {{ $supplier->code }}
+                            </p>
+
+                        </div>
+
+
+                        @if ($supplier->is_active)
+
+                        <span class="shrink-0 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-black text-emerald-700">
+                            Activo
+                        </span>
+
+                        @else
+
+                        <span class="shrink-0 rounded-full border border-rose-200 bg-rose-50 px-2.5 py-1 text-xs font-black text-rose-700">
+                            Inactivo
+                        </span>
+
+                        @endif
+
                     </div>
 
-                    <form :action="formAction" method="POST" class="space-y-4">
-                        @csrf
-                        <template x-if="isEdit">
-                            <input type="hidden" name="_method" value="PUT">
-                        </template>
 
-                        <div class="grid grid-cols-2 gap-3">
-                            <div>
-                                <label class="block text-xs font-bold text-slate-700 mb-1">Código Identificador</label>
-                                <input type="text" name="code" x-model="form.code" placeholder="Ej. PRV-0001 (Auto)" class="app-input text-xs w-full">
-                            </div>
+                    {{-- RFC --}}
+                    <div class="mt-4 rounded-xl border border-slate-200 bg-slate-50 p-4">
 
-                            <div>
-                                <label class="block text-xs font-bold text-slate-700 mb-1">RFC (Opcional)</label>
-                                <input type="text" name="rfc" x-model="form.rfc" placeholder="Ej. ABC123456T12" class="app-input text-xs w-full uppercase">
-                            </div>
-                        </div>
+                        <p class="text-xs font-black uppercase tracking-[0.1em] text-slate-400">
+                            RFC
+                        </p>
 
-                        <div>
-                            <label class="block text-xs font-bold text-slate-700 mb-1">Razón Social / Nombre Empresa *</label>
-                            <input type="text" name="business_name" x-model="form.business_name" placeholder="Ej. Distribuidora de Bebidas del Norte S.A." class="app-input text-xs w-full" required>
-                        </div>
+                        <p class="mt-1 font-mono text-sm font-bold text-slate-800">
+                            {{ $supplier->rfc ?: 'No registrado' }}
+                        </p>
 
-                        <div class="grid grid-cols-2 gap-3">
-                            <div>
-                                <label class="block text-xs font-bold text-slate-700 mb-1">Nombre de Contacto</label>
-                                <input type="text" name="contact_name" x-model="form.contact_name" placeholder="Ej. Juan Pérez" class="app-input text-xs w-full">
-                            </div>
+                    </div>
 
-                            <div>
-                                <label class="block text-xs font-bold text-slate-700 mb-1">Teléfono</label>
-                                <input type="text" name="phone" x-model="form.phone" placeholder="Ej. 8112345678" class="app-input text-xs w-full">
-                            </div>
-                        </div>
 
-                        <div class="grid grid-cols-2 gap-3">
-                            <div>
-                                <label class="block text-xs font-bold text-slate-700 mb-1">Correo Electrónico</label>
-                                <input type="email" name="email" x-model="form.email" placeholder="contacto@proveedor.com" class="app-input text-xs w-full">
-                            </div>
-
-                            <div>
-                                <label class="block text-xs font-bold text-slate-700 mb-1">Días de Crédito (0 = Contado)</label>
-                                <input type="number" name="payment_terms_days" x-model="form.payment_terms_days" placeholder="0" class="app-input text-xs w-full" min="0" required>
-                            </div>
-                        </div>
+                    {{-- Contacto --}}
+                    <div class="mt-4 grid grid-cols-2 gap-4">
 
                         <div>
-                            <label class="block text-xs font-bold text-slate-700 mb-1">Dirección Fiscal / Bodega</label>
-                            <textarea name="address" x-model="form.address" rows="2" class="app-input text-xs w-full resize-none" placeholder="Av. Industrial #120, Col. Centro"></textarea>
+
+                            <p class="text-xs font-semibold text-slate-400">
+                                Contacto
+                            </p>
+
+                            <p class="mt-1 text-sm font-bold text-slate-800">
+                                {{ $supplier->contact_name ?: 'Sin contacto' }}
+                            </p>
+
                         </div>
 
-                        <template x-if="isEdit">
-                            <div class="flex items-center gap-2 pt-2">
-                                <input type="hidden" name="is_active" value="0">
-                                <input type="checkbox" name="is_active" id="is_active" value="1" x-model="form.is_active" class="rounded border-slate-300 text-emerald-500 focus:ring-emerald-400">
-                                <label for="is_active" class="text-xs font-bold text-slate-700">Proveedor Activo</label>
-                            </div>
-                        </template>
 
-                        <div class="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
-                            <button type="button" @click="showModal = false" class="rounded-xl border border-slate-200 px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-100 transition">
-                                Cancelar
-                            </button>
-                            <button type="submit" class="inline-flex items-center gap-2 rounded-xl bg-emerald-500 px-5 py-2 text-xs font-bold text-slate-950 shadow-sm hover:bg-emerald-400 transition">
-                                Guardar Proveedor
-                            </button>
+                        <div>
+
+                            <p class="text-xs font-semibold text-slate-400">
+                                Teléfono
+                            </p>
+
+                            <p class="mt-1 text-sm font-bold text-slate-800">
+                                {{ $supplier->phone ?: 'No registrado' }}
+                            </p>
+
                         </div>
-                    </form>
+
+                    </div>
+
+
+                    {{-- Email --}}
+                    @if ($supplier->email)
+
+                    <div class="mt-4">
+
+                        <p class="text-xs font-semibold text-slate-400">
+                            Correo
+                        </p>
+
+                        <p class="mt-1 break-all text-sm font-bold text-slate-800">
+                            {{ $supplier->email }}
+                        </p>
+
+                    </div>
+
+                    @endif
+
+
+                    {{-- Crédito --}}
+                    <div class="mt-4 flex items-center justify-between border-t border-slate-100 pt-4">
+
+                        <div>
+
+                            <p class="text-xs font-semibold text-slate-400">
+                                Condición de pago
+                            </p>
+
+                            <p class="mt-1 text-sm font-black text-slate-800">
+
+                                @if ((int) $supplier->payment_terms_days > 0)
+                                Crédito a {{ $supplier->payment_terms_days }} días
+                                @else
+                                Contado
+                                @endif
+
+                            </p>
+
+                        </div>
+
+                    </div>
+
+
+                    {{-- Acción --}}
+                    <button
+                        type="button"
+                        onclick="openSupplierEditModal(
+                                @js($supplier->id),
+                                @js($supplier->code),
+                                @js($supplier->business_name),
+                                @js($supplier->rfc),
+                                @js($supplier->contact_name),
+                                @js($supplier->phone),
+                                @js($supplier->email),
+                                @js($supplier->payment_terms_days),
+                                @js($supplier->address),
+                                @js((bool) $supplier->is_active)
+                            )"
+                        class="mt-5 flex min-h-12 w-full items-center justify-center rounded-xl bg-slate-900 px-4 text-sm font-black text-white shadow-sm transition hover:bg-slate-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-600">
+                        Editar proveedor
+                    </button>
+
+                </article>
+
+                @empty
+
+                <div class="px-5 py-16 text-center">
+
+                    <div class="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-slate-100 text-xl font-black text-slate-400">
+                        ∅
+                    </div>
+
+                    <p class="mt-4 text-base font-black text-slate-900">
+                        No encontramos proveedores
+                    </p>
+
+                    <p class="mt-2 text-sm leading-6 text-slate-500">
+                        No existen proveedores que coincidan con los filtros seleccionados.
+                    </p>
+
                 </div>
+
+                @endforelse
+
             </div>
-        </template>
+
+
+            {{-- =====================================================
+                 PAGINACIÓN
+            ====================================================== --}}
+            @if ($suppliers->hasPages())
+
+            <div class="border-t border-slate-200 bg-slate-50/70 px-5 py-4 sm:px-6">
+                {{ $suppliers->links() }}
+            </div>
+
+            @endif
+
+        </x-ui.card>
+
+
+        {{-- =========================================================
+             MODAL EDITAR PROVEEDOR
+        ========================================================== --}}
+        <x-ui.modal
+            id="supplierEditModal"
+            size="lg"
+            title="Editar proveedor"
+            description="Actualiza la información comercial, fiscal y de contacto del proveedor."
+            close-id="close-supplier-edit-modal">
+
+            {{-- FORM --}}
+            <form
+                id="supplier-edit-form"
+                method="POST"
+                action="">
+                @csrf
+
+                @method('PUT')
+
+                <input
+                    type="hidden"
+                    name="supplier_id"
+                    id="supplier_edit_id">
+
+
+                <div class="space-y-6 px-5 py-5 sm:px-6">
+
+                    {{-- =================================================
+                         IDENTIFICACIÓN
+                    ================================================== --}}
+                    <div>
+
+                        <div class="mb-4">
+
+                            <p class="text-xs font-black uppercase tracking-[0.12em] text-emerald-700">
+                                Identificación
+                            </p>
+
+                            <p class="mt-1 text-sm font-black text-slate-950">
+                                Datos generales
+                            </p>
+
+                        </div>
+
+
+                        <div class="grid gap-4 sm:grid-cols-2">
+
+                            {{-- Código --}}
+                            <div>
+
+                                <label
+                                    for="supplier_edit_code"
+                                    class="mb-2 block text-sm font-bold text-slate-700">
+                                    Código
+                                </label>
+
+                                <x-ui.input
+                                    id="supplier_edit_code"
+                                    name="code"
+                                    type="text"
+                                    required
+                                    autocomplete="off" />
+
+                            </div>
+
+
+                            {{-- RFC --}}
+                            <div>
+
+                                <label
+                                    for="supplier_edit_rfc"
+                                    class="mb-2 block text-sm font-bold text-slate-700">
+                                    RFC
+                                </label>
+
+                                <x-ui.input
+                                    id="supplier_edit_rfc"
+                                    name="rfc"
+                                    type="text"
+                                    maxlength="20"
+                                    autocomplete="off"
+                                    class="uppercase" />
+
+                            </div>
+
+
+                            {{-- Razón social --}}
+                            <div class="sm:col-span-2">
+
+                                <label
+                                    for="supplier_edit_business_name"
+                                    class="mb-2 block text-sm font-bold text-slate-700">
+                                    Razón social / nombre comercial
+                                    <span class="text-rose-600">*</span>
+                                </label>
+
+                                <x-ui.input
+                                    id="supplier_edit_business_name"
+                                    name="business_name"
+                                    type="text"
+                                    required
+                                    autocomplete="organization" />
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+
+                    {{-- =================================================
+                         CONTACTO
+                    ================================================== --}}
+                    <div class="border-t border-slate-200 pt-6">
+
+                        <div class="mb-4">
+
+                            <p class="text-xs font-black uppercase tracking-[0.12em] text-sky-700">
+                                Contacto
+                            </p>
+
+                            <p class="mt-1 text-sm font-black text-slate-950">
+                                Comunicación y condiciones comerciales
+                            </p>
+
+                        </div>
+
+
+                        <div class="grid gap-4 sm:grid-cols-2">
+
+                            {{-- Contacto --}}
+                            <div>
+
+                                <label
+                                    for="supplier_edit_contact_name"
+                                    class="mb-2 block text-sm font-bold text-slate-700">
+                                    Vendedor / agente
+                                </label>
+
+                                <x-ui.input
+                                    id="supplier_edit_contact_name"
+                                    name="contact_name"
+                                    type="text"
+                                    autocomplete="name" />
+
+                            </div>
+
+
+                            {{-- Teléfono --}}
+                            <div>
+
+                                <label
+                                    for="supplier_edit_phone"
+                                    class="mb-2 block text-sm font-bold text-slate-700">
+                                    Teléfono
+                                </label>
+
+                                <x-ui.input
+                                    id="supplier_edit_phone"
+                                    name="phone"
+                                    type="tel"
+                                    autocomplete="tel" />
+
+                            </div>
+
+
+                            {{-- Email --}}
+                            <div>
+
+                                <label
+                                    for="supplier_edit_email"
+                                    class="mb-2 block text-sm font-bold text-slate-700">
+                                    Correo electrónico
+                                </label>
+
+                                <x-ui.input
+                                    id="supplier_edit_email"
+                                    name="email"
+                                    type="email"
+                                    autocomplete="email" />
+
+                            </div>
+
+
+                            {{-- Crédito --}}
+                            <div>
+
+                                <label
+                                    for="supplier_edit_payment_terms_days"
+                                    class="mb-2 block text-sm font-bold text-slate-700">
+                                    Días de crédito
+                                    <span class="text-rose-600">*</span>
+                                </label>
+
+                                <x-ui.input
+                                    id="supplier_edit_payment_terms_days"
+                                    name="payment_terms_days"
+                                    type="number"
+                                    min="0"
+                                    max="365"
+                                    step="1"
+                                    required />
+
+                            </div>
+
+
+                            {{-- Dirección --}}
+                            <div class="sm:col-span-2">
+
+                                <label
+                                    for="supplier_edit_address"
+                                    class="mb-2 block text-sm font-bold text-slate-700">
+                                    Dirección de bodega / entrega
+                                </label>
+
+                                <textarea
+                                    id="supplier_edit_address"
+                                    name="address"
+                                    rows="3"
+                                    maxlength="1000"
+                                    class="app-input min-h-28 resize-none"
+                                    placeholder="Dirección utilizada para recibir mercancía..."></textarea>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+
+                    {{-- =================================================
+                         ESTADO
+                    ================================================== --}}
+                    <div class="border-t border-slate-200 pt-6">
+
+                        <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+
+                            <div class="flex items-start justify-between gap-4">
+
+                                <div>
+
+                                    <p class="text-sm font-black text-slate-900">
+                                        Estado del proveedor
+                                    </p>
+
+                                    <p class="mt-1 text-xs leading-5 text-slate-500">
+                                        Los proveedores inactivos no deberían aparecer como opción para nuevas compras.
+                                    </p>
+
+                                </div>
+
+
+                                <label class="relative inline-flex shrink-0 cursor-pointer items-center">
+
+                                    <input
+                                        type="hidden"
+                                        name="is_active"
+                                        value="0">
+
+                                    <input
+                                        type="checkbox"
+                                        id="supplier_edit_is_active"
+                                        name="is_active"
+                                        value="1"
+                                        class="peer sr-only">
+
+                                    <span class="h-7 w-12 rounded-full bg-slate-300 transition peer-checked:bg-emerald-600 peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-emerald-600"></span>
+
+                                    <span class="absolute left-1 top-1 h-5 w-5 rounded-full bg-white shadow-sm transition peer-checked:translate-x-5"></span>
+
+                                </label>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </form>
+
+
+            {{-- =====================================================
+                 FOOTER
+            ====================================================== --}}
+            <x-slot:footer>
+
+                <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+
+                    {{-- Eliminar --}}
+                    <form
+                        id="supplier-delete-form"
+                        method="POST"
+                        action="">
+                        @csrf
+                        @method('DELETE')
+
+                        <button
+                            type="button"
+                            id="open-delete-supplier-confirm"
+                            class="inline-flex min-h-11 w-full items-center justify-center rounded-xl border border-rose-200 bg-rose-50 px-4 text-sm font-bold text-rose-700 transition hover:border-rose-300 hover:bg-rose-100 hover:text-rose-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rose-600 sm:w-auto">
+                            Eliminar proveedor
+                        </button>
+                    </form>
+
+
+                    {{-- Acciones principales --}}
+                    <div class="flex flex-col-reverse gap-3 sm:flex-row">
+
+                        <button
+                            type="button"
+                            id="cancel-supplier-edit-modal"
+                            class="inline-flex min-h-12 items-center justify-center rounded-xl border border-slate-300 bg-white px-5 text-sm font-bold text-slate-700 transition hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-500">
+                            Cancelar
+                        </button>
+
+                        <x-ui.button
+                            type="submit"
+                            form="supplier-edit-form"
+                            variant="primary"
+                            size="lg">
+                            Guardar cambios
+                        </x-ui.button>
+
+                    </div>
+
+                </div>
+
+            </x-slot:footer>
+
+        </x-ui.modal>
+
+        <x-ui.confirm
+            id="deleteSupplierConfirm"
+            size="sm"
+            title="Eliminar proveedor"
+            description="Esta acción eliminará el proveedor del catálogo."
+            confirm-text="Eliminar proveedor"
+            cancel-text="Cancelar"
+            variant="danger"
+            confirm-id="confirm-delete-supplier"
+            cancel-id="cancel-delete-supplier"
+            close-id="close-delete-supplier">
+            <p class="text-sm leading-6 text-slate-600">
+                ¿Estás seguro de que deseas eliminar este proveedor?
+            </p>
+
+            <div class="mt-4 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
+
+                <p class="text-xs font-black uppercase tracking-[0.1em] text-slate-400">
+                    Proveedor seleccionado
+                </p>
+
+                <p
+                    id="delete_supplier_name"
+                    class="mt-1 text-sm font-black text-slate-900">
+                    -
+                </p>
+
+            </div>
+
+            <p class="mt-4 text-xs leading-5 text-slate-500">
+                El proveedor dejará de estar disponible en el catálogo.
+                Si existen compras relacionadas, sus registros históricos deberán conservarse.
+            </p>
+        </x-ui.confirm>
+
+
     </div>
 
+
+    {{-- =============================================================
+         JAVASCRIPT
+    ============================================================== --}}
     <script>
-        function supplierModal() {
-            return {
-                showModal: false,
-                isEdit: false,
-                formAction: '{{ route("suppliers.store") }}',
-                form: {
-                    id: '',
-                    code: '',
-                    business_name: '',
-                    rfc: '',
-                    contact_name: '',
-                    phone: '',
-                    email: '',
-                    payment_terms_days: 0,
-                    address: '',
-                    is_active: true
-                },
-                openCreate() {
-                    this.isEdit = false;
-                    this.formAction = '{{ route("suppliers.store") }}';
-                    this.form = { id: '', code: '', business_name: '', rfc: '', contact_name: '', phone: '', email: '', payment_terms_days: 0, address: '', is_active: true };
-                    this.showModal = true;
-                },
-                openEdit(supplier) {
-                    this.isEdit = true;
-                    this.formAction = `/suppliers/${supplier.id}`;
-                    this.form = { ...supplier };
-                    this.showModal = true;
-                }
+        const deleteSupplierButton =
+            document.getElementById('open-delete-supplier-confirm');
+
+        const deleteSupplierForm =
+            document.getElementById('supplier-delete-form');
+
+        const deleteConfirmModal =
+            document.getElementById('deleteSupplierConfirm');
+
+        const confirmDeleteSupplier =
+            document.getElementById('confirm-delete-supplier');
+
+        const cancelDeleteSupplier =
+            document.getElementById('cancel-delete-supplier');
+
+        const closeDeleteSupplier =
+            document.getElementById('close-delete-supplier');
+
+
+        function openDeleteSupplierConfirm() {
+
+            if (!deleteConfirmModal) {
+                return;
             }
+
+            deleteConfirmModal.classList.remove('hidden');
+            deleteConfirmModal.classList.add('flex');
+
+            deleteConfirmModal.setAttribute('aria-hidden', 'false');
+
+            document.body.classList.add('overflow-hidden');
         }
+
+
+        function closeDeleteSupplierConfirm() {
+
+            if (!deleteConfirmModal) {
+                return;
+            }
+
+            deleteConfirmModal.classList.add('hidden');
+            deleteConfirmModal.classList.remove('flex');
+
+            deleteConfirmModal.setAttribute('aria-hidden', 'true');
+
+            document.body.classList.remove('overflow-hidden');
+        }
+
+
+        deleteSupplierButton?.addEventListener(
+            'click',
+            function() {
+
+                /*
+                 * Cerramos primero el modal de edición.
+                 */
+                closeSupplierEditModal();
+
+                /*
+                 * Abrimos confirmación.
+                 */
+                openDeleteSupplierConfirm();
+            }
+        );
+
+
+        confirmDeleteSupplier?.addEventListener(
+            'click',
+            function() {
+
+                if (!deleteSupplierForm) {
+                    return;
+                }
+
+                const action = deleteSupplierForm.getAttribute('action');
+
+                if (!action) {
+                    console.error('El formulario de eliminación no tiene action.');
+
+                    return;
+                }
+
+                confirmDeleteSupplier.disabled = true;
+                confirmDeleteSupplier.textContent = 'Eliminando...';
+
+                deleteSupplierForm.submit();
+            }
+        );
+
+
+        cancelDeleteSupplier?.addEventListener(
+            'click',
+            closeDeleteSupplierConfirm
+        );
+
+
+        closeDeleteSupplier?.addEventListener(
+            'click',
+            closeDeleteSupplierConfirm
+        );
+
+
+        deleteConfirmModal?.addEventListener(
+            'click',
+            function(event) {
+
+                if (event.target === deleteConfirmModal) {
+                    closeDeleteSupplierConfirm();
+                }
+
+            }
+        );
+
+        function openSupplierEditModal(
+            id,
+            code,
+            businessName,
+            rfc,
+            contactName,
+            phone,
+            email,
+            paymentTermsDays,
+            address,
+            isActive
+        ) {
+
+            const modal = document.getElementById('supplierEditModal');
+            const form = document.getElementById('supplier-edit-form');
+
+            if (!modal || !form) {
+                return;
+            }
+
+
+            /*
+             * Acción del formulario.
+             *
+             * Ejemplo:
+             * /suppliers/uuid-del-proveedor
+             */
+            form.action = `{{ route('suppliers.update', '__SUPPLIER__') }}`
+                .replace('__SUPPLIER__', id);
+
+            const deleteForm = document.getElementById('supplier-delete-form');
+
+            if (deleteForm) {
+                deleteForm.action = `{{ route('suppliers.destroy', '__SUPPLIER__') }}`
+                    .replace('__SUPPLIER__', id);
+            }
+
+            const deleteSupplierName =
+                document.getElementById('delete_supplier_name');
+
+            if (deleteSupplierName) {
+                deleteSupplierName.textContent = businessName ?? 'Proveedor';
+            }
+
+            /*
+             * Identificador
+             */
+            document.getElementById('supplier_edit_id').value = id;
+
+
+            /*
+             * Campos
+             */
+            document.getElementById('supplier_edit_code').value =
+                code ?? '';
+
+            document.getElementById('supplier_edit_business_name').value =
+                businessName ?? '';
+
+            document.getElementById('supplier_edit_rfc').value =
+                rfc ?? '';
+
+            document.getElementById('supplier_edit_contact_name').value =
+                contactName ?? '';
+
+            document.getElementById('supplier_edit_phone').value =
+                phone ?? '';
+
+            document.getElementById('supplier_edit_email').value =
+                email ?? '';
+
+            document.getElementById('supplier_edit_payment_terms_days').value =
+                paymentTermsDays ?? 0;
+
+            document.getElementById('supplier_edit_address').value =
+                address ?? '';
+
+            document.getElementById('supplier_edit_is_active').checked =
+                Boolean(isActive);
+
+
+            /*
+             * Mostrar modal
+             */
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+
+            modal.setAttribute('aria-hidden', 'false');
+
+            document.body.classList.add('overflow-hidden');
+
+
+            /*
+             * Enfocar razón social
+             */
+            window.setTimeout(() => {
+                document.getElementById('supplier_edit_business_name')?.focus();
+            }, 100);
+        }
+
+
+        function closeSupplierEditModal() {
+
+            const modal = document.getElementById('supplierEditModal');
+
+            if (!modal) {
+                return;
+            }
+
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+
+            modal.setAttribute('aria-hidden', 'true');
+
+            document.body.classList.remove('overflow-hidden');
+        }
+
+
+        document.addEventListener('DOMContentLoaded', function() {
+
+            const modal = document.getElementById('supplierEditModal');
+
+            const closeButton =
+                document.getElementById('close-supplier-edit-modal');
+
+            const cancelButton =
+                document.getElementById('cancel-supplier-edit-modal');
+
+
+            closeButton?.addEventListener(
+                'click',
+                closeSupplierEditModal
+            );
+
+
+            cancelButton?.addEventListener(
+                'click',
+                closeSupplierEditModal
+            );
+
+
+            /*
+             * Cerrar haciendo click sobre el fondo.
+             */
+            modal?.addEventListener('click', function(event) {
+
+                if (event.target === modal) {
+                    closeSupplierEditModal();
+                }
+
+            });
+
+
+            /*
+             * Cerrar con Escape.
+             */
+            document.addEventListener('keydown', function(event) {
+
+                if (event.key !== 'Escape') {
+                    return;
+                }
+
+                if (modal && !modal.classList.contains('hidden')) {
+                    closeSupplierEditModal();
+                }
+
+                if (
+                    deleteConfirmModal &&
+                    !deleteConfirmModal.classList.contains('hidden')
+                ) {
+                    closeDeleteSupplierConfirm();
+                    return;
+                }
+
+            });
+
+        });
     </script>
+
 </x-layouts.app>

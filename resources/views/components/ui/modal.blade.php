@@ -20,7 +20,7 @@ $modalElementId = $attributes->get('id');
 <div
     {{ $attributes->class([
         'fixed inset-0 z-[9999] hidden h-screen w-screen items-center justify-center',
-        'bg-slate-950/900 p-4 sm:p-6',
+        'bg-slate-950/90 p-4 sm:p-6',
         'backdrop-blur-md',
         'animate-modal-backdrop',
     ]) }}

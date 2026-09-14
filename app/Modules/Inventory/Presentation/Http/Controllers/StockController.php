@@ -17,13 +17,16 @@ final class StockController extends Controller
 {
     public function index(Request $request): View
     {
-        $search = $request->input('search');
+        $search = trim((string) $request->input('search', ''));
         $categoryId = $request->input('category_id');
         $stockStatus = $request->input('status');
 
         $orgId = DB::table('organizations')->value('id');
+
         $branchId = session('current_branch_id')
-            ?? DB::table('branches')->where('organization_id', $orgId)->value('id');
+            ?? DB::table('branches')
+            ->where('organization_id', $orgId)
+            ->value('id');
 
         $query = StockItem::query()
             ->where('stock_items.organization_id', $orgId)
@@ -32,28 +35,169 @@ final class StockController extends Controller
                 'product.category',
                 'product.brand',
                 'inventoryUnit',
-                'barcodes' => fn($b) => $b->where('is_active', true),
+                'barcodes' => fn($q) => $q->where('is_active', true),
                 'inventoryBalance' => fn($q) => $q->where('branch_id', $branchId),
                 'reorderLevel' => fn($q) => $q->where('branch_id', $branchId),
             ]);
 
-        if ($search) {
-            $query->whereHas('product', function ($p) use ($search) {
-                $p->where('name', 'ilike', "%{$search}%")
-                  ->orWhere('sku', 'ilike', "%{$search}%");
-            })->orWhereHas('barcodes', function ($b) use ($search) {
-                $b->where('barcode', 'ilike', "%{$search}%");
+        /*
+     * Búsqueda:
+     * producto, SKU o código de barras.
+     *
+     * El where externo evita que el OR del código de barras
+     * se salga del alcance de organización + stock activo.
+     */
+        if ($search !== '') {
+            $query->where(function ($q) use ($search) {
+                $q->whereHas('product', function ($p) use ($search) {
+                    $p->where('name', 'ilike', "%{$search}%")
+                        ->orWhere('sku', 'ilike', "%{$search}%");
+                })
+                    ->orWhereHas('barcodes', function ($b) use ($search) {
+                        $b->where('barcode', 'ilike', "%{$search}%");
+                    });
             });
         }
 
+        /*
+     * Categoría.
+     */
         if ($categoryId) {
-            $query->whereHas('product', fn($p) => $p->where('category_id', $categoryId));
+            $query->whereHas(
+                'product',
+                fn($p) => $p->where('category_id', $categoryId)
+            );
         }
 
-        $items = $query->paginate(15)->withQueryString();
-        $categories = Category::query()->where('is_active', true)->orderBy('name')->get();
+        /*
+     * Estado del stock.
+     *
+     * disponible = físico - reservado
+     *
+     * Se utilizan subconsultas para poder filtrar desde SQL
+     * antes de paginar.
+     */
+        if ($stockStatus) {
+            $balanceTable = 'inventory_balances';
+            $reorderTable = 'reorder_levels';
 
-        return view('modules.inventory.stock.index', compact('items', 'categories', 'search', 'categoryId', 'stockStatus'));
+            $query->where(function ($q) use (
+                $stockStatus,
+                $branchId,
+                $balanceTable,
+                $reorderTable
+            ) {
+                $availableSql = "
+                COALESCE(
+                    (
+                        SELECT ib.on_hand_quantity - ib.reserved_quantity
+                        FROM {$balanceTable} ib
+                        WHERE ib.stock_item_id = stock_items.id
+                          AND ib.branch_id = ?
+                        LIMIT 1
+                    ),
+                    0
+                )
+            ";
+
+                $minimumSql = "
+                COALESCE(
+                    (
+                        SELECT rl.minimum_quantity
+                        FROM {$reorderTable} rl
+                        WHERE rl.stock_item_id = stock_items.id
+                          AND rl.branch_id = ?
+                        LIMIT 1
+                    ),
+                    0
+                )
+            ";
+
+                match ($stockStatus) {
+                    'out' => $q->whereRaw(
+                        "{$availableSql} <= 0",
+                        [$branchId]
+                    ),
+
+                    'low' => $q->whereRaw(
+                        "{$availableSql} > 0
+                     AND {$availableSql} <= {$minimumSql}",
+                        [$branchId, $branchId, $branchId]
+                    ),
+
+                    'available' => $q->whereRaw(
+                        "{$availableSql} > {$minimumSql}",
+                        [$branchId, $branchId]
+                    ),
+
+                    default => null,
+                };
+            });
+        }
+
+        $items = $query
+            ->latest('stock_items.created_at')
+            ->paginate(15)
+            ->withQueryString();
+
+        $categories = Category::query()
+            ->where('is_active', true)
+            ->orderBy('name')
+            ->get();
+
+        /*
+     * KPIs.
+     *
+     * Por ahora los calculamos sobre los registros obtenidos.
+     * Más adelante, si el inventario crece bastante, podemos
+     * llevar estos agregados directamente a SQL.
+     */
+        $allItems = StockItem::query()
+            ->where('organization_id', $orgId)
+            ->where('is_active', true)
+            ->with([
+                'inventoryBalance' => fn($q) => $q->where('branch_id', $branchId),
+                'reorderLevel' => fn($q) => $q->where('branch_id', $branchId),
+            ])
+            ->get();
+
+        $totalItems = $allItems->count();
+        $availableItems = 0;
+        $lowStockItems = 0;
+        $outOfStockItems = 0;
+
+        foreach ($allItems as $stockItem) {
+            $balance = $stockItem->inventoryBalance;
+            $reorder = $stockItem->reorderLevel;
+
+            $onHand = (float) ($balance?->on_hand_quantity ?? 0);
+            $reserved = (float) ($balance?->reserved_quantity ?? 0);
+            $available = max(0, $onHand - $reserved);
+            $minimum = (float) ($reorder?->minimum_quantity ?? 0);
+
+            if ($available <= 0) {
+                $outOfStockItems++;
+            } elseif ($minimum > 0 && $available <= $minimum) {
+                $lowStockItems++;
+            } else {
+                $availableItems++;
+            }
+        }
+
+        return view(
+            'modules.inventory.stock.index',
+            compact(
+                'items',
+                'categories',
+                'search',
+                'categoryId',
+                'stockStatus',
+                'totalItems',
+                'availableItems',
+                'lowStockItems',
+                'outOfStockItems',
+            )
+        );
     }
 
     public function adjust(Request $request): RedirectResponse

@@ -61,24 +61,38 @@ class PurchaseController extends Controller
     {
         $orgId = $this->getOrganizationId();
 
-        $suppliers = Supplier::where('organization_id', $orgId)
+        $suppliers = Supplier::query()
+            ->where('organization_id', $orgId)
             ->where('is_active', true)
             ->orderBy('business_name')
             ->get();
 
-        $stockItems = StockItem::with('product')
+        $stockItems = StockItem::query()
+            ->with('product')
             ->where('organization_id', $orgId)
+            ->where('is_active', true)
             ->get();
 
-        $products = $stockItems->isEmpty()
-            ? Product::where('organization_id', $orgId)->get()
-            : collect();
-
-        $productUnits = ProductUnit::with('unit')
+        /*
+     * Unidades configuradas específicamente para cada artículo.
+     *
+     * No debemos cargar todas las ProductUnit de la organización,
+     * porque cada ProductUnit pertenece a un stock_item.
+     */
+        $productUnitsByStockItem = ProductUnit::query()
+            ->with('unit')
             ->where('organization_id', $orgId)
-            ->get();
+            ->where('is_active', true)
+            ->where('is_purchase_unit', true)
+            ->whereIn('stock_item_id', $stockItems->pluck('id'))
+            ->get()
+            ->groupBy('stock_item_id');
 
-        return view('modules.purchases.create', compact('suppliers', 'stockItems', 'products', 'productUnits'));
+        return view('modules.purchases.create', compact(
+            'suppliers',
+            'stockItems',
+            'productUnitsByStockItem'
+        ));
     }
 
     public function store(Request $request): RedirectResponse

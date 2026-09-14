@@ -58,14 +58,14 @@ class SupplierController extends Controller
                 'nullable',
                 'string',
                 'max:40',
-                Rule::unique('suppliers')->where(fn ($q) => $q->where('organization_id', $orgId)->whereNull('deleted_at')),
+                Rule::unique('suppliers')->where(fn($q) => $q->where('organization_id', $orgId)->whereNull('deleted_at')),
             ],
             'business_name' => 'required|string|max:255',
             'rfc' => [
                 'nullable',
                 'string',
                 'max:20',
-                Rule::unique('suppliers')->where(fn ($q) => $q->where('organization_id', $orgId)->whereNotNull('rfc')->whereNull('deleted_at')),
+                Rule::unique('suppliers')->where(fn($q) => $q->where('organization_id', $orgId)->whereNotNull('rfc')->whereNull('deleted_at')),
             ],
             'contact_name' => 'nullable|string|max:255',
             'email' => 'nullable|email|max:255',
@@ -98,14 +98,14 @@ class SupplierController extends Controller
                 'required',
                 'string',
                 'max:40',
-                Rule::unique('suppliers')->where(fn ($q) => $q->where('organization_id', $orgId)->whereNull('deleted_at'))->ignore($supplier->id),
+                Rule::unique('suppliers')->where(fn($q) => $q->where('organization_id', $orgId)->whereNull('deleted_at'))->ignore($supplier->id),
             ],
             'business_name' => 'required|string|max:255',
             'rfc' => [
                 'nullable',
                 'string',
                 'max:20',
-                Rule::unique('suppliers')->where(fn ($q) => $q->where('organization_id', $orgId)->whereNotNull('rfc')->whereNull('deleted_at'))->ignore($supplier->id),
+                Rule::unique('suppliers')->where(fn($q) => $q->where('organization_id', $orgId)->whereNotNull('rfc')->whereNull('deleted_at'))->ignore($supplier->id),
             ],
             'contact_name' => 'nullable|string|max:255',
             'email' => 'nullable|email|max:255',
@@ -122,7 +122,17 @@ class SupplierController extends Controller
 
     public function destroy(Supplier $supplier)
     {
+        $orgId = $this->getOrganizationId();
+
+        abort_unless(
+            $supplier->organization_id === $orgId,
+            404
+        );
+
         $supplier->delete();
-        return redirect()->route('suppliers.index')->with('success', 'Proveedor eliminado correctamente.');
+
+        return redirect()
+            ->route('suppliers.index')
+            ->with('success', 'Proveedor eliminado correctamente.');
     }
 }
