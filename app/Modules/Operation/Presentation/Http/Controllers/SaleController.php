@@ -47,9 +47,14 @@ final class SaleController
             ->get()
             : collect();
 
+        $availableCash = $session
+            ? $this->availableCash($session->id)
+            : 0;
+
         return view('modules.operation.sales.index', [
             'activeSession' => $session,
             'paymentMethods' => $paymentMethods,
+            'availableCash' => $availableCash,
         ]);
     }
 
@@ -682,6 +687,40 @@ final class SaleController
                 ? max(0, $amountReceived - $total)
                 : 0;
 
+            if ($paymentMethod->affects_cash && $change > 0) {
+                $cashIn = (float) DB::table('cash_movements')
+                    ->where('cash_session_id', $session->id)
+                    ->whereIn('movement_type', [
+                        'opening_float',
+                        'sale_payment',
+                        'income',
+                    ])
+                    ->sum('amount');
+
+                $cashOut = (float) DB::table('cash_movements')
+                    ->where('cash_session_id', $session->id)
+                    ->whereIn('movement_type', [
+                        'sale_change',
+                        'return_payment',
+                        'expense',
+                        'withdrawal',
+                        'deposit',
+                    ])
+                    ->sum('amount');
+
+                $availableCash = round($cashIn - $cashOut, 2);
+
+                if ($change > $availableCash) {
+                    throw ValidationException::withMessages([
+                        'amount_received' => sprintf(
+                            'No hay suficiente efectivo en caja para entregar el cambio. Caja disponible: $%0.2f. Cambio requerido: $%0.2f.',
+                            $availableCash,
+                            $change
+                        ),
+                    ]);
+                }
+            }
+
             $sale = Sale::create([
                 'organization_id' => $session->organization_id,
                 'branch_id' => $session->branch_id,
@@ -830,6 +869,30 @@ final class SaleController
             ->where('status', 'open')
             ->latest('opened_at')
             ->first();
+    }
+    private function availableCash(string $cashSessionId): float
+    {
+        $cashIn = (float) DB::table('cash_movements')
+            ->where('cash_session_id', $cashSessionId)
+            ->whereIn('movement_type', [
+                'opening_float',
+                'sale_payment',
+                'income',
+            ])
+            ->sum('amount');
+
+        $cashOut = (float) DB::table('cash_movements')
+            ->where('cash_session_id', $cashSessionId)
+            ->whereIn('movement_type', [
+                'sale_change',
+                'return_payment',
+                'expense',
+                'withdrawal',
+                'deposit',
+            ])
+            ->sum('amount');
+
+        return round($cashIn - $cashOut, 2);
     }
 
     private function resolvePrice(

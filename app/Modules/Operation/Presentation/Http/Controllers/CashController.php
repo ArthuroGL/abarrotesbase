@@ -44,9 +44,9 @@ final class CashController
 
         $movements = $activeSession
             ? $activeSession->movements()
-                ->with('createdBy')
-                ->latest('occurred_at')
-                ->get()
+            ->with('createdBy')
+            ->latest('occurred_at')
+            ->get()
             : collect();
 
         $cashSummary = $this->calculateCashSummary($movements);
@@ -56,8 +56,10 @@ final class CashController
             'registers' => $registers,
             'activeSession' => $activeSession,
             'movements' => $movements,
+
             'cashIn' => $cashSummary['cash_in'],
             'cashOut' => $cashSummary['cash_out'],
+            'cashSales' => $cashSummary['cash_sales'],
             'theoreticalCash' => $cashSummary['theoretical_cash'],
         ]);
     }
@@ -144,7 +146,7 @@ final class CashController
      * Tipos permitidos:
      * income     = entrada de efectivo
      * withdrawal = retiro de efectivo
-     * deposit    = depósito de efectivo, sale de la caja
+     * deposit    = depósito bancario, sale de la caja
      * expense    = gasto pagado desde caja
      */
     public function storeMovement(Request $request): RedirectResponse
@@ -172,35 +174,75 @@ final class CashController
             ],
         ]);
 
-        DB::transaction(function () use ($request, $validated): void {
-            $session = CashSession::query()
-                ->where('responsible_user_id', $request->user()->id)
-                ->where('status', 'open')
-                ->latest('opened_at')
-                ->lockForUpdate()
-                ->first();
+        try {
+            DB::transaction(function () use ($request, $validated): void {
 
-            if (!$session) {
-                throw new \RuntimeException(
-                    'No tienes una sesión de caja abierta.'
-                );
-            }
+                /*
+             * Bloqueamos la sesión para evitar que dos operaciones
+             * modifiquen simultáneamente el mismo saldo de caja.
+             */
+                $session = CashSession::query()
+                    ->where('responsible_user_id', $request->user()->id)
+                    ->where('status', 'open')
+                    ->latest('opened_at')
+                    ->lockForUpdate()
+                    ->first();
 
-            CashMovement::create([
-                'organization_id' => $session->organization_id,
-                'branch_id' => $session->branch_id,
-                'cash_session_id' => $session->id,
-                'payment_method_id' => null,
-                'movement_type' => $validated['movement_type'],
-                'amount' => $validated['amount'],
-                'source_type' => 'manual',
-                'source_id' => null,
-                'reason_code' => $validated['reason_code'] ?? null,
-                'notes' => $validated['notes'] ?? null,
-                'created_by' => $request->user()->id,
-                'occurred_at' => now(),
-            ]);
-        });
+                if (!$session) {
+                    throw new \RuntimeException(
+                        'No tienes una sesión de caja abierta.'
+                    );
+                }
+
+                /*
+             * Las salidas manuales no pueden superar
+             * el efectivo disponible actualmente.
+             */
+                $outgoingTypes = [
+                    'withdrawal',
+                    'deposit',
+                    'expense',
+                ];
+
+                if (in_array($validated['movement_type'], $outgoingTypes, true)) {
+
+                    $availableCash = $this->availableCash($session->id);
+
+                    $amount = (float) $validated['amount'];
+
+                    if ($amount > $availableCash) {
+                        throw new \RuntimeException(
+                            sprintf(
+                                'No hay suficiente efectivo en caja para realizar este movimiento. Disponible: $%0.2f. Solicitado: $%0.2f.',
+                                $availableCash,
+                                $amount
+                            )
+                        );
+                    }
+                }
+
+                CashMovement::create([
+                    'organization_id' => $session->organization_id,
+                    'branch_id' => $session->branch_id,
+                    'cash_session_id' => $session->id,
+                    'payment_method_id' => null,
+                    'movement_type' => $validated['movement_type'],
+                    'amount' => $validated['amount'],
+                    'source_type' => 'manual',
+                    'source_id' => null,
+                    'reason_code' => $validated['reason_code'] ?? null,
+                    'notes' => $validated['notes'] ?? null,
+                    'created_by' => $request->user()->id,
+                    'occurred_at' => now(),
+                ]);
+            });
+        } catch (Throwable $e) {
+            return back()
+                ->withErrors([
+                    'movement_type' => $e->getMessage(),
+                ])
+                ->withInput();
+        }
 
         return redirect()
             ->route('cash.index')
@@ -363,43 +405,89 @@ final class CashController
             'theoreticalCash' => $cashSummary['theoretical_cash'],
         ]);
     }
+    /**
+     * Obtener el efectivo disponible actualmente en una sesión.
+     *
+     * Este importe representa el efectivo que físicamente debería
+     * existir en caja antes de registrar una nueva salida.
+     */
+    private function availableCash(string $cashSessionId): float
+    {
+        $cashIn = (float) CashMovement::query()
+            ->where('cash_session_id', $cashSessionId)
+            ->whereIn('movement_type', [
+                'opening_float',
+                'sale_payment',
+                'income',
+            ])
+            ->sum('amount');
+
+        $cashOut = (float) CashMovement::query()
+            ->where('cash_session_id', $cashSessionId)
+            ->whereIn('movement_type', [
+                'sale_change',
+                'return_payment',
+                'expense',
+                'withdrawal',
+                'deposit',
+            ])
+            ->sum('amount');
+
+        return round($cashIn - $cashOut, 2);
+    }
 
     /**
-     * Calcular el efectivo real que debería existir físicamente
-     * en la caja según los movimientos.
+     * Calcular el resumen de efectivo según los movimientos.
      */
     private function calculateCashSummary($movements): array
     {
         $cashIn = 0.0;
         $cashOut = 0.0;
+        $cashSales = 0.0;
 
         foreach ($movements as $movement) {
             $amount = (float) $movement->amount;
 
             switch ($movement->movement_type) {
+
+                /*
+             * ENTRADAS
+             */
                 case 'opening_float':
                 case 'sale_payment':
                 case 'income':
+
                     $cashIn += $amount;
+
+                    /*
+                 * Separamos las ventas en efectivo para
+                 * mostrarlas como indicador independiente.
+                 */
+                    if ($movement->movement_type === 'sale_payment') {
+                        $cashSales += $amount;
+                    }
+
                     break;
 
+                /*
+             * SALIDAS
+             */
                 case 'sale_change':
                 case 'return_payment':
                 case 'expense':
                 case 'withdrawal':
                 case 'deposit':
+
                     $cashOut += $amount;
+
                     break;
 
+                /*
+             * AJUSTES DE CIERRE
+             *
+             * No modifican automáticamente el efectivo teórico.
+             */
                 case 'closing_adjustment':
-                    /*
-                     * Un ajuste de cierre positivo entra.
-                     * Uno negativo debería manejarse como
-                     * movimiento independiente y justificado.
-                     *
-                     * Por seguridad no se incluye automáticamente
-                     * en el efectivo teórico.
-                     */
                     break;
             }
         }
@@ -407,6 +495,7 @@ final class CashController
         return [
             'cash_in' => round($cashIn, 2),
             'cash_out' => round($cashOut, 2),
+            'cash_sales' => round($cashSales, 2),
             'theoretical_cash' => round($cashIn - $cashOut, 2),
         ];
     }

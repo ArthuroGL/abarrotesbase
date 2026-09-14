@@ -393,6 +393,7 @@
 
 
             {{-- CAMBIO --}}
+            {{-- CAMBIO --}}
             <div
                 id="change-box"
                 class="mt-6 hidden overflow-hidden rounded-2xl border-2 border-emerald-200 bg-emerald-50">
@@ -401,11 +402,15 @@
 
                     <div class="min-w-0">
 
-                        <p class="text-sm font-black uppercase tracking-wide text-emerald-800">
+                        <p
+                            id="change-title"
+                            class="text-sm font-black uppercase tracking-wide text-emerald-800">
                             Cambio
                         </p>
 
-                        <p class="mt-1 text-xs leading-5 text-emerald-700">
+                        <p
+                            id="change-description"
+                            class="mt-1 text-xs leading-5 text-emerald-700">
                             Entregar al cliente.
                         </p>
 
@@ -416,6 +421,56 @@
                         class="shrink-0 text-2xl font-black text-emerald-700 sm:text-3xl">
                         $ 0.00 MXN
                     </p>
+
+                </div>
+
+            </div>
+
+            {{-- DISPONIBILIDAD DE CAJA --}}
+            <div
+                id="cash-availability-box"
+                class="mt-3 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+
+                <div class="flex items-center justify-between gap-4">
+
+                    <span class="text-sm font-semibold text-slate-600">
+                        Efectivo disponible en caja
+                    </span>
+
+                    <strong
+                        id="available-cash"
+                        class="text-base font-black text-slate-900">
+                        $ 0.00 MXN
+                    </strong>
+
+                </div>
+
+            </div>
+
+            {{-- ERROR DE CAMBIO --}}
+            <div
+                id="change-error-box"
+                class="mt-3 hidden rounded-2xl border-2 border-rose-200 bg-rose-50 p-4">
+
+                <div class="flex items-start gap-3">
+
+                    <div
+                        class="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-rose-100 text-sm font-black text-rose-600">
+                        !
+                    </div>
+
+                    <div class="min-w-0">
+
+                        <p class="text-sm font-black text-rose-900">
+                            No hay suficiente efectivo para entregar el cambio
+                        </p>
+
+                        <p
+                            id="change-error-message"
+                            class="mt-1 text-xs leading-5 text-rose-700">
+                        </p>
+
+                    </div>
 
                 </div>
 
@@ -562,6 +617,9 @@
         };
 
         const $ = (id) => document.getElementById(id);
+
+        const availableCash = Number(@json($availableCash));
+        let changeAvailable = true;
 
         const completedSaleModal = $('sale-completed-modal');
         const completedSaleNumber = $('completed-sale-number');
@@ -1054,7 +1112,6 @@
         }
 
         function updateChange() {
-
             const total = state.cart.reduce(
                 (sum, item) =>
                 sum + (item.price * item.quantity),
@@ -1074,12 +1131,91 @@
                 Math.max(0, received - total) :
                 0;
 
+            const hasChange =
+                affectsCash && change > 0;
+
+            changeAvailable = !hasChange || change <= availableCash;
+
             $('change').textContent = money(change);
+
+            $('cash-availability-box').classList.toggle(
+                'hidden',
+                !affectsCash
+            );
+
+            $('available-cash').textContent =
+                money(availableCash);
 
             $('change-box').classList.toggle(
                 'hidden',
-                !affectsCash || change <= 0
+                !hasChange
             );
+
+            $('change-error-box').classList.toggle(
+                'hidden',
+                !hasChange || changeAvailable
+            );
+
+            if (hasChange && !changeAvailable) {
+
+                const missing =
+                    change - availableCash;
+
+                $('change-title').textContent =
+                    'Cambio no disponible';
+
+                $('change-description').textContent =
+                    'La caja no tiene suficiente efectivo.';
+
+                $('change').classList.remove(
+                    'text-emerald-700'
+                );
+
+                $('change').classList.add(
+                    'text-rose-700'
+                );
+
+                $('change-box').classList.remove(
+                    'border-emerald-200',
+                    'bg-emerald-50'
+                );
+
+                $('change-box').classList.add(
+                    'border-rose-200',
+                    'bg-rose-50'
+                );
+
+                $('change-error-message').textContent =
+                    `Necesitas ${money(change)} de cambio, pero la caja dispone de ${money(availableCash)}. Faltan ${money(missing)}.`;
+
+            } else {
+
+                $('change-title').textContent =
+                    'Cambio';
+
+                $('change-description').textContent =
+                    'Entregar al cliente.';
+
+                $('change').classList.remove(
+                    'text-rose-700'
+                );
+
+                $('change').classList.add(
+                    'text-emerald-700'
+                );
+
+                $('change-box').classList.remove(
+                    'border-rose-200',
+                    'bg-rose-50'
+                );
+
+                $('change-box').classList.add(
+                    'border-emerald-200',
+                    'bg-emerald-50'
+                );
+            }
+
+            $('confirm-payment').disabled = !changeAvailable;
         }
 
 
@@ -1192,6 +1328,20 @@
 
             const affectsCash =
                 option?.dataset.affectsCash === '1';
+
+            const change =
+                affectsCash ?
+                Math.max(0, received - total) :
+                0;
+
+            if (affectsCash && change > availableCash) {
+                showMessage(
+                    `No hay suficiente efectivo en caja para entregar ${money(change)} de cambio.`,
+                    'error'
+                );
+
+                return;
+            }
 
             const requiresReference =
                 option?.dataset.requiresReference === '1';
