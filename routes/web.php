@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\GlobalSearchController;
 use App\Http\Controllers\PurchaseController;
 use App\Http\Controllers\SupplierController;
 use App\Modules\Dashboard\Presentation\Http\Controllers\DashboardController;
@@ -14,6 +15,13 @@ use App\Modules\Operation\Presentation\Http\Controllers\ExpenseController;
 use App\Modules\Operation\Presentation\Http\Controllers\SaleController;
 use App\Modules\Payment\Presentation\Http\Controllers\MercadoPagoWebhookController;
 use Illuminate\Support\Facades\Route;
+
+Route::middleware('auth')->group(function () {
+
+    Route::get('/search', [GlobalSearchController::class, 'index'])
+        ->name('global.search');
+
+});
 
 // Rutas para Usuarios Invitados (Guest)
 Route::middleware('guest')->group(function () {

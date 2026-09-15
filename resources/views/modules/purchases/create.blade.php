@@ -243,7 +243,7 @@
                         <p
                             id="grand-total-display"
                             class="text-3xl font-black tracking-tight text-slate-950">
-                            $0.00
+                            0.00
                             <span class="text-sm font-bold text-slate-400">
                                 MXN
                             </span>
@@ -444,7 +444,7 @@
                     <div class="flex min-h-12 items-center rounded-xl border border-slate-200 bg-slate-50 px-4">
 
                         <p class="row-subtotal text-sm font-black text-slate-900">
-                            $0.00
+                            0.00
                         </p>
 
                     </div>

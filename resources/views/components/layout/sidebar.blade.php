@@ -4,7 +4,6 @@
             'label' => 'Principal',
             'items' => [
                 ['label' => 'Dashboard', 'route' => 'dashboard', 'icon' => 'chart'],
-                ['label' => 'Punto de venta', 'route' => null, 'icon' => 'store', 'badge' => 'Próximamente'],
             ],
         ],
         [
@@ -61,7 +60,7 @@
                 </span>
 
                 <span class="block text-xs font-semibold tracking-[0.2em] text-emerald-400">
-                    BASE
+                    Margarita
                 </span>
             </span>
 
@@ -162,16 +161,16 @@
         <div class="sidebar-footer rounded-xl bg-slate-900 p-3 text-xs leading-5 text-slate-400">
 
             <span class="sidebar-label font-semibold text-slate-200">
-                Fundación técnica
+                Prueba técnica
             </span>
 
             <span class="sidebar-label block">
-                Laravel 12 · PostgreSQL · MXN
+                Construido como un proyecto de prueba para Abarrotes Base.
             </span>
 
             <span
                 class="sidebar-footer-short hidden text-center text-[10px] font-bold text-slate-500">
-                L12
+                GLLA
             </span>
 
         </div>

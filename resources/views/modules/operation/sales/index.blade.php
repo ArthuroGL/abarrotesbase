@@ -216,7 +216,7 @@
                         <strong
                             id="subtotal"
                             class="font-bold text-slate-700">
-                            $ 0.00 MXN
+                            0.00 MXN
                         </strong>
                     </div>
 
@@ -226,7 +226,7 @@
                         <strong
                             id="tax"
                             class="font-bold text-slate-700">
-                            $ 0.00 MXN
+                            0.00 MXN
                         </strong>
                     </div>
 
@@ -250,7 +250,7 @@
                         <strong
                             id="total"
                             class="text-right text-3xl font-black tracking-tight text-white sm:text-4xl">
-                            $ 0.00 MXN
+                            0.00 MXN
                         </strong>
 
                     </div>
@@ -295,7 +295,7 @@
                 <p
                     id="payment-total"
                     class="mt-2 text-4xl font-black tracking-tight text-white sm:text-[2.75rem]">
-                    $ 0.00 MXN
+                    0.00 MXN
                 </p>
 
             </div>
@@ -419,7 +419,7 @@
                     <p
                         id="change"
                         class="shrink-0 text-2xl font-black text-emerald-700 sm:text-3xl">
-                        $ 0.00 MXN
+                        0.00 MXN
                     </p>
 
                 </div>
@@ -440,7 +440,7 @@
                     <strong
                         id="available-cash"
                         class="text-base font-black text-slate-900">
-                        $ 0.00 MXN
+                        0.00 MXN
                     </strong>
 
                 </div>
@@ -560,7 +560,7 @@
                     <strong
                         id="completed-sale-total"
                         class="text-2xl font-black text-slate-950">
-                        $ 0.00 MXN
+                        0.00 MXN
                     </strong>
 
                 </div>
@@ -576,7 +576,7 @@
                     <strong
                         id="completed-sale-change"
                         class="text-xl font-black text-emerald-600">
-                        $ 0.00 MXN
+                        0.00 MXN
                     </strong>
 
                 </div>
