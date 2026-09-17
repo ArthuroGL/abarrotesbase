@@ -10,7 +10,7 @@
                 variant="secondary"
                 type="button"
                 onclick="window.location.href='{{ route('expenses.index') }}'">
-                Volver a gastos
+                ← Volver a gastos
             </x-ui.button>
 
         </x-slot:actions>

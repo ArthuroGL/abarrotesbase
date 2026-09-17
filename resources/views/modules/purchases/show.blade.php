@@ -15,7 +15,7 @@
                 <a
                     href="{{ route('purchases.index') }}"
                     class="inline-flex min-h-11 items-center justify-center rounded-xl border border-slate-300 bg-white px-4 text-sm font-bold text-slate-700 transition hover:bg-slate-50">
-                    Volver a compras
+                    ← Volver a compras
                 </a>
 
                 @if ($purchase->status === 'approved')
@@ -570,7 +570,7 @@
                         id="cancel-cancel-purchase"
                         onclick="closePurchaseModal('cancelPurchaseModal')"
                         class="inline-flex min-h-11 items-center justify-center rounded-xl border border-slate-300 bg-white px-5 text-sm font-bold text-slate-700 transition hover:bg-slate-50">
-                        Volver
+                        ← Volver
                     </button>
 
                     <x-ui.button

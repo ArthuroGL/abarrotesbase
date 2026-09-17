@@ -20,9 +20,9 @@ final class DashboardController
 
         $branchId = session('current_branch_id')
             ?? DB::table('branches')
-            ->where('organization_id', $orgId)
-            ->where('is_active', true)
-            ->value('id');
+                ->where('organization_id', $orgId)
+                ->where('is_active', true)
+                ->value('id');
 
         if (!$branchId) {
             abort(500, 'No hay una sucursal activa configurada.');
@@ -77,7 +77,12 @@ final class DashboardController
 
                 return [
                     'hour' => $hour,
-                    'label' => str_pad((string) $hour, 2, '0', STR_PAD_LEFT),
+                    'label' => str_pad(
+                        (string) $hour,
+                        2,
+                        '0',
+                        STR_PAD_LEFT
+                    ),
                     'total' => (float) ($data->total ?? 0),
                 ];
             });
@@ -146,16 +151,19 @@ final class DashboardController
                 'opening_float' => (float) $activeCashSession->opening_float,
                 'cash_in' => round($cashIn, 2),
                 'cash_out' => round($cashOut, 2),
-                'theoretical_cash' => round($cashIn - $cashOut, 2),
+                'theoretical_cash' => round(
+                    $cashIn - $cashOut,
+                    2
+                ),
                 'opened_at' => $activeCashSession->opened_at,
             ];
         }
 
         /*
-|--------------------------------------------------------------------------
-| INVENTARIO
-|--------------------------------------------------------------------------
-*/
+        |--------------------------------------------------------------------------
+        | INVENTARIO
+        |--------------------------------------------------------------------------
+        */
 
         $inventoryBase = DB::table('stock_items')
             ->join(
@@ -164,42 +172,56 @@ final class DashboardController
                 '=',
                 'stock_items.product_id'
             )
-            ->leftJoin('inventory_balances', function ($join) use ($orgId, $branchId) {
+            ->leftJoin('inventory_balances', function ($join) use (
+                $orgId,
+                $branchId
+            ) {
                 $join->on(
                     'inventory_balances.stock_item_id',
                     '=',
                     'stock_items.id'
                 )
-                    ->where('inventory_balances.organization_id', $orgId)
-                    ->where('inventory_balances.branch_id', $branchId);
+                    ->where(
+                        'inventory_balances.organization_id',
+                        $orgId
+                    )
+                    ->where(
+                        'inventory_balances.branch_id',
+                        $branchId
+                    );
             })
-            ->leftJoin('stock_reorder_levels', function ($join) use ($orgId, $branchId) {
+            ->leftJoin('stock_reorder_levels', function ($join) use (
+                $orgId,
+                $branchId
+            ) {
                 $join->on(
                     'stock_reorder_levels.stock_item_id',
                     '=',
                     'stock_items.id'
                 )
-                    ->where('stock_reorder_levels.organization_id', $orgId)
-                    ->where('stock_reorder_levels.branch_id', $branchId);
+                    ->where(
+                        'stock_reorder_levels.organization_id',
+                        $orgId
+                    )
+                    ->where(
+                        'stock_reorder_levels.branch_id',
+                        $branchId
+                    );
             })
-            ->where('stock_items.organization_id', $orgId)
-            ->where('stock_items.is_active', true);
-
-
-        /*
-|--------------------------------------------------------------------------
-| TOTAL DE PRODUCTOS CONTROLADOS
-|--------------------------------------------------------------------------
-*/
-
-        $inventoryTotal = (clone $inventoryBase)->count();
-
+            ->where(
+                'stock_items.organization_id',
+                $orgId
+            )
+            ->where(
+                'stock_items.is_active',
+                true
+            );
 
         /*
-|--------------------------------------------------------------------------
-| AGOTADOS
-|--------------------------------------------------------------------------
-*/
+        |--------------------------------------------------------------------------
+        | AGOTADOS
+        |--------------------------------------------------------------------------
+        */
 
         $outOfStock = (clone $inventoryBase)
             ->whereRaw(
@@ -207,12 +229,11 @@ final class DashboardController
             )
             ->count();
 
-
         /*
-|--------------------------------------------------------------------------
-| STOCK BAJO
-|--------------------------------------------------------------------------
-*/
+        |--------------------------------------------------------------------------
+        | STOCK BAJO
+        |--------------------------------------------------------------------------
+        */
 
         $lowStock = (clone $inventoryBase)
             ->whereRaw(
@@ -222,16 +243,16 @@ final class DashboardController
                 'COALESCE(inventory_balances.available_quantity, 0) > 0'
             )
             ->whereRaw(
-                'COALESCE(inventory_balances.available_quantity, 0) <= COALESCE(stock_reorder_levels.minimum_quantity, 0)'
+                'COALESCE(inventory_balances.available_quantity, 0)
+                 <= COALESCE(stock_reorder_levels.minimum_quantity, 0)'
             )
             ->count();
 
-
         /*
-|--------------------------------------------------------------------------
-| PRODUCTOS QUE REQUIEREN ATENCIÓN
-|--------------------------------------------------------------------------
-*/
+        |--------------------------------------------------------------------------
+        | PRODUCTOS QUE REQUIEREN ATENCIÓN
+        |--------------------------------------------------------------------------
+        */
 
         $inventoryAlerts = (clone $inventoryBase)
             ->select([
@@ -239,7 +260,6 @@ final class DashboardController
                 'products.name',
                 'products.sku',
                 'inventory_balances.on_hand_quantity',
-                'inventory_balances.reserved_quantity',
                 'inventory_balances.available_quantity',
                 'stock_reorder_levels.minimum_quantity',
             ])
@@ -257,27 +277,21 @@ final class DashboardController
                                 'COALESCE(inventory_balances.available_quantity, 0) > 0'
                             )
                             ->whereRaw(
-                                'COALESCE(inventory_balances.available_quantity, 0) <= COALESCE(stock_reorder_levels.minimum_quantity, 0)'
+                                'COALESCE(inventory_balances.available_quantity, 0)
+                                 <= COALESCE(stock_reorder_levels.minimum_quantity, 0)'
                             );
                     });
             })
             ->orderByRaw(
                 'COALESCE(inventory_balances.available_quantity, 0) ASC'
             )
-            ->limit(8)
+            ->limit(5)
             ->get()
             ->map(function ($item) {
-
-                $onHand = (float) ($item->on_hand_quantity ?? 0);
-
-                $reserved = (float) ($item->reserved_quantity ?? 0);
-
-                $available = (float) (
-                    $item->available_quantity
-                    ?? ($onHand - $reserved)
+                $available = max(
+                    0,
+                    (float) ($item->available_quantity ?? 0)
                 );
-
-                $available = max(0, $available);
 
                 $minimum = (float) (
                     $item->minimum_quantity ?? 0
@@ -294,6 +308,7 @@ final class DashboardController
                         : 'low',
                 ];
             });
+
         /*
         |--------------------------------------------------------------------------
         | COMPRAS
@@ -313,8 +328,14 @@ final class DashboardController
                 '=',
                 'purchases.supplier_id'
             )
-            ->where('purchases.organization_id', $orgId)
-            ->where('purchases.branch_id', $branchId)
+            ->where(
+                'purchases.organization_id',
+                $orgId
+            )
+            ->where(
+                'purchases.branch_id',
+                $branchId
+            )
             ->select([
                 'purchases.id',
                 'purchases.purchase_number',
@@ -324,7 +345,7 @@ final class DashboardController
                 'suppliers.business_name as supplier_name',
             ])
             ->orderByDesc('purchases.created_at')
-            ->limit(5)
+            ->limit(3)
             ->get();
 
         /*
@@ -342,15 +363,30 @@ final class DashboardController
         $monthStart = now()->startOfMonth();
         $monthEnd = now()->copy()->endOfMonth();
 
-        $monthExpenses = (float) DB::table('expenses')
+        $monthExpensesQuery = DB::table('expenses')
             ->where('organization_id', $orgId)
             ->where('branch_id', $branchId)
             ->whereBetween('expense_date', [
                 $monthStart->toDateString(),
                 $monthEnd->toDateString(),
-            ])
-            ->whereIn('status', ['approved', 'paid'])
-            ->sum('amount');
+            ]);
+
+        $monthExpenses = (float) (
+            (clone $monthExpensesQuery)
+                ->whereIn('status', ['approved', 'paid'])
+                ->sum('amount')
+        );
+
+        $monthExpensesPaid = (float) (
+            (clone $monthExpensesQuery)
+                ->where('status', 'paid')
+                ->sum('amount')
+        );
+
+        $monthExpensesPending = max(
+            0,
+            $monthExpenses - $monthExpensesPaid
+        );
 
         /*
         |--------------------------------------------------------------------------
@@ -371,13 +407,16 @@ final class DashboardController
             ->orderByDesc('created_at')
             ->limit(5)
             ->get()
-            ->map(fn($item) => [
+            ->map(fn ($item) => [
                 'type' => 'sale',
                 'label' => 'Venta',
                 'reference' => $item->reference,
                 'amount' => (float) $item->amount,
                 'created_at' => $item->created_at,
-                'url' => route('sales.show', $item->id),
+                'url' => route(
+                    'sales.show',
+                    $item->id
+                ),
             ]);
 
         $recentPurchasesActivity = DB::table('purchases')
@@ -392,13 +431,16 @@ final class DashboardController
             ->orderByDesc('created_at')
             ->limit(5)
             ->get()
-            ->map(fn($item) => [
+            ->map(fn ($item) => [
                 'type' => 'purchase',
                 'label' => 'Compra',
                 'reference' => $item->reference,
                 'amount' => (float) $item->amount,
                 'created_at' => $item->created_at,
-                'url' => route('purchases.show', $item->id),
+                'url' => route(
+                    'purchases.show',
+                    $item->id
+                ),
             ]);
 
         $recentExpenses = DB::table('expenses')
@@ -413,20 +455,23 @@ final class DashboardController
             ->orderByDesc('created_at')
             ->limit(5)
             ->get()
-            ->map(fn($item) => [
+            ->map(fn ($item) => [
                 'type' => 'expense',
                 'label' => 'Gasto',
                 'reference' => $item->reference,
                 'amount' => (float) $item->amount,
                 'created_at' => $item->created_at,
-                'url' => route('expenses.show', $item->id),
+                'url' => route(
+                    'expenses.show',
+                    $item->id
+                ),
             ]);
 
         $recentActivity = $recentSales
             ->concat($recentPurchasesActivity)
             ->concat($recentExpenses)
             ->sortByDesc('created_at')
-            ->take(8)
+            ->take(5)
             ->values();
 
         /*
@@ -438,20 +483,26 @@ final class DashboardController
         $metrics = [
             [
                 'label' => 'Ventas de hoy',
-                'value' => '$' . number_format($salesToday, 2),
+                'value' => '$' . number_format(
+                    $salesToday,
+                    2
+                ),
                 'detail' => $ticketsToday > 0
-                    ? $ticketsToday . ' tickets registrados'
+                    ? $ticketsToday . ' tickets'
                     : 'Sin ventas registradas',
                 'tone' => 'emerald',
             ],
             [
                 'label' => 'Ticket promedio',
-                'value' => '$' . number_format($averageTicket, 2),
-                'detail' => $ticketsToday . ' tickets hoy',
+                'value' => '$' . number_format(
+                    $averageTicket,
+                    2
+                ),
+                'detail' => 'Por ticket',
                 'tone' => 'sky',
             ],
             [
-                'label' => 'Stock bajo',
+                'label' => 'Stock',
                 'value' => (string) $lowStock,
                 'detail' => $outOfStock . ' agotados',
                 'tone' => 'amber',
@@ -490,7 +541,6 @@ final class DashboardController
             'cashSummary' => $cashSummary,
             'activeCashSession' => $activeCashSession,
 
-            'inventoryTotal' => $inventoryTotal,
             'lowStock' => $lowStock,
             'outOfStock' => $outOfStock,
             'inventoryAlerts' => $inventoryAlerts,
@@ -500,6 +550,8 @@ final class DashboardController
 
             'pendingExpenses' => $pendingExpenses,
             'monthExpenses' => $monthExpenses,
+            'monthExpensesPaid' => $monthExpensesPaid,
+            'monthExpensesPending' => $monthExpensesPending,
 
             'recentActivity' => $recentActivity,
         ]);

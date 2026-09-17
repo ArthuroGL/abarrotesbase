@@ -16,6 +16,7 @@
                     <span class="text-lg leading-none">+</span>
                     Nuevo proveedor
                 </a>
+
             </x-slot:actions>
         </x-layout.page-header>
 
@@ -59,7 +60,7 @@
         {{-- =========================================================
              RESUMEN
         ========================================================== --}}
-        <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div class="grid gap-2 sm:grid-cols-2 lg:grid-cols-2">
 
             <x-ui.card padding="p-5" class="relative overflow-hidden">
 
@@ -94,25 +95,6 @@
 
                 <p class="mt-1 text-sm font-medium text-slate-500">
                     Proveedores mostrados
-                </p>
-
-            </x-ui.card>
-
-
-            <x-ui.card padding="p-5" class="relative overflow-hidden sm:col-span-2 lg:col-span-1">
-
-                <div class="absolute inset-y-0 left-0 w-1 bg-sky-500"></div>
-
-                <p class="text-xs font-black uppercase tracking-[0.12em] text-slate-500">
-                    Vista
-                </p>
-
-                <p class="mt-2 text-2xl font-black tracking-tight text-slate-950">
-                    Catálogo
-                </p>
-
-                <p class="mt-1 text-sm font-medium text-slate-500">
-                    Ordenado por razón social
                 </p>
 
             </x-ui.card>
@@ -154,20 +136,7 @@
 
                     <div class="relative">
 
-                        <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4 text-slate-400">
-                            <svg
-                                class="h-5 w-5"
-                                fill="none"
-                                viewBox="0 0 24 24"
-                                stroke-width="2"
-                                stroke="currentColor"
-                                aria-hidden="true">
-                                <path
-                                    stroke-linecap="round"
-                                    stroke-linejoin="round"
-                                    d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
-                            </svg>
-                        </div>
+
 
                         <x-ui.input
                             id="search"
@@ -183,38 +152,6 @@
                 </div>
 
 
-                {{-- Estado --}}
-                <div class="lg:col-span-4">
-
-                    <label
-                        for="status"
-                        class="mb-2 block text-sm font-bold text-slate-700">
-                        Estado
-                    </label>
-
-                    <select
-                        id="status"
-                        name="status"
-                        class="app-input"
-                        onchange="this.form.submit()">
-                        <option value="">
-                            Todos los estados
-                        </option>
-
-                        <option
-                            value="active"
-                            @selected($status==='active' )>
-                            Activos
-                        </option>
-
-                        <option
-                            value="inactive"
-                            @selected($status==='inactive' )>
-                            Inactivos
-                        </option>
-                    </select>
-
-                </div>
 
 
                 {{-- Acciones --}}
@@ -925,19 +862,30 @@
 
 
                     {{-- =================================================
-                         ESTADO
-                    ================================================== --}}
+     ESTADO
+================================================== --}}
                     <div class="border-t border-slate-200 pt-6">
 
                         <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
 
-                            <div class="flex items-start justify-between gap-4">
+                            <div class="flex items-center justify-between gap-4">
 
-                                <div>
+                                {{-- Información --}}
+                                <div class="min-w-0">
 
-                                    <p class="text-sm font-black text-slate-900">
-                                        Estado del proveedor
-                                    </p>
+                                    <div class="flex items-center gap-2">
+
+                                        <p class="text-sm font-black text-slate-900">
+                                            Estado del proveedor
+                                        </p>
+
+                                        <span
+                                            id="supplier_edit_status_badge"
+                                            class="inline-flex items-center rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-black uppercase tracking-wide text-emerald-700">
+                                            Activo
+                                        </span>
+
+                                    </div>
 
                                     <p class="mt-1 text-xs leading-5 text-slate-500">
                                         Los proveedores inactivos no deberían aparecer como opción para nuevas compras.
@@ -946,25 +894,32 @@
                                 </div>
 
 
-                                <label class="relative inline-flex shrink-0 cursor-pointer items-center">
+                                <div class="shrink-0">
 
+                                    {{-- Valor enviado al backend --}}
                                     <input
                                         type="hidden"
                                         name="is_active"
-                                        value="0">
+                                        id="supplier_edit_is_active_value"
+                                        value="1">
 
-                                    <input
-                                        type="checkbox"
-                                        id="supplier_edit_is_active"
-                                        name="is_active"
-                                        value="1"
-                                        class="peer sr-only">
+                                    <button
+                                        type="button"
+                                        id="supplier_edit_status_switch"
+                                        role="switch"
+                                        aria-checked="true"
+                                        aria-label="Cambiar estado del proveedor"
+                                        class="relative h-8 w-14 shrink-0 rounded-full bg-emerald-600 shadow-inner transition-colors duration-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-600">
 
-                                    <span class="h-7 w-12 rounded-full bg-slate-300 transition peer-checked:bg-emerald-600 peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-emerald-600"></span>
+                                        <span
+                                            id="supplier_edit_status_switch_dot"
+                                            class="absolute left-1 top-1 grid h-6 w-6 place-items-center rounded-full bg-white text-[10px] font-black text-emerald-600 shadow-md transition-transform duration-200">
+                                            ✓
+                                        </span>
 
-                                    <span class="absolute left-1 top-1 h-5 w-5 rounded-full bg-white shadow-sm transition peer-checked:translate-x-5"></span>
+                                    </button>
 
-                                </label>
+                                </div>
 
                             </div>
 
@@ -1183,6 +1138,70 @@
             }
         );
 
+        function updateSupplierStatusUI() {
+
+            const valueInput =
+                document.getElementById('supplier_edit_is_active_value');
+
+            const switchButton =
+                document.getElementById('supplier_edit_status_switch');
+
+            const switchDot =
+                document.getElementById('supplier_edit_status_switch_dot');
+
+            const badge =
+                document.getElementById('supplier_edit_status_badge');
+
+            if (!valueInput || !switchButton || !switchDot || !badge) {
+                return;
+            }
+
+            const isActive = valueInput.value === '1';
+
+            switchButton.setAttribute(
+                'aria-checked',
+                isActive ? 'true' : 'false'
+            );
+
+            if (isActive) {
+
+                /*
+                 * SWITCH ACTIVO
+                 */
+                switchButton.className =
+                    'relative h-8 w-14 shrink-0 rounded-full bg-emerald-600 shadow-inner transition-colors duration-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-600';
+
+                switchDot.className =
+                    'absolute left-1 top-1 grid h-6 w-6 place-items-center rounded-full bg-white text-[10px] font-black text-emerald-600 shadow-md transition-transform duration-200 translate-x-6';
+
+                switchDot.textContent = '✓';
+
+                badge.textContent = 'Activo';
+
+                badge.className =
+                    'inline-flex items-center rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-black uppercase tracking-wide text-emerald-700';
+
+            } else {
+
+                /*
+                 * SWITCH INACTIVO
+                 */
+                switchButton.className =
+                    'relative h-8 w-14 shrink-0 rounded-full bg-slate-300 shadow-inner transition-colors duration-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-500';
+
+                switchDot.className =
+                    'absolute left-1 top-1 grid h-6 w-6 place-items-center rounded-full bg-white text-[10px] font-black text-slate-400 shadow-md transition-transform duration-200';
+
+                switchDot.textContent = '';
+
+                badge.textContent = 'Inactivo';
+
+                badge.className =
+                    'inline-flex items-center rounded-full bg-rose-100 px-2 py-0.5 text-[10px] font-black uppercase tracking-wide text-rose-700';
+
+            }
+        }
+
         function openSupplierEditModal(
             id,
             code,
@@ -1260,9 +1279,14 @@
             document.getElementById('supplier_edit_address').value =
                 address ?? '';
 
-            document.getElementById('supplier_edit_is_active').checked =
-                Boolean(isActive);
+            const statusValue =
+                document.getElementById('supplier_edit_is_active_value');
 
+            if (statusValue) {
+                statusValue.value = isActive ? '1' : '0';
+            }
+
+            updateSupplierStatusUI();
 
             /*
              * Mostrar modal
@@ -1302,6 +1326,25 @@
 
 
         document.addEventListener('DOMContentLoaded', function() {
+
+            const supplierStatusSwitch =
+                document.getElementById('supplier_edit_status_switch');
+
+            supplierStatusSwitch?.addEventListener('click', function() {
+
+                const valueInput =
+                    document.getElementById('supplier_edit_is_active_value');
+
+                if (!valueInput) {
+                    return;
+                }
+
+                valueInput.value =
+                    valueInput.value === '1' ? '0' : '1';
+
+                updateSupplierStatusUI();
+
+            });
 
             const modal = document.getElementById('supplierEditModal');
 

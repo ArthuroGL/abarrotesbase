@@ -15,7 +15,7 @@
                     href="{{ route('products.index') }}"
                     class="inline-flex min-h-11 items-center justify-center rounded-xl border border-slate-300 bg-white px-4 text-sm font-bold text-slate-700 transition hover:bg-slate-50"
                 >
-                    Volver al catálogo
+                    ← Volver al catálogo
                 </a>
             </x-slot:actions>
         </x-layout.page-header>

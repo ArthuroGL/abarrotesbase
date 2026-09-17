@@ -79,7 +79,7 @@ final class StockController extends Controller
      */
         if ($stockStatus) {
             $balanceTable = 'inventory_balances';
-            $reorderTable = 'reorder_levels';
+            $reorderTable = 'stock_reorder_levels';
 
             $query->where(function ($q) use (
                 $stockStatus,
@@ -171,8 +171,7 @@ final class StockController extends Controller
             $reorder = $stockItem->reorderLevel;
 
             $onHand = (float) ($balance?->on_hand_quantity ?? 0);
-            $reserved = (float) ($balance?->reserved_quantity ?? 0);
-            $available = max(0, $onHand - $reserved);
+            $available = $onHand;
             $minimum = (float) ($reorder?->minimum_quantity ?? 0);
 
             if ($available <= 0) {
@@ -214,7 +213,14 @@ final class StockController extends Controller
         $branchId = session('current_branch_id')
             ?? DB::table('branches')->where('organization_id', $orgId)->value('id');
 
-        DB::transaction(function () use ($validated, $orgId, $branchId) {
+        $stockItem = StockItem::query()
+            ->where('organization_id', $orgId)
+            ->where('id', $validated['stock_item_id'])
+            ->where('is_active', true)
+            ->with('inventoryUnit')
+            ->firstOrFail();
+
+        DB::transaction(function () use ($validated, $orgId, $branchId, $stockItem) {
             $qtyDelta = $validated['movement_type'] === 'adjustment_out'
                 ? -abs((float) $validated['quantity'])
                 : abs((float) $validated['quantity']);
@@ -246,26 +252,36 @@ final class StockController extends Controller
                 ->first();
 
             if ($balance) {
-                $newOnHand = max(0, (float) $balance->on_hand_quantity + $qtyDelta);
+                $currentOnHand = (float) $balance->on_hand_quantity;
+
+                if (
+                    $validated['movement_type'] === 'adjustment_out'
+                    && (float) $validated['quantity'] > $currentOnHand
+                ) {
+                    throw \Illuminate\Validation\ValidationException::withMessages([
+                        'quantity' => sprintf(
+                            'No puedes retirar %s %s. La existencia actual es %s %s.',
+                            number_format((float) $validated['quantity'], 2),
+                            $stockItem->inventoryUnit?->code ?? 'unidades',
+                            number_format($currentOnHand, 2),
+                            $stockItem->inventoryUnit?->code ?? 'unidades',
+                        ),
+                    ]);
+                }
+
+                $newOnHand = $currentOnHand + $qtyDelta;
+
                 DB::table('inventory_balances')
                     ->where('organization_id', $orgId)
                     ->where('branch_id', $branchId)
                     ->where('stock_item_id', $validated['stock_item_id'])
                     ->update([
                         'on_hand_quantity' => $newOnHand,
-                        'weighted_average_cost' => $cost > 0 ? $cost : $balance->weighted_average_cost,
+                        'weighted_average_cost' => $cost > 0
+                            ? $cost
+                            : $balance->weighted_average_cost,
                         'version' => ((int) $balance->version) + 1,
                     ]);
-            } else {
-                DB::table('inventory_balances')->insert([
-                    'organization_id' => $orgId,
-                    'branch_id' => $branchId,
-                    'stock_item_id' => $validated['stock_item_id'],
-                    'on_hand_quantity' => max(0, $qtyDelta),
-                    'reserved_quantity' => 0,
-                    'weighted_average_cost' => $cost,
-                    'version' => 1,
-                ]);
             }
         });
 

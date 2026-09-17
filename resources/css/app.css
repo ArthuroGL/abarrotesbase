@@ -5,6 +5,17 @@
 }
 
 @layer components {
+    .app-modal {
+        isolation: isolate;
+    }
+
+    .animate-modal-backdrop {
+        animation: modal-backdrop-in 160ms ease-out;
+    }
+
+    .animate-modal-panel {
+        animation: modal-panel-in 180ms ease-out;
+    }
     /*
      * INPUT BASE
      *
@@ -21,6 +32,10 @@
     .nav-link {
         @apply flex min-h-11 items-center gap-3 rounded-xl px-3 py-3 text-sm font-semibold text-slate-400 transition hover:bg-slate-900 hover:text-white;
     }
+
+    .nav-link-active {
+        @apply bg-emerald-500/15 text-emerald-300 hover:bg-emerald-500/20 hover:text-emerald-200;
+    }
     .sidebar-nav-link {
         transition:
             background-color 180ms ease,
@@ -33,10 +48,77 @@
         transition: opacity 180ms ease;
     }
 
-    .nav-link-active {
-        @apply bg-emerald-500/15 text-emerald-300 hover:bg-emerald-500/20 hover:text-emerald-200;
+    /*
+     * MANIJA DEL SIDEBAR
+     */
+
+    .sidebar-edge-toggle {
+        position: fixed;
+
+        top: 50%;
+        left: 17.5rem;
+
+        width: 36px;
+        height: 96px;
+
+        transform: translateY(-50%);
+
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        padding: 0;
+        border: 0;
+
+        background: transparent;
+
+        cursor: pointer;
+
+        z-index: 50;
+
+        transition: left 300ms ease-in-out;
     }
 
+    .sidebar-edge-toggle span {
+        display: block;
+
+        width: 6px;
+        height: 56px;
+
+        border-radius: 9999px;
+
+        background-color: transparent;
+
+        transition:
+            height 160ms ease,
+            width 160ms ease,
+            background-color 160ms ease,
+            box-shadow 160ms ease;
+    }
+
+    .sidebar-edge-toggle:hover span {
+        width: 7px;
+        height: 72px;
+
+        background-color: rgb(16 185 129);
+
+        box-shadow:
+            0 0 0 4px rgb(16 185 129 / 0.10);
+    }
+
+    .sidebar-edge-toggle:focus-visible {
+        outline: none;
+    }
+
+    .sidebar-edge-toggle:focus-visible span {
+        width: 7px;
+        height: 72px;
+
+        background-color: rgb(16 185 129);
+
+        box-shadow:
+            0 0 0 4px rgb(16 185 129 / 0.10);
+    }
     /*
      * TARJETAS KPI
      */
@@ -85,16 +167,6 @@
     to {
         opacity: 1;
         transform: translateY(0) scale(1);
-    }
-}
-
-@layer components {
-    .animate-modal-backdrop {
-        animation: modal-backdrop-in 160ms ease-out;
-    }
-
-    .animate-modal-panel {
-        animation: modal-panel-in 180ms ease-out;
     }
 }
 

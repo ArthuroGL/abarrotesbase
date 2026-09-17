@@ -257,7 +257,7 @@
                             scope="col"
                             class="whitespace-nowrap px-5 py-3.5 text-right text-xs font-black uppercase tracking-wider text-slate-500"
                         >
-                            Precio
+                            Precio de venta
                         </th>
 
                         <th

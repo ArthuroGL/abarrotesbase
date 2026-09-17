@@ -273,6 +273,102 @@
     </div>
 
     {{-- =========================
+     MODAL CANTIDAD A GRANEL
+    ========================== --}}
+    <x-ui.modal
+        id="bulk-quantity-modal"
+        size="sm"
+        title="Cantidad del producto"
+        description="Elige si quieres vender por importe o por peso."
+        close-id="close-bulk-quantity">
+
+        <div class="px-5 py-5 sm:px-6">
+            <div class="rounded-2xl border border-slate-200 bg-slate-50 p-5">
+                <p id="bulk-product-name" class="text-lg font-black text-slate-900">Producto</p>
+                <div class="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
+                    <span id="bulk-product-price" class="font-black text-emerald-700">$ 0.00 MXN / kg</span>
+                    <span class="text-slate-300">•</span>
+                    <span id="bulk-product-stock" class="font-semibold text-slate-500">Stock disponible: 0 kg</span>
+                </div>
+            </div>
+
+            <div class="mt-5 grid grid-cols-2 rounded-xl bg-slate-100 p-1">
+                <button type="button" id="bulk-mode-money"
+                    class="min-h-12 rounded-lg bg-white px-4 py-3 text-sm font-black text-slate-900 shadow-sm ring-1 ring-slate-200 transition">
+                    Dinero ($)
+                </button>
+                <button type="button" id="bulk-mode-weight"
+                    class="min-h-12 rounded-lg bg-transparent px-4 py-3 text-sm font-black text-slate-500 transition hover:text-slate-900">
+                    Peso (kg/g)
+                </button>
+            </div>
+
+            <div id="bulk-money-panel" class="mt-5">
+                <label for="bulk-money-input" class="mb-2 block text-sm font-black text-slate-900">Importe</label>
+                <div class="relative">
+                    <span class="pointer-events-none absolute inset-y-0 left-4 flex items-center text-xl font-black text-slate-400">$</span>
+                    <input id="bulk-money-input" type="number" min="0.01" step="0.01"
+                        inputmode="decimal" value="10.00"
+                        class="app-input min-h-16 pl-10 text-2xl font-black tabular-nums">
+                </div>
+                <div class="mt-3 grid grid-cols-4 gap-2">
+                    <button type="button" data-bulk-money="5" class="bulk-money-shortcut min-h-11 rounded-xl border border-slate-200 bg-white px-2 text-sm font-black text-slate-700 transition hover:border-emerald-300 hover:bg-emerald-50">$5</button>
+                    <button type="button" data-bulk-money="10" class="bulk-money-shortcut min-h-11 rounded-xl border border-slate-200 bg-white px-2 text-sm font-black text-slate-700 transition hover:border-emerald-300 hover:bg-emerald-50">$10</button>
+                    <button type="button" data-bulk-money="20" class="bulk-money-shortcut min-h-11 rounded-xl border border-slate-200 bg-white px-2 text-sm font-black text-slate-700 transition hover:border-emerald-300 hover:bg-emerald-50">$20</button>
+                    <button type="button" data-bulk-money="50" class="bulk-money-shortcut min-h-11 rounded-xl border border-slate-200 bg-white px-2 text-sm font-black text-slate-700 transition hover:border-emerald-300 hover:bg-emerald-50">$50</button>
+                </div>
+            </div>
+
+            <div id="bulk-weight-panel" class="mt-5 hidden">
+                <label for="bulk-weight-input" class="mb-2 block text-sm font-black text-slate-900">Peso</label>
+                <div class="relative">
+                    <input id="bulk-weight-input" type="number" min="0.001" step="0.001"
+                        inputmode="decimal" value="0.500"
+                        class="app-input min-h-16 pr-20 text-2xl font-black tabular-nums">
+                    <span class="pointer-events-none absolute inset-y-0 right-4 flex items-center text-sm font-black text-slate-400">kg</span>
+                </div>
+                <div class="mt-3 grid grid-cols-3 gap-2">
+                    <button type="button" data-bulk-weight="0.25" class="bulk-weight-shortcut min-h-11 rounded-xl border border-slate-200 bg-white px-2 text-sm font-black text-slate-700 transition hover:border-emerald-300 hover:bg-emerald-50">1/4 kg</button>
+                    <button type="button" data-bulk-weight="0.5" class="bulk-weight-shortcut min-h-11 rounded-xl border border-slate-200 bg-white px-2 text-sm font-black text-slate-700 transition hover:border-emerald-300 hover:bg-emerald-50">1/2 kg</button>
+                    <button type="button" data-bulk-weight="1" class="bulk-weight-shortcut min-h-11 rounded-xl border border-slate-200 bg-white px-2 text-sm font-black text-slate-700 transition hover:border-emerald-300 hover:bg-emerald-50">1 kg</button>
+                </div>
+            </div>
+
+            <div class="mt-5 rounded-2xl border border-emerald-200 bg-emerald-50 p-5">
+                <p class="text-xs font-black uppercase tracking-[0.14em] text-emerald-800">Conversión</p>
+                <div class="mt-3 grid gap-3 sm:grid-cols-2">
+                    <div>
+                        <p class="text-xs font-semibold text-emerald-700">Peso</p>
+                        <p id="bulk-converted-weight" class="mt-1 text-xl font-black text-emerald-900">0.500 kg</p>
+                        <p id="bulk-converted-grams" class="mt-0.5 text-xs font-semibold text-emerald-700">500 gramos</p>
+                    </div>
+                    <div>
+                        <p class="text-xs font-semibold text-emerald-700">Importe</p>
+                        <p id="bulk-converted-money" class="mt-1 text-xl font-black text-emerald-900">$ 10.00 MXN</p>
+                    </div>
+                </div>
+            </div>
+
+            <div id="bulk-stock-error"
+                class="mt-4 hidden rounded-2xl border-2 border-rose-200 bg-rose-50 p-4 text-sm font-semibold leading-6 text-rose-700">
+            </div>
+        </div>
+
+        <x-slot:footer>
+            <div class="grid gap-3 sm:grid-cols-2">
+                <button type="button" id="cancel-bulk-quantity"
+                    class="min-h-14 rounded-xl border-2 border-slate-300 bg-white px-5 py-3 text-base font-black text-slate-700 transition hover:border-slate-400 hover:bg-slate-100">
+                    Cancelar
+                </button>
+                <button type="button" id="confirm-bulk-quantity"
+                    class="min-h-14 rounded-xl bg-emerald-600 px-5 py-3 text-base font-black text-white shadow-sm transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400">
+                    Agregar al ticket
+                </button>
+            </div>
+        </x-slot:footer>
+    </x-ui.modal>
+
+    {{-- =========================
      MODAL DE COBRO
 ========================== --}}
     <x-ui.modal
@@ -838,16 +934,17 @@
                         button.dataset.product.replace(/&apos;/g, "'")
                     );
 
-                    addToCart(product);
+                    const addedDirectly = addToCart(product);
 
-                    searchInput.value = '';
-                    searchResults.innerHTML = `
+                    if (addedDirectly) {
+                        searchInput.value = '';
+                        searchResults.innerHTML = `
                             <div class="rounded-xl border border-dashed border-slate-200 p-8 text-center text-sm text-slate-400">
                                 Producto agregado al ticket.
                             </div>
                         `;
-
-                    searchInput.focus();
+                        searchInput.focus();
+                    }
                 });
 
             });
@@ -863,7 +960,358 @@
                 .replaceAll("'", '&#039;');
         }
 
+        let bulkProduct = null;
+        let bulkMode = 'money';
+        let bulkEditingIndex = null;
+
+        const bulkQuantityModal = $('bulk-quantity-modal');
+        const bulkProductName = $('bulk-product-name');
+        const bulkProductPrice = $('bulk-product-price');
+        const bulkProductStock = $('bulk-product-stock');
+        const bulkMoneyPanel = $('bulk-money-panel');
+        const bulkWeightPanel = $('bulk-weight-panel');
+        const bulkMoneyInput = $('bulk-money-input');
+        const bulkWeightInput = $('bulk-weight-input');
+        const bulkConvertedWeight = $('bulk-converted-weight');
+        const bulkConvertedGrams = $('bulk-converted-grams');
+        const bulkConvertedMoney = $('bulk-converted-money');
+        const bulkStockError = $('bulk-stock-error');
+        const confirmBulkQuantity = $('confirm-bulk-quantity');
+
+        function roundMoney(value) {
+            return Math.round((Number(value) + Number.EPSILON) * 100) / 100;
+        }
+
+        function roundQuantity(value) {
+            return Math.round((Number(value) + Number.EPSILON) * 1000000) / 1000000;
+        }
+
+        function cartItemTotal(item) {
+            if (item.allow_decimal && Number.isFinite(Number(item.sale_amount))) {
+                return Number(item.sale_amount);
+            }
+
+            return Number(item.price) * Number(item.quantity);
+        }
+
+        function cartTotal() {
+            return state.cart.reduce(
+                (sum, item) => sum + cartItemTotal(item),
+                0
+            );
+        }
+
+        function formatQuantity(quantity, allowDecimal = true) {
+            const value = Number(quantity || 0);
+
+            if (!allowDecimal) {
+                return value.toLocaleString('es-MX', {
+                    maximumFractionDigits: 0
+                });
+            }
+
+            return value.toLocaleString('es-MX', {
+                minimumFractionDigits: 3,
+                maximumFractionDigits: 6
+            });
+        }
+
+        function openBulkQuantityModal(product, editIndex = null) {
+            bulkProduct = {
+                ...product,
+                price: Number(product.price),
+                stock: Number(product.stock),
+                conversion_factor: Number(product.conversion_factor || 1),
+            };
+
+            bulkEditingIndex = editIndex;
+
+            const existing = editIndex !== null ?
+                state.cart[editIndex] :
+                null;
+
+            bulkMode = existing?.sale_mode === 'weight' ?
+                'weight' :
+                'money';
+
+            const initialQuantity = existing ?
+                Number(existing.quantity) :
+                0.5;
+
+            const initialMoney = existing ?
+                Number(existing.sale_amount ?? (existing.price * existing.quantity)) :
+                roundMoney(bulkProduct.price * initialQuantity);
+
+            bulkProductName.textContent = bulkProduct.name || 'Producto';
+            bulkProductPrice.textContent = `${money(bulkProduct.price)} / kg`;
+            bulkProductStock.textContent =
+                `Stock disponible: ${formatQuantity(bulkProduct.stock)} kg`;
+
+            bulkMoneyInput.value =
+                Math.max(0.01, initialMoney).toFixed(2);
+
+            bulkWeightInput.value =
+                Math.max(0.001, initialQuantity).toFixed(6);
+
+            setBulkMode(bulkMode);
+
+            bulkQuantityModal.classList.remove('hidden');
+            bulkQuantityModal.classList.add('flex');
+
+            updateBulkConversion();
+
+            setTimeout(() => {
+                const input = bulkMode === 'money' ?
+                    bulkMoneyInput :
+                    bulkWeightInput;
+
+                input.focus();
+                input.select();
+            }, 50);
+        }
+
+        function closeBulkQuantityModal() {
+            bulkQuantityModal.classList.add('hidden');
+            bulkQuantityModal.classList.remove('flex');
+
+            bulkProduct = null;
+            bulkEditingIndex = null;
+
+            bulkStockError.classList.add('hidden');
+            bulkStockError.textContent = '';
+        }
+
+        function setBulkMode(mode) {
+            bulkMode = mode === 'weight' ? 'weight' : 'money';
+
+            const moneyButton = $('bulk-mode-money');
+            const weightButton = $('bulk-mode-weight');
+
+            const activeClasses = [
+                'bg-white', 'text-slate-900', 'shadow-sm',
+                'ring-1', 'ring-slate-200'
+            ];
+
+            const inactiveClasses = [
+                'bg-transparent', 'text-slate-500',
+                'shadow-none', 'ring-0'
+            ];
+
+            const activeButton =
+                bulkMode === 'money' ? moneyButton : weightButton;
+
+            const inactiveButton =
+                bulkMode === 'money' ? weightButton : moneyButton;
+
+            activeButton.classList.remove(...inactiveClasses);
+            activeButton.classList.add(...activeClasses);
+
+            inactiveButton.classList.remove(...activeClasses);
+            inactiveButton.classList.add(...inactiveClasses);
+
+            bulkMoneyPanel.classList.toggle(
+                'hidden',
+                bulkMode !== 'money'
+            );
+
+            bulkWeightPanel.classList.toggle(
+                'hidden',
+                bulkMode !== 'weight'
+            );
+
+            updateBulkConversion();
+        }
+
+        function getBulkValues() {
+            if (!bulkProduct) {
+                return {
+                    quantity: 0,
+                    amount: 0,
+                    inventoryQuantity: 0
+                };
+            }
+
+            const price = Number(bulkProduct.price);
+
+            if (!price || price <= 0) {
+                return {
+                    quantity: 0,
+                    amount: 0,
+                    inventoryQuantity: 0
+                };
+            }
+
+            if (bulkMode === 'money') {
+                const requestedAmount =
+                    Number(bulkMoneyInput.value || 0);
+
+                const quantity = roundQuantity(
+                    requestedAmount / price
+                );
+
+                const amount = roundMoney(
+                    quantity * price
+                );
+
+                return {
+                    quantity,
+                    amount,
+                    inventoryQuantity: quantity * Number(bulkProduct.conversion_factor || 1)
+                };
+            }
+
+            const quantity = roundQuantity(
+                Number(bulkWeightInput.value || 0)
+            );
+
+            const amount = roundMoney(
+                quantity * price
+            );
+
+            return {
+                quantity,
+                amount,
+                inventoryQuantity: quantity * Number(bulkProduct.conversion_factor || 1)
+            };
+        }
+
+        function updateBulkConversion() {
+            if (!bulkProduct) {
+                return;
+            }
+
+            const values = getBulkValues();
+
+            bulkConvertedWeight.textContent =
+                `${formatQuantity(values.quantity)} kg`;
+
+            bulkConvertedGrams.textContent =
+                `${(values.quantity * 1000).toLocaleString('es-MX', {
+                    minimumFractionDigits: 0,
+                    maximumFractionDigits: 3
+                })} gramos`;
+
+            bulkConvertedMoney.textContent =
+                money(values.amount);
+
+            const insufficient =
+                values.inventoryQuantity >
+                Number(bulkProduct.stock) + 0.0000001;
+
+            bulkStockError.classList.toggle(
+                'hidden',
+                !insufficient
+            );
+
+            if (insufficient) {
+                bulkStockError.textContent =
+                    `La cantidad seleccionada supera la existencia disponible. Disponible: ${formatQuantity(bulkProduct.stock)} kg.`;
+            } else {
+                bulkStockError.textContent = '';
+            }
+
+            confirmBulkQuantity.disabled = !values.quantity ||
+                values.quantity <= 0 ||
+                values.amount <= 0 ||
+                insufficient;
+        }
+
+        function saveBulkQuantity() {
+            if (!bulkProduct) {
+                return;
+            }
+
+            const values = getBulkValues();
+
+            if (
+                !values.quantity ||
+                values.quantity <= 0 ||
+                values.amount <= 0
+            ) {
+                showMessage('Captura una cantidad válida.', 'error');
+                return;
+            }
+
+            if (
+                values.inventoryQuantity >
+                Number(bulkProduct.stock) + 0.0000001
+            ) {
+                showMessage(
+                    'La cantidad seleccionada supera la existencia disponible.',
+                    'error'
+                );
+                return;
+            }
+
+            if (bulkEditingIndex !== null) {
+                const item = state.cart[bulkEditingIndex];
+
+                if (!item) {
+                    closeBulkQuantityModal();
+                    return;
+                }
+
+                item.quantity = values.quantity;
+                item.sale_mode = bulkMode;
+                item.sale_amount = values.amount;
+
+                renderCart();
+                closeBulkQuantityModal();
+                searchInput.focus();
+                return;
+            }
+
+            const existingIndex = state.cart.findIndex(item =>
+                item.stock_item_id === bulkProduct.stock_item_id &&
+                item.product_unit_id === bulkProduct.product_unit_id
+            );
+
+            if (existingIndex !== -1) {
+                const existing = state.cart[existingIndex];
+
+                existing.quantity = roundQuantity(
+                    Number(existing.quantity) + values.quantity
+                );
+
+                existing.sale_mode = 'weight';
+                existing.sale_amount = roundMoney(
+                    existing.price * existing.quantity
+                );
+            } else {
+                state.cart.push({
+                    stock_item_id: bulkProduct.stock_item_id,
+                    product_unit_id: bulkProduct.product_unit_id,
+                    name: bulkProduct.name,
+                    sku: bulkProduct.sku,
+                    unit: bulkProduct.unit,
+                    price: Number(bulkProduct.price),
+                    quantity: values.quantity,
+                    allow_decimal: true,
+                    stock: Number(bulkProduct.stock),
+                    conversion_factor: Number(bulkProduct.conversion_factor || 1),
+                    sale_mode: bulkMode,
+                    sale_amount: values.amount,
+                });
+            }
+
+            renderCart();
+            closeBulkQuantityModal();
+
+            searchInput.value = '';
+            searchResults.innerHTML = `
+                <div class="rounded-xl border border-dashed border-slate-200 p-8 text-center text-sm text-slate-400">
+                    Producto agregado al ticket.
+                </div>
+            `;
+
+            searchInput.focus();
+        }
+
         function addToCart(product) {
+            if (product.allow_decimal) {
+                openBulkQuantityModal(product);
+                return false;
+            }
 
             const existing = state.cart.find(item =>
                 item.stock_item_id === product.stock_item_id &&
@@ -871,21 +1319,20 @@
             );
 
             if (existing) {
-
                 const nextQuantity =
                     Number(existing.quantity) + 1;
 
-                if (
-                    !product.allow_decimal &&
-                    nextQuantity % 1 !== 0
-                ) {
-                    return;
+                if (nextQuantity > Number(product.stock)) {
+                    showMessage(
+                        'La cantidad seleccionada supera la existencia disponible.',
+                        'error'
+                    );
+                    return false;
                 }
 
                 existing.quantity = nextQuantity;
-
+                existing.sale_amount = null;
             } else {
-
                 state.cart.push({
                     stock_item_id: product.stock_item_id,
                     product_unit_id: product.product_unit_id,
@@ -894,103 +1341,124 @@
                     unit: product.unit,
                     price: Number(product.price),
                     quantity: 1,
-                    allow_decimal: product.allow_decimal,
+                    allow_decimal: false,
                     stock: Number(product.stock),
+                    conversion_factor: Number(product.conversion_factor || 1),
+                    sale_mode: 'unit',
+                    sale_amount: null,
                 });
             }
 
             renderCart();
+            return true;
         }
 
         function renderCart() {
-
             if (!state.cart.length) {
-
                 cartElement.innerHTML = `
-                        <div
-                            id="empty-cart"
-                            class="grid min-h-[280px] place-items-center text-center text-sm text-slate-400">
-                            <div>
-                                <div class="text-3xl font-black">+</div>
-                                <p class="mt-2">
-                                    Agrega productos al ticket.
-                                </p>
-                            </div>
+                    <div id="empty-cart"
+                        class="grid min-h-[280px] place-items-center text-center text-sm text-slate-400">
+                        <div>
+                            <div class="text-3xl font-black">+</div>
+                            <p class="mt-2">Agrega productos al ticket.</p>
                         </div>
-                    `;
+                    </div>
+                `;
 
                 checkoutButton.disabled = true;
                 updateTotals();
                 return;
             }
 
-            cartElement.innerHTML = state.cart.map((item, index) => `
-    <div class="rounded-2xl border border-slate-200 bg-white p-4">
+            cartElement.innerHTML = state.cart.map((item, index) => {
+                const isBulk = Boolean(item.allow_decimal);
+                const lineTotal = cartItemTotal(item);
 
-        <div class="flex items-start justify-between gap-3">
+                const quantityText = isBulk ?
+                    `${formatQuantity(item.quantity)} kg` :
+                    `${formatQuantity(item.quantity, false)} ${Number(item.quantity) === 1 ? 'pieza' : 'piezas'}`;
 
-            <div class="min-w-0">
+                const detailText = isBulk ?
+                    `${money(item.price)} / kg · ${quantityText}` :
+                    `${money(item.price)} · ${escapeHtml(item.unit || '')}`;
 
-                <p class="truncate text-base font-black text-slate-900">
-                    ${escapeHtml(item.name)}
-                </p>
+                return `
+                    <div class="rounded-2xl border border-slate-200 bg-white p-4">
+                        <div class="flex items-start justify-between gap-3">
+                            <div class="min-w-0">
+                                <p class="truncate text-base font-black text-slate-900">
+                                    ${escapeHtml(item.name)}
+                                </p>
+                                <p class="mt-1 text-sm text-slate-500">
+                                    ${detailText}
+                                </p>
+                                ${
+                                    isBulk
+                                        ? `<p class="mt-1 text-xs font-semibold text-slate-400">
+                                            ${item.sale_mode === 'money'
+                                                ? 'Venta por importe'
+                                                : 'Venta por peso'}
+                                           </p>`
+                                        : ''
+                                }
+                            </div>
 
-                <p class="mt-1 text-sm text-slate-500">
-                    ${money(item.price)} · ${escapeHtml(item.unit || '')}
-                </p>
+                            <button type="button"
+                                data-index="${index}"
+                                class="remove-line min-h-10 shrink-0 rounded-lg px-2 text-sm font-bold text-rose-600 transition hover:bg-rose-50 hover:text-rose-700">
+                                Quitar
+                            </button>
+                        </div>
 
-            </div>
+                        ${
+                            isBulk
+                                ? `
+                                    <div class="mt-4 flex items-center justify-between gap-3">
+                                        <button type="button"
+                                            data-index="${index}"
+                                            class="edit-bulk-line min-h-11 rounded-xl border border-slate-300 bg-white px-4 text-sm font-black text-slate-700 transition hover:border-emerald-300 hover:bg-emerald-50">
+                                            Modificar cantidad
+                                        </button>
+                                        <strong class="text-lg font-black text-slate-900">
+                                            ${money(lineTotal)}
+                                        </strong>
+                                    </div>
+                                `
+                                : `
+                                    <div class="mt-4 flex items-center justify-between gap-3">
+                                        <div class="flex min-h-11 items-center overflow-hidden rounded-xl border border-slate-300 bg-white">
+                                            <button type="button"
+                                                data-index="${index}"
+                                                class="quantity-minus grid h-11 w-11 shrink-0 place-items-center text-xl font-black text-slate-600 transition hover:bg-slate-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-emerald-600"
+                                                aria-label="Disminuir cantidad">
+                                                −
+                                            </button>
 
-            <button
-                type="button"
-                data-index="${index}"
-                class="remove-line min-h-10 shrink-0 rounded-lg px-2 text-sm font-bold text-rose-600 transition hover:bg-rose-50 hover:text-rose-700">
-                Quitar
-            </button>
+                                            <input data-index="${index}"
+                                                value="${item.quantity}"
+                                                type="number"
+                                                min="1"
+                                                step="1"
+                                                aria-label="Cantidad de ${escapeHtml(item.name)}"
+                                                class="quantity-input h-11 w-20 border-x border-slate-300 bg-white px-2 text-center text-base font-black text-slate-900 outline-none focus:bg-emerald-50">
 
-        </div>
+                                            <button type="button"
+                                                data-index="${index}"
+                                                class="quantity-plus grid h-11 w-11 shrink-0 place-items-center text-xl font-black text-slate-600 transition hover:bg-slate-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-emerald-600"
+                                                aria-label="Aumentar cantidad">
+                                                +
+                                            </button>
+                                        </div>
 
-
-        <div class="mt-4 flex items-center justify-between gap-3">
-
-            <div class="flex min-h-11 items-center overflow-hidden rounded-xl border border-slate-300 bg-white">
-
-                <button
-                    type="button"
-                    data-index="${index}"
-                    class="quantity-minus grid h-11 w-11 shrink-0 place-items-center text-xl font-black text-slate-600 transition hover:bg-slate-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-emerald-600"
-                    aria-label="Disminuir cantidad">
-                    −
-                </button>
-
-                <input
-                    data-index="${index}"
-                    value="${item.quantity}"
-                    type="number"
-                    min="0.001"
-                    step="${item.allow_decimal ? '0.001' : '1'}"
-                    aria-label="Cantidad de ${escapeHtml(item.name)}"
-                    class="quantity-input h-11 w-20 border-x border-slate-300 bg-white px-2 text-center text-base font-black text-slate-900 outline-none focus:bg-emerald-50">
-
-                <button
-                    type="button"
-                    data-index="${index}"
-                    class="quantity-plus grid h-11 w-11 shrink-0 place-items-center text-xl font-black text-slate-600 transition hover:bg-slate-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-emerald-600"
-                    aria-label="Aumentar cantidad">
-                    +
-                </button>
-
-            </div>
-
-
-            <strong class="text-lg font-black text-slate-900">
-                ${money(item.price * item.quantity)}
-            </strong>
-
-        </div>
-
-    </div>
-`).join('');
+                                        <strong class="text-lg font-black text-slate-900">
+                                            ${money(lineTotal)}
+                                        </strong>
+                                    </div>
+                                `
+                        }
+                    </div>
+                `;
+            }).join('');
 
             checkoutButton.disabled = false;
 
@@ -999,81 +1467,118 @@
         }
 
         function bindCartEvents() {
-
             document.querySelectorAll('.remove-line').forEach(button => {
                 button.addEventListener('click', () => {
-
                     state.cart.splice(
                         Number(button.dataset.index),
                         1
                     );
-
                     renderCart();
                 });
             });
 
-            document.querySelectorAll('.quantity-minus').forEach(button => {
-
+            document.querySelectorAll('.edit-bulk-line').forEach(button => {
                 button.addEventListener('click', () => {
-
                     const index = Number(button.dataset.index);
                     const item = state.cart[index];
 
-                    item.quantity =
-                        Math.max(
-                            item.allow_decimal ? 0.001 : 1,
-                            Number(item.quantity) - 1
-                        );
+                    if (!item) {
+                        return;
+                    }
 
+                    openBulkQuantityModal({
+                        stock_item_id: item.stock_item_id,
+                        product_unit_id: item.product_unit_id,
+                        name: item.name,
+                        sku: item.sku,
+                        unit: item.unit,
+                        price: item.price,
+                        stock: item.stock,
+                        conversion_factor: item.conversion_factor || 1,
+                        allow_decimal: true,
+                    }, index);
+                });
+            });
+
+            document.querySelectorAll('.quantity-minus').forEach(button => {
+                button.addEventListener('click', () => {
+                    const index = Number(button.dataset.index);
+                    const item = state.cart[index];
+
+                    if (!item) {
+                        return;
+                    }
+
+                    item.quantity = Math.max(
+                        1,
+                        Number(item.quantity) - 1
+                    );
+
+                    item.sale_amount = null;
                     renderCart();
                 });
             });
 
             document.querySelectorAll('.quantity-plus').forEach(button => {
-
                 button.addEventListener('click', () => {
-
                     const index = Number(button.dataset.index);
                     const item = state.cart[index];
 
-                    item.quantity =
+                    if (!item) {
+                        return;
+                    }
+
+                    const nextQuantity =
                         Number(item.quantity) + 1;
 
+                    if (nextQuantity > Number(item.stock)) {
+                        showMessage(
+                            'La cantidad seleccionada supera la existencia disponible.',
+                            'error'
+                        );
+                        return;
+                    }
+
+                    item.quantity = nextQuantity;
+                    item.sale_amount = null;
                     renderCart();
                 });
             });
 
             document.querySelectorAll('.quantity-input').forEach(input => {
-
                 input.addEventListener('change', () => {
-
                     const index = Number(input.dataset.index);
                     const item = state.cart[index];
+
+                    if (!item) {
+                        return;
+                    }
 
                     let quantity = Number(input.value);
 
                     if (!quantity || quantity <= 0) {
-                        quantity = item.allow_decimal ? 0.001 : 1;
+                        quantity = 1;
                     }
 
-                    if (!item.allow_decimal) {
-                        quantity = Math.round(quantity);
+                    quantity = Math.round(quantity);
+
+                    if (quantity > Number(item.stock)) {
+                        showMessage(
+                            'La cantidad seleccionada supera la existencia disponible.',
+                            'error'
+                        );
+                        quantity = Number(item.stock);
                     }
 
                     item.quantity = quantity;
-
+                    item.sale_amount = null;
                     renderCart();
                 });
             });
         }
 
         function updateTotals() {
-
-            const subtotal = state.cart.reduce(
-                (sum, item) =>
-                sum + (item.price * item.quantity),
-                0
-            );
+            const subtotal = cartTotal();
 
             $('subtotal').textContent = money(subtotal);
             $('tax').textContent = money(0);
@@ -1084,11 +1589,7 @@
 
             if (!state.cart.length) return;
 
-            const total = state.cart.reduce(
-                (sum, item) =>
-                sum + (item.price * item.quantity),
-                0
-            );
+            const total = cartTotal();
 
             $('payment-total').textContent = money(total);
 
@@ -1112,11 +1613,7 @@
         }
 
         function updateChange() {
-            const total = state.cart.reduce(
-                (sum, item) =>
-                sum + (item.price * item.quantity),
-                0
-            );
+            const total = cartTotal();
 
             const received = Number(amountReceived.value || 0);
 
@@ -1314,11 +1811,7 @@
                 return;
             }
 
-            const total = state.cart.reduce(
-                (sum, item) =>
-                sum + (item.price * item.quantity),
-                0
-            );
+            const total = cartTotal();
 
             const received =
                 Number(amountReceived.value || 0);
@@ -1385,6 +1878,8 @@
                     stock_item_id: item.stock_item_id,
                     product_unit_id: item.product_unit_id,
                     quantity: item.quantity,
+                    sale_mode: item.sale_mode || 'unit',
+                    sale_amount: item.sale_amount ?? null,
                 }));
 
                 /*
@@ -1616,6 +2111,84 @@
 
         });
 
+
+        $('close-bulk-quantity').addEventListener(
+            'click',
+            closeBulkQuantityModal
+        );
+
+        $('cancel-bulk-quantity').addEventListener(
+            'click',
+            closeBulkQuantityModal
+        );
+
+        bulkQuantityModal.addEventListener('click', event => {
+            if (event.target === bulkQuantityModal) {
+                closeBulkQuantityModal();
+                searchInput.focus();
+            }
+        });
+
+        $('bulk-mode-money').addEventListener(
+            'click',
+            () => setBulkMode('money')
+        );
+
+        $('bulk-mode-weight').addEventListener(
+            'click',
+            () => setBulkMode('weight')
+        );
+
+        bulkMoneyInput.addEventListener(
+            'input',
+            updateBulkConversion
+        );
+
+        bulkWeightInput.addEventListener(
+            'input',
+            updateBulkConversion
+        );
+
+        document.querySelectorAll('.bulk-money-shortcut').forEach(button => {
+            button.addEventListener('click', () => {
+                bulkMoneyInput.value =
+                    Number(button.dataset.bulkMoney).toFixed(2);
+
+                setBulkMode('money');
+                bulkMoneyInput.focus();
+                bulkMoneyInput.select();
+            });
+        });
+
+        document.querySelectorAll('.bulk-weight-shortcut').forEach(button => {
+            button.addEventListener('click', () => {
+                bulkWeightInput.value =
+                    Number(button.dataset.bulkWeight).toFixed(3);
+
+                setBulkMode('weight');
+                bulkWeightInput.focus();
+                bulkWeightInput.select();
+            });
+        });
+
+        confirmBulkQuantity.addEventListener(
+            'click',
+            saveBulkQuantity
+        );
+
+        bulkMoneyInput.addEventListener('keydown', event => {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                saveBulkQuantity();
+            }
+        });
+
+        bulkWeightInput.addEventListener('keydown', event => {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                saveBulkQuantity();
+            }
+        });
 
         renderCart();
     </script>

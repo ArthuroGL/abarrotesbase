@@ -781,9 +781,9 @@
                         Depósito bancario
                     </option>
 
-                    <option value="expense">
+                    <!-- <option value="expense">
                         Gasto pagado desde caja
-                    </option>
+                    </option> -->
 
                 </select>
 

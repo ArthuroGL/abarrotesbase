@@ -11,7 +11,7 @@
                 type="button"
                 onclick="window.location.href='{{ route('cash.index') }}'"
             >
-                Volver a caja
+                ← Volver a caja
             </x-ui.button>
         </x-slot:actions>
     </x-layout.page-header>

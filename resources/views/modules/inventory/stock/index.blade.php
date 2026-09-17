@@ -183,21 +183,6 @@
                     </label>
 
                     <div class="relative">
-                        <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4 text-slate-400">
-                            <svg
-                                class="h-5 w-5"
-                                fill="none"
-                                viewBox="0 0 24 24"
-                                stroke-width="2"
-                                stroke="currentColor"
-                                aria-hidden="true">
-                                <path
-                                    stroke-linecap="round"
-                                    stroke-linejoin="round"
-                                    d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
-                            </svg>
-                        </div>
-
                         <x-ui.input
                             id="search"
                             name="search"
@@ -342,12 +327,8 @@
                                 Físico
                             </th>
 
-                            <th scope="col" class="px-6 py-4 text-right">
-                                Reservado
-                            </th>
-
                             <th scope="col" class="px-6 py-4">
-                                Disponible
+                                Estado
                             </th>
 
                             <th scope="col" class="px-6 py-4 text-right">
@@ -374,15 +355,7 @@
                         $unit = $item->inventoryUnit?->code ?? 'PZA';
 
                         $onHand = (float) ($balance?->on_hand_quantity ?? 0);
-                        $reserved = (float) ($balance?->reserved_quantity ?? 0);
-
-                        $available = (float) (
-                        $balance?->available_quantity
-                        ?? ($onHand - $reserved)
-                        );
-
-                        $available = max(0, $available);
-
+                        $available = $onHand;
                         $minQty = (float) ($reorder?->minimum_quantity ?? 0);
                         $cost = (float) ($balance?->weighted_average_cost ?? 0);
                         @endphp
@@ -440,7 +413,7 @@
                             </td>
 
 
-                            {{-- Físico --}}
+                            {{-- Existencia --}}
                             <td class="px-6 py-5 text-right align-middle">
 
                                 <p class="text-base font-black tabular-nums text-slate-950">
@@ -448,20 +421,6 @@
                                 </p>
 
                                 <p class="mt-0.5 text-xs font-semibold text-slate-400">
-                                    {{ $unit }}
-                                </p>
-
-                            </td>
-
-
-                            {{-- Reservado --}}
-                            <td class="px-6 py-5 text-right align-middle">
-
-                                <p class="text-base font-bold tabular-nums text-amber-700">
-                                    {{ number_format($reserved, 2) }}
-                                </p>
-
-                                <p class="mt-0.5 text-xs font-semibold text-amber-500/70">
                                     {{ $unit }}
                                 </p>
 
@@ -564,7 +523,7 @@
     @empty
 
     <tr>
-        <td colspan="7" class="px-6 py-16 text-center">
+        <td colspan="6" class="px-6 py-16 text-center">
 
             <div class="mx-auto max-w-md">
 
@@ -616,14 +575,7 @@
         $unit = $item->inventoryUnit?->code ?? 'PZA';
 
         $onHand = (float) ($balance?->on_hand_quantity ?? 0);
-        $reserved = (float) ($balance?->reserved_quantity ?? 0);
-
-        $available = (float) (
-        $balance?->available_quantity
-        ?? ($onHand - $reserved)
-        );
-
-        $available = max(0, $available);
+        $available = $onHand;
 
         $minQty = (float) ($reorder?->minimum_quantity ?? 0);
         $cost = (float) ($balance?->weighted_average_cost ?? 0);
@@ -722,18 +674,6 @@
                         {{ number_format($onHand, 2) }}
                     </p>
                 </div>
-
-
-                <div>
-                    <p class="text-xs font-semibold text-slate-400">
-                        Reservado
-                    </p>
-
-                    <p class="mt-1 text-sm font-black text-amber-700 tabular-nums">
-                        {{ number_format($reserved, 2) }}
-                    </p>
-                </div>
-
 
                 <div>
                     <p class="text-xs font-semibold text-slate-400">
@@ -856,6 +796,29 @@
 
                 </div>
 
+                {{-- ERROR DE STOCK --}}
+                <div
+                    id="stock-adjust-error"
+                    class="hidden rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3"
+                    role="alert"
+                    aria-live="assertive">
+                    <div class="flex items-start gap-3">
+                        <span class="mt-0.5 grid h-6 w-6 shrink-0 place-items-center rounded-full bg-rose-600 text-xs font-black text-white">
+                            !
+                        </span>
+
+                        <div class="min-w-0">
+                            <p class="text-sm font-black text-rose-800">
+                                No se puede realizar la salida
+                            </p>
+
+                            <p
+                                id="stock-adjust-error-message"
+                                class="mt-1 text-sm font-medium leading-5 text-rose-700"></p>
+                        </div>
+                    </div>
+                </div>
+
 
                 {{-- Tipo de movimiento --}}
                 <div>
@@ -930,11 +893,6 @@
                         </label>
 
                         <div class="relative">
-
-                            <span class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4 text-sm font-bold text-slate-400">
-                                $
-                            </span>
-
                             <input
                                 id="unit_cost"
                                 type="number"
@@ -1032,6 +990,12 @@
             const availableElement = document.getElementById('modal_available');
             const quantityInput = document.getElementById('quantity');
 
+            const movementTypeInput = document.getElementById('movement_type');
+            const errorContainer = document.getElementById('stock-adjust-error');
+            const errorMessage = document.getElementById('stock-adjust-error-message');
+
+
+
             if (!modal || !itemIdInput || !itemNameElement) {
                 return;
             }
@@ -1043,6 +1007,11 @@
                 availableElement.textContent = `${available} ${unit}`;
             }
 
+
+
+            modal.dataset.available = parseFloat(available) || 0;
+            modal.dataset.unit = unit;
+            hideStockAdjustError();
             modal.classList.remove('hidden');
             modal.classList.add('flex');
 
@@ -1055,6 +1024,81 @@
             }, 100);
         }
 
+        function showStockAdjustError(message) {
+            const errorContainer = document.getElementById('stock-adjust-error');
+            const errorMessage = document.getElementById('stock-adjust-error-message');
+            const quantityInput = document.getElementById('quantity');
+
+            if (!errorContainer || !errorMessage) {
+                return;
+            }
+
+            errorMessage.textContent = message;
+
+            errorContainer.classList.remove('hidden');
+
+            quantityInput?.classList.add(
+                'ring-2',
+                'ring-rose-500',
+                'bg-rose-50'
+            );
+        }
+
+        function hideStockAdjustError() {
+            const errorContainer = document.getElementById('stock-adjust-error');
+            const quantityInput = document.getElementById('quantity');
+
+            if (!errorContainer) {
+                return;
+            }
+
+            errorContainer.classList.add('hidden');
+
+            if (quantityInput) {
+                quantityInput.classList.remove(
+                    'ring-2',
+                    'ring-rose-500',
+                    'bg-rose-50'
+                );
+            }
+        }
+
+        function validateStockOutput() {
+            const modal = document.getElementById('adjustModal');
+            const quantityInput = document.getElementById('quantity');
+            const movementTypeInput = document.getElementById('movement_type');
+
+            if (!modal || !quantityInput || !movementTypeInput) {
+                return true;
+            }
+
+            if (movementTypeInput.value !== 'adjustment_out') {
+                hideStockAdjustError();
+                return true;
+            }
+
+            const available = parseFloat(modal.dataset.available || '0');
+            const quantity = parseFloat(quantityInput.value || '0');
+            const unit = modal.dataset.unit || 'unidades';
+
+            if (!quantity || quantity <= 0) {
+                hideStockAdjustError();
+                return true;
+            }
+
+            if (quantity > available) {
+                showStockAdjustError(
+                    `No puedes retirar ${quantity.toFixed(2)} ${unit}. ` +
+                    `La existencia actual es de ${available.toFixed(2)} ${unit}.`
+                );
+
+                return false;
+            }
+
+            hideStockAdjustError();
+
+            return true;
+        }
 
         function closeAdjustModal() {
             const modal = document.getElementById('adjustModal');
@@ -1099,7 +1143,9 @@
                 available.textContent = '-';
             }
 
+
             updateNotesCounter();
+            hideStockAdjustError();
         }
 
 
@@ -1121,6 +1167,9 @@
             const cancelButton = document.getElementById('cancel-adjust-modal');
             const modal = document.getElementById('adjustModal');
             const notes = document.getElementById('stock_notes');
+            const quantityInput = document.getElementById('quantity');
+            const movementTypeInput = document.getElementById('movement_type');
+            const form = document.getElementById('adjust-stock-form');
 
             closeButton?.addEventListener('click', closeAdjustModal);
 
@@ -1128,7 +1177,18 @@
 
             notes?.addEventListener('input', updateNotesCounter);
 
+            quantityInput?.addEventListener('input', validateStockOutput);
+
+            movementTypeInput?.addEventListener('change', validateStockOutput);
+
             updateNotesCounter();
+
+            form?.addEventListener('submit', function(event) {
+                if (!validateStockOutput()) {
+                    event.preventDefault();
+                    return;
+                }
+            });
 
 
             document.addEventListener('keydown', function(event) {

@@ -278,7 +278,13 @@ final class SaleController
                     ]);
                 }
 
+
                 $quantity = (float) $item['quantity'];
+
+                $saleMode = $item['sale_mode'] ?? 'unit';
+                $saleAmount = isset($item['sale_amount'])
+                    ? (float) $item['sale_amount']
+                    : null;
 
                 if (
                     !$unit->allow_decimal
@@ -290,11 +296,15 @@ final class SaleController
                     ]);
                 }
 
+                $priceQuantity = $unit->allow_decimal
+                    ? max(1, $quantity)
+                    : $quantity;
+
                 $price = $this->resolvePrice(
                     $session->organization_id,
                     $stockItem->id,
                     $unit->id,
-                    $quantity
+                    $priceQuantity
                 );
 
                 if (!$price) {
@@ -302,6 +312,21 @@ final class SaleController
                         "items.{$index}.quantity" =>
                         'El producto no tiene un precio vigente.',
                     ]);
+                }
+
+                if (
+                    $unit->allow_decimal
+                    && $saleMode === 'money'
+                    && $saleAmount !== null
+                ) {
+                    $expectedQuantity = $saleAmount / (float) $price->amount;
+
+                    if (abs($quantity - $expectedQuantity) > 0.000001) {
+                        throw ValidationException::withMessages([
+                            "items.{$index}.quantity" =>
+                            'La cantidad no corresponde al importe solicitado.',
+                        ]);
+                    }
                 }
 
                 $balance = DB::table('inventory_balances')
@@ -328,7 +353,18 @@ final class SaleController
                     ]);
                 }
 
-                $gross = $quantity * (float) $price->amount;
+                if (
+                    $unit->allow_decimal
+                    && $saleMode === 'money'
+                    && $saleAmount !== null
+                ) {
+                    $gross = round($saleAmount, 6);
+                } else {
+                    $gross = round(
+                        $quantity * (float) $price->amount,
+                        6
+                    );
+                }
 
                 $taxRate = 0.0;
                 $taxIncluded = false;
@@ -484,9 +520,23 @@ final class SaleController
     {
         $validated = $request->validate([
             'items' => ['required', 'array', 'min:1'],
+
             'items.*.stock_item_id' => ['required', 'uuid'],
             'items.*.product_unit_id' => ['required', 'uuid'],
             'items.*.quantity' => ['required', 'numeric', 'gt:0'],
+
+            'items.*.sale_mode' => [
+                'nullable',
+                'string',
+                'in:unit,money,weight',
+            ],
+
+            'items.*.sale_amount' => [
+                'nullable',
+                'numeric',
+                'gt:0',
+            ],
+
             'payment_method_id' => ['required', 'uuid'],
             'amount_received' => ['required', 'numeric', 'gt:0'],
             'reference' => ['nullable', 'string', 'max:120'],
@@ -569,6 +619,11 @@ final class SaleController
 
                 $quantity = (float) $item['quantity'];
 
+                $saleMode = $item['sale_mode'] ?? 'unit';
+                $saleAmount = isset($item['sale_amount'])
+                    ? (float) $item['sale_amount']
+                    : null;
+
                 if (!$unit->allow_decimal && $quantity != floor($quantity)) {
                     throw ValidationException::withMessages([
                         "items.{$index}.quantity" =>
@@ -576,11 +631,22 @@ final class SaleController
                     ]);
                 }
 
+                /*
+ * Para productos a granel, el precio por unidad sigue siendo
+ * válido aunque la cantidad sea menor a 1 kg.
+ *
+ * Por eso resolvemos el precio con una cantidad mínima de 1
+ * cuando la unidad permite decimales.
+ */
+                $priceQuantity = $unit->allow_decimal
+                    ? max(1, $quantity)
+                    : $quantity;
+
                 $price = $this->resolvePrice(
                     $session->organization_id,
                     $stockItem->id,
                     $unit->id,
-                    $quantity
+                    $priceQuantity
                 );
 
                 if (!$price) {
@@ -612,7 +678,44 @@ final class SaleController
                     ]);
                 }
 
-                $gross = $quantity * (float) $price->amount;
+                /*
+ * En productos a granel:
+ *
+ * money  = el importe solicitado por el cliente es la base del cobro.
+ * weight = el peso es la base del cobro.
+ * unit   = comportamiento normal.
+ */
+                if (
+                    $unit->allow_decimal
+                    && $saleMode === 'money'
+                    && $saleAmount !== null
+                ) {
+                    $gross = round($saleAmount, 6);
+                } else {
+                    $gross = round(
+                        $quantity * (float) $price->amount,
+                        6
+                    );
+                }
+
+                if (
+                    $unit->allow_decimal
+                    && $saleMode === 'money'
+                    && $saleAmount !== null
+                ) {
+                    $expectedQuantity = $saleAmount / (float) $price->amount;
+
+                    /*
+     * La diferencia permitida corresponde a la precisión
+     * manejada por quantity en la base de datos.
+     */
+                    if (abs($quantity - $expectedQuantity) > 0.000001) {
+                        throw ValidationException::withMessages([
+                            "items.{$index}.quantity" =>
+                            'La cantidad no corresponde al importe solicitado.',
+                        ]);
+                    }
+                }
 
                 $taxRate = 0.0;
                 $taxIncluded = false;

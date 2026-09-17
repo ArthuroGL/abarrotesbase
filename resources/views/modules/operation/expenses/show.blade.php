@@ -37,7 +37,7 @@
                 type="button"
                 onclick="window.location.href='{{ route('expenses.index') }}'"
             >
-                Volver
+                ← Volver
             </x-ui.button>
 
             @if (in_array($expense->status, ['draft', 'rejected']))

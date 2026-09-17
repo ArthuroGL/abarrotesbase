@@ -15,7 +15,7 @@
                     href="{{ route('suppliers.index') }}"
                     class="inline-flex min-h-11 items-center justify-center rounded-xl border border-slate-300 bg-white px-4 text-sm font-bold text-slate-700 shadow-sm transition hover:bg-slate-50 hover:text-slate-950 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-500"
                 >
-                    Volver a proveedores
+                    ← Volver a proveedores
                 </a>
             </x-slot:actions>
         </x-layout.page-header>
