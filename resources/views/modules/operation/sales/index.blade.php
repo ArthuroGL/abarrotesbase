@@ -878,53 +878,69 @@
                 return;
             }
 
-            searchResults.innerHTML = items.map(item => `
-    <button
-        type="button"
-        data-product='${JSON.stringify(item).replace(/'/g, '&apos;')}'
-        class="product-result group flex min-h-[76px] w-full items-center justify-between gap-4 rounded-2xl border border-slate-200 bg-white p-4 text-left transition hover:border-emerald-300 hover:bg-emerald-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-600">
+            searchResults.innerHTML = items.map(item => {
 
-        <div class="min-w-0 flex-1">
+                const outOfStock = Number(item.stock) <= 0;
 
-            <p class="truncate text-base font-black text-slate-900 group-hover:text-emerald-800">
-                ${escapeHtml(item.name || 'Producto')}
-            </p>
+                return `
+        <button
+            type="button"
+            ${outOfStock ? 'disabled' : ''}
+            data-product='${JSON.stringify(item).replace(/'/g, '&apos;')}'
+            class="product-result group flex min-h-[76px] w-full items-center justify-between gap-4 rounded-2xl border p-4 text-left transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2
+            ${
+                outOfStock
+                    ? 'cursor-not-allowed border-slate-200 bg-slate-50 opacity-70'
+                    : 'border-slate-200 bg-white hover:border-emerald-300 hover:bg-emerald-50 focus-visible:outline-emerald-600'
+            }">
 
-            <div class="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-slate-500">
+            <div class="min-w-0 flex-1">
 
-                <span>
-                    ${escapeHtml(item.sku || item.barcode || 'Sin clave')}
-                </span>
+                <p class="truncate text-base font-black text-slate-900 ${
+                    outOfStock ? '' : 'group-hover:text-emerald-800'
+                }">
+                    ${escapeHtml(item.name || 'Producto')}
+                </p>
 
-                <span class="text-slate-300">•</span>
+                <div class="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-slate-500">
 
-                <span>
-                    ${escapeHtml(item.unit || '')}
-                </span>
+                    <span>
+                        ${escapeHtml(item.sku || item.barcode || 'Sin clave')}
+                    </span>
+
+                    <span class="text-slate-300">•</span>
+
+                    <span>
+                        ${escapeHtml(item.unit || '')}
+                    </span>
+
+                </div>
 
             </div>
 
-        </div>
+            <div class="shrink-0 text-right">
 
+                <p class="text-lg font-black text-emerald-600">
+                    ${money(item.price)}
+                </p>
 
-        <div class="shrink-0 text-right">
+                <p class="mt-1 text-xs font-bold ${
+                    outOfStock
+                        ? 'text-rose-600'
+                        : 'text-slate-400'
+                }">
+                    ${
+                        outOfStock
+                            ? 'Agotado'
+                            : `Stock: ${formatQuantity(item.stock, item.allow_decimal)}`
+                    }
+                </p>
 
-            <p class="text-lg font-black text-emerald-600">
-                ${money(item.price)}
-            </p>
+            </div>
 
-            <p class="mt-1 text-xs font-semibold ${
-                Number(item.stock) > 0
-                    ? 'text-slate-400'
-                    : 'text-rose-600'
-            }">
-                Stock: ${item.stock}
-            </p>
-
-        </div>
-
-    </button>
-`).join('');
+        </button>
+    `;
+            }).join('');
 
             document.querySelectorAll('.product-result').forEach(button => {
 
@@ -933,6 +949,16 @@
                     const product = JSON.parse(
                         button.dataset.product.replace(/&apos;/g, "'")
                     );
+
+                    if (Number(product.stock) <= 0) {
+                        showMessage(
+                            'Producto no disponible por falta de stock',
+                            'error'
+                        );
+
+                        return;
+                    }
+
 
                     const addedDirectly = addToCart(product);
 
@@ -1308,6 +1334,15 @@
         }
 
         function addToCart(product) {
+            if (Number(product.stock) <= 0) {
+                showMessage(
+                    'Producto no disponible por falta de stock',
+                    'error'
+                );
+
+                return false;
+            }
+
             if (product.allow_decimal) {
                 openBulkQuantityModal(product);
                 return false;

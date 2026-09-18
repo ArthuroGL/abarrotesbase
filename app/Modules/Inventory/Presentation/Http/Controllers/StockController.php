@@ -220,69 +220,154 @@ final class StockController extends Controller
             ->with('inventoryUnit')
             ->firstOrFail();
 
-        DB::transaction(function () use ($validated, $orgId, $branchId, $stockItem) {
+        DB::transaction(function () use (
+            $validated,
+            $orgId,
+            $branchId,
+            $stockItem
+        ) {
+
+            $qty = (float) $validated['quantity'];
+
             $qtyDelta = $validated['movement_type'] === 'adjustment_out'
-                ? -abs((float) $validated['quantity'])
-                : abs((float) $validated['quantity']);
+                ? -$qty
+                : $qty;
 
             $cost = (float) ($validated['unit_cost'] ?? 0);
 
-            // 1. Registrar Movimiento Kardex
-            InventoryMovement::create([
-                'organization_id' => $orgId,
-                'branch_id' => $branchId,
-                'stock_item_id' => $validated['stock_item_id'],
-                'movement_type' => $validated['movement_type'],
-                'quantity_delta' => $qtyDelta,
-                'unit_cost' => $cost,
-                'total_cost' => abs($qtyDelta * $cost),
-                'source_type' => 'MANUAL_ADJUSTMENT',
-                'source_id' => null,
-                'reason_code' => $validated['movement_type'],
-                'notes' => $validated['notes'] ?? 'Ajuste manual de existencias',
-                'created_by' => auth()->id(),
-                'occurred_at' => now(),
-            ]);
 
-            // 2. Actualizar o Crear Balance de Inventario sin referencias a timestamps
+            /*
+    |--------------------------------------------------------------------------
+    | BUSCAR Y BLOQUEAR BALANCE
+    |--------------------------------------------------------------------------
+    */
+
             $balance = DB::table('inventory_balances')
                 ->where('organization_id', $orgId)
                 ->where('branch_id', $branchId)
-                ->where('stock_item_id', $validated['stock_item_id'])
+                ->where('stock_item_id', $stockItem->id)
+                ->lockForUpdate()
                 ->first();
 
-            if ($balance) {
-                $currentOnHand = (float) $balance->on_hand_quantity;
 
-                if (
-                    $validated['movement_type'] === 'adjustment_out'
-                    && (float) $validated['quantity'] > $currentOnHand
-                ) {
+            /*
+    |--------------------------------------------------------------------------
+    | VALIDAR SALIDA
+    |--------------------------------------------------------------------------
+    */
+
+            if ($validated['movement_type'] === 'adjustment_out') {
+
+                $currentOnHand = (float) (
+                    $balance?->on_hand_quantity ?? 0
+                );
+
+                if ($qty > $currentOnHand) {
+
                     throw \Illuminate\Validation\ValidationException::withMessages([
                         'quantity' => sprintf(
                             'No puedes retirar %s %s. La existencia actual es %s %s.',
-                            number_format((float) $validated['quantity'], 2),
+                            number_format($qty, 2),
                             $stockItem->inventoryUnit?->code ?? 'unidades',
                             number_format($currentOnHand, 2),
                             $stockItem->inventoryUnit?->code ?? 'unidades',
                         ),
                     ]);
                 }
+            }
+
+
+            /*
+    |--------------------------------------------------------------------------
+    | ACTUALIZAR BALANCE
+    |--------------------------------------------------------------------------
+    */
+
+            if ($balance) {
+
+                $currentOnHand = (float) $balance->on_hand_quantity;
 
                 $newOnHand = $currentOnHand + $qtyDelta;
 
                 DB::table('inventory_balances')
                     ->where('organization_id', $orgId)
                     ->where('branch_id', $branchId)
-                    ->where('stock_item_id', $validated['stock_item_id'])
+                    ->where('stock_item_id', $stockItem->id)
                     ->update([
                         'on_hand_quantity' => $newOnHand,
+
                         'weighted_average_cost' => $cost > 0
                             ? $cost
                             : $balance->weighted_average_cost,
-                        'version' => ((int) $balance->version) + 1,
+
+                        'version' => DB::raw('version + 1'),
+
+                        'updated_at' => now(),
                     ]);
+            } else {
+
+                /*
+        | Una salida no puede crear inventario negativo.
+        | Si llegamos aquí con adjustment_out, la existencia era 0.
+        */
+
+                if ($validated['movement_type'] === 'adjustment_out') {
+
+                    throw \Illuminate\Validation\ValidationException::withMessages([
+                        'quantity' =>
+                        'No existe inventario disponible para realizar esta salida.',
+                    ]);
+                }
+
+                DB::table('inventory_balances')->insert([
+                    'organization_id' => $orgId,
+                    'branch_id' => $branchId,
+                    'stock_item_id' => $stockItem->id,
+
+                    'on_hand_quantity' => $qty,
+
+                    'reserved_quantity' => 0,
+
+                    'weighted_average_cost' => $cost,
+
+                    'version' => 1
+                ]);
             }
+
+
+            /*
+    |--------------------------------------------------------------------------
+    | KARDEX
+    |--------------------------------------------------------------------------
+    */
+
+            InventoryMovement::create([
+                'organization_id' => $orgId,
+                'branch_id' => $branchId,
+                'stock_item_id' => $stockItem->id,
+
+                'movement_type' => $validated['movement_type'],
+
+                'quantity_delta' => $qtyDelta,
+
+                'unit_cost' => $cost,
+
+                'total_cost' => abs($qtyDelta * $cost),
+
+                'source_type' => 'MANUAL_ADJUSTMENT',
+
+                'source_id' => null,
+
+                'reason_code' => $validated['movement_type'],
+
+                'notes' =>
+                $validated['notes']
+                    ?? 'Ajuste manual de existencias',
+
+                'created_by' => auth()->id(),
+
+                'occurred_at' => now(),
+            ]);
         });
 
         return redirect()->route('stock.index')->with('status', 'Existencia actualizada correctamente.');

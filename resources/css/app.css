@@ -5,6 +5,8 @@
 }
 
 @layer components {
+
+
     .app-modal {
         isolation: isolate;
     }

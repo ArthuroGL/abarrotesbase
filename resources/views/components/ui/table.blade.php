@@ -1,31 +1,37 @@
 @props([
     'caption' => null,
-    'dividers' => true,
+    'maxHeight' => '420px',
 ])
 
-<div class="w-full overflow-x-auto">
-    <table
-        {{ $attributes->class([
-            'min-w-[900px] w-full text-left',
-        ]) }}
+<div
+    {{ $attributes->class([
+        'w-full min-w-0',
+    ]) }}
+    data-table-wrapper
+>
+    <div
+        class="w-full overflow-x-auto overflow-y-auto overscroll-contain rounded-xl"
+        style="max-height: {{ $maxHeight }};"
+        data-table-scroll
     >
-        @if ($caption)
-            <caption class="sr-only">
-                {{ $caption }}
-            </caption>
-        @endif
+        <table class="w-full border-separate border-spacing-0">
 
-        @isset($head)
-            <thead class="border-b border-slate-200 bg-slate-50">
-                {{ $head }}
-            </thead>
-        @endisset
+            @if ($caption)
+                <caption class="sr-only">
+                    {{ $caption }}
+                </caption>
+            @endif
 
-        <tbody @class([
-            'bg-white',
-            'divide-y divide-slate-100' => $dividers,
-        ])>
-            {{ $slot }}
-        </tbody>
-    </table>
+            @isset($head)
+                <thead class="sticky top-0 z-20">
+                    {{ $head }}
+                </thead>
+            @endisset
+
+            <tbody class="divide-y divide-slate-200 bg-white">
+                {{ $slot }}
+            </tbody>
+
+        </table>
+    </div>
 </div>

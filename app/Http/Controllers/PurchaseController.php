@@ -191,17 +191,30 @@ class PurchaseController extends Controller
     public function receive(Purchase $purchase): RedirectResponse
     {
         if ($purchase->status === 'received') {
-            return back()->with('error', 'Esta compra ya fue recibida anteriormente.');
+            return back()->with(
+                'error',
+                'Esta compra ya fue recibida anteriormente.'
+            );
         }
 
         if ($purchase->status === 'cancelled') {
-            return back()->with('error', 'No se puede recibir una compra que ha sido rechazada/cancelada.');
+            return back()->with(
+                'error',
+                'No se puede recibir una compra que ha sido rechazada/cancelada.'
+            );
         }
 
         DB::transaction(function () use ($purchase) {
+
             $orgId = $purchase->organization_id;
             $branchId = $purchase->branch_id;
             $userId = auth()->id();
+
+            /*
+        |--------------------------------------------------------------------------
+        | RECEPCIÓN
+        |--------------------------------------------------------------------------
+        */
 
             $receipt = PurchaseReceipt::create([
                 'organization_id' => $orgId,
@@ -215,12 +228,72 @@ class PurchaseController extends Controller
                 'notes' => 'Recepción directa de O.C. ' . $purchase->purchase_number,
             ]);
 
-            foreach ($purchase->lines as $line) {
-                $unit = ProductUnit::find($line->product_unit_id);
-                $conversionFactor = (float) ($unit?->conversion_factor ?? 1.0);
 
-                $baseQuantity = (float) $line->ordered_quantity * $conversionFactor;
-                $unitCostBase = (float) $line->unit_cost / ($conversionFactor > 0 ? $conversionFactor : 1);
+            /*
+        |--------------------------------------------------------------------------
+        | PROCESAR CADA LÍNEA
+        |--------------------------------------------------------------------------
+        */
+
+            foreach ($purchase->lines as $line) {
+
+                /*
+            |--------------------------------------------------------------------------
+            | UNIDAD DE COMPRA
+            |--------------------------------------------------------------------------
+            */
+
+                $unit = ProductUnit::query()
+                    ->where('organization_id', $orgId)
+                    ->where('stock_item_id', $line->stock_item_id)
+                    ->where('id', $line->product_unit_id)
+                    ->where('is_active', true)
+                    ->where('is_purchase_unit', true)
+                    ->first();
+
+                if (!$unit) {
+                    throw new \RuntimeException(
+                        "La unidad de compra de la línea {$line->line_number} no es válida."
+                    );
+                }
+
+                $conversionFactor = (float) (
+                    $unit->conversion_factor ?: 1
+                );
+
+
+                /*
+            |--------------------------------------------------------------------------
+            | CANTIDAD REAL QUE ENTRA AL INVENTARIO
+            |--------------------------------------------------------------------------
+            |
+            | Ejemplo:
+            |
+            | 5 cajas × 12 piezas = 60 piezas
+            |
+            */
+
+                $baseQuantity =
+                    (float) $line->ordered_quantity
+                    * $conversionFactor;
+
+
+                /*
+            |--------------------------------------------------------------------------
+            | COSTO POR UNIDAD BASE
+            |--------------------------------------------------------------------------
+            */
+
+                $unitCostBase =
+                    (float) $line->unit_cost
+                    / $conversionFactor;
+
+
+                /*
+            |--------------------------------------------------------------------------
+            | LÍNEA DE RECEPCIÓN
+            |--------------------------------------------------------------------------
+            */
 
                 PurchaseReceiptLine::create([
                     'purchase_receipt_id' => $receipt->id,
@@ -233,39 +306,62 @@ class PurchaseController extends Controller
                     'line_total' => $line->line_total,
                 ]);
 
-                // 1. Registro del movimiento en Kardex
-                DB::table('inventory_movements')->insert([
-                    'id' => (string) Str::uuid(),
-                    'organization_id' => $orgId,
-                    'branch_id' => $branchId,
-                    'stock_item_id' => $line->stock_item_id,
-                    'movement_type' => 'purchase_receipt',
-                    'quantity_delta' => $baseQuantity,
-                    'unit_cost' => $unitCostBase,
-                    'total_cost' => $line->line_total,
-                    'source_type' => 'purchase_receipts',
-                    'source_id' => $receipt->id,
-                    'reason_code' => 'PURCHASE_RECEIPT',
-                    'notes' => 'Entrada por compra O.C. ' . $purchase->purchase_number,
-                    'created_by' => $userId,
-                    'occurred_at' => now(),
-                ]);
 
-                // 2. Balance de inventario (llave primaria compuesta: org_id, branch_id, stock_item_id)
+                /*
+            |--------------------------------------------------------------------------
+            | BALANCE DE INVENTARIO
+            |--------------------------------------------------------------------------
+            |
+            | Bloqueamos la fila para evitar que otra operación
+            | modifique simultáneamente la existencia.
+            |
+            */
+
                 $balance = DB::table('inventory_balances')
                     ->where('organization_id', $orgId)
                     ->where('branch_id', $branchId)
                     ->where('stock_item_id', $line->stock_item_id)
+                    ->lockForUpdate()
                     ->first();
 
+
+                /*
+            |--------------------------------------------------------------------------
+            | ENTRADA DE INVENTARIO
+            |--------------------------------------------------------------------------
+            */
+
                 if ($balance) {
+
                     $currentOnHand = (float) $balance->on_hand_quantity;
-                    $currentCost = (float) $balance->weighted_average_cost;
-                    $newOnHand = $currentOnHand + $baseQuantity;
+
+                    $currentCost = (float) (
+                        $balance->weighted_average_cost ?? 0
+                    );
+
+                    $newOnHand =
+                        $currentOnHand + $baseQuantity;
+
+
+                    /*
+                |--------------------------------------------------------------------------
+                | COSTO PROMEDIO PONDERADO
+                |--------------------------------------------------------------------------
+                */
 
                     $newWeightedCost = $newOnHand > 0
-                        ? (($currentOnHand * $currentCost) + ($baseQuantity * $unitCostBase)) / $newOnHand
+                        ? (
+                            ($currentOnHand * $currentCost)
+                            + ($baseQuantity * $unitCostBase)
+                        ) / $newOnHand
                         : $unitCostBase;
+
+
+                    /*
+                |--------------------------------------------------------------------------
+                | ACTUALIZAR BALANCE
+                |--------------------------------------------------------------------------
+                */
 
                     DB::table('inventory_balances')
                         ->where('organization_id', $orgId)
@@ -278,26 +374,87 @@ class PurchaseController extends Controller
                             'updated_at' => now(),
                         ]);
                 } else {
-                    // FIX: Sin columna 'id' ya que usa PK compuesta
+
+                    /*
+                |--------------------------------------------------------------------------
+                | CREAR BALANCE
+                |--------------------------------------------------------------------------
+                */
+
                     DB::table('inventory_balances')->insert([
                         'organization_id' => $orgId,
                         'branch_id' => $branchId,
                         'stock_item_id' => $line->stock_item_id,
+
                         'on_hand_quantity' => $baseQuantity,
+
+                        /*
+                    | Ya no utilizamos reservas para determinar
+                    | la existencia disponible.
+                    */
                         'reserved_quantity' => 0,
+
                         'weighted_average_cost' => $unitCostBase,
+
                         'version' => 1,
+
+                        'created_at' => now(),
                         'updated_at' => now(),
                     ]);
                 }
+
+
+                /*
+            |--------------------------------------------------------------------------
+            | KARDEX
+            |--------------------------------------------------------------------------
+            */
+
+                DB::table('inventory_movements')->insert([
+                    'id' => (string) Str::uuid(),
+                    'organization_id' => $orgId,
+                    'branch_id' => $branchId,
+                    'stock_item_id' => $line->stock_item_id,
+
+                    'movement_type' => 'purchase_receipt',
+
+                    'quantity_delta' => $baseQuantity,
+
+                    'unit_cost' => $unitCostBase,
+
+                    'total_cost' =>
+                    abs($baseQuantity * $unitCostBase),
+
+                    'source_type' => 'purchase_receipts',
+                    'source_id' => $receipt->id,
+
+                    'reason_code' => 'PURCHASE_RECEIPT',
+
+                    'notes' =>
+                    'Entrada por compra O.C. '
+                        . $purchase->purchase_number,
+
+                    'created_by' => $userId,
+                    'occurred_at' => now(),
+                ]);
             }
+
+
+            /*
+        |--------------------------------------------------------------------------
+        | MARCAR COMPRA COMO RECIBIDA
+        |--------------------------------------------------------------------------
+        */
 
             $purchase->update([
                 'status' => 'received',
             ]);
         });
 
-        return back()->with('success', '¡Mercancía recibida e ingresada al inventario exitosamente!');
+        return back()->with(
+            'success',
+            '¡Mercancía recibida e ingresada al inventario exitosamente!'
+        );
     }
 
     public function cancel(Request $request, Purchase $purchase): RedirectResponse

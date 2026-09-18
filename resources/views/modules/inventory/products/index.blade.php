@@ -9,14 +9,12 @@
         <x-layout.page-header
             eyebrow="Inventario"
             title="Productos"
-            description="Administra el catálogo, códigos de barras, precios y configuración de venta."
-        >
+            description="Administra el catálogo, códigos de barras, precios y configuración de venta.">
             <x-slot:actions>
 
                 <a
                     href="{{ route('products.create') }}"
-                    class="inline-flex min-h-12 items-center justify-center rounded-xl bg-emerald-600 px-5 text-sm font-black text-white shadow-sm transition hover:bg-emerald-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-600"
-                >
+                    class="inline-flex min-h-12 items-center justify-center rounded-xl bg-emerald-600 px-5 text-sm font-black text-white shadow-sm transition hover:bg-emerald-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-600">
                     <span class="mr-2 text-lg leading-none">+</span>
                     Nuevo producto
                 </a>
@@ -33,7 +31,7 @@
 
             <div class="border-b border-slate-200 bg-slate-50/70 px-5 py-4 sm:px-6">
 
-                <div class="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+                <div class="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
 
                     <div>
                         <h2 class="text-base font-black text-slate-900">
@@ -46,12 +44,11 @@
                     </div>
 
                     @if ($search || $categoryId || $brandId)
-                        <a
-                            href="{{ route('products.index') }}"
-                            class="text-sm font-bold text-rose-600 transition hover:text-rose-700"
-                        >
-                            Limpiar filtros
-                        </a>
+                    <a
+                        href="{{ route('products.index') }}"
+                        class="text-sm font-bold text-rose-600 transition hover:text-rose-700">
+                        Limpiar filtros
+                    </a>
                     @endif
 
                 </div>
@@ -62,16 +59,14 @@
             <form
                 method="GET"
                 action="{{ route('products.index') }}"
-                class="grid gap-4 p-5 sm:p-6 lg:grid-cols-12"
-            >
+                class="grid gap-4 p-5 sm:p-6 lg:grid-cols-12">
 
                 {{-- BUSCADOR --}}
                 <div class="lg:col-span-6">
 
                     <label
                         for="search"
-                        class="mb-2 block text-sm font-bold text-slate-800"
-                    >
+                        class="mb-2 block text-sm font-bold text-slate-800">
                         Producto, SKU o código de barras
                     </label>
 
@@ -81,8 +76,7 @@
                         type="search"
                         :value="$search"
                         placeholder="Ej. Coca-Cola, COC-001 o 7501234567890"
-                        autocomplete="off"
-                    />
+                        autocomplete="off" />
 
                 </div>
 
@@ -92,28 +86,26 @@
 
                     <label
                         for="category_id"
-                        class="mb-2 block text-sm font-bold text-slate-800"
-                    >
+                        class="mb-2 block text-sm font-bold text-slate-800">
                         Categoría
                     </label>
 
                     <select
                         id="category_id"
                         name="category_id"
-                        class="app-input"
-                    >
+                        class="app-input">
                         <option value="">
                             Todas las categorías
                         </option>
 
                         @foreach ($categories as $category)
 
-                            <option
-                                value="{{ $category->id }}"
-                                @selected($categoryId === $category->id)
+                        <option
+                            value="{{ $category->id }}"
+                            @selected($categoryId===$category->id)
                             >
-                                {{ $category->name }}
-                            </option>
+                            {{ $category->name }}
+                        </option>
 
                         @endforeach
 
@@ -127,28 +119,26 @@
 
                     <label
                         for="brand_id"
-                        class="mb-2 block text-sm font-bold text-slate-800"
-                    >
+                        class="mb-2 block text-sm font-bold text-slate-800">
                         Marca
                     </label>
 
                     <select
                         id="brand_id"
                         name="brand_id"
-                        class="app-input"
-                    >
+                        class="app-input">
                         <option value="">
                             Todas las marcas
                         </option>
 
                         @foreach ($brands as $brand)
 
-                            <option
-                                value="{{ $brand->id }}"
-                                @selected($brandId === $brand->id)
+                        <option
+                            value="{{ $brand->id }}"
+                            @selected($brandId===$brand->id)
                             >
-                                {{ $brand->name }}
-                            </option>
+                            {{ $brand->name }}
+                        </option>
 
                         @endforeach
 
@@ -162,19 +152,17 @@
 
                     <button
                         type="submit"
-                        class="inline-flex min-h-11 items-center justify-center rounded-xl bg-slate-950 px-6 text-sm font-black text-white transition hover:bg-slate-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-950"
-                    >
+                        class="inline-flex min-h-11 items-center justify-center rounded-xl bg-slate-950 px-6 text-sm font-black text-white transition hover:bg-slate-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-950">
                         Buscar productos
                     </button>
 
                     @if ($search || $categoryId || $brandId)
 
-                        <a
-                            href="{{ route('products.index') }}"
-                            class="inline-flex min-h-11 items-center justify-center rounded-xl border border-slate-300 bg-white px-5 text-sm font-bold text-slate-700 transition hover:bg-slate-50"
-                        >
-                            Limpiar
-                        </a>
+                    <a
+                        href="{{ route('products.index') }}"
+                        class="inline-flex min-h-11 items-center justify-center rounded-xl border border-slate-300 bg-white px-5 text-sm font-bold text-slate-700 transition hover:bg-slate-50">
+                        Limpiar
+                    </a>
 
                     @endif
 
@@ -224,73 +212,69 @@
 
 
             {{-- TABLA --}}
-            <x-ui.table
-                caption="Catálogo de productos"
-            >
+            <div class="min-w-0 px-3 py-3 sm:px-5">
 
-                <x-slot:head>
+                <x-ui.table
+                    caption="Catálogo de productos"
+                    maxHeight="clamp(280px, calc(100vh - 560px), 420px)">
 
-                    <tr>
+                    <x-slot:head>
 
-                        <th
-                            scope="col"
-                            class="whitespace-nowrap px-5 py-3.5 text-xs font-black uppercase tracking-wider text-slate-500 sm:px-6"
-                        >
-                            Producto
-                        </th>
+                        <tr>
 
-                        <th
-                            scope="col"
-                            class="whitespace-nowrap px-5 py-3.5 text-xs font-black uppercase tracking-wider text-slate-500"
-                        >
-                            Código
-                        </th>
+                            <th
+                                scope="col"
+                                class="whitespace-nowrap px-4 py-3.5 text-left text-xs font-black uppercase tracking-wider text-slate-500 sm:px-5">
+                                Producto
+                            </th>
 
-                        <th
-                            scope="col"
-                            class="whitespace-nowrap px-5 py-3.5 text-xs font-black uppercase tracking-wider text-slate-500"
-                        >
-                            Clasificación
-                        </th>
+                            <th
+                                scope="col"
+                                class="whitespace-nowrap px-4 py-3.5 text-left text-xs font-black uppercase tracking-wider text-slate-500 sm:px-5">
+                                Código
+                            </th>
 
-                        <th
-                            scope="col"
-                            class="whitespace-nowrap px-5 py-3.5 text-right text-xs font-black uppercase tracking-wider text-slate-500"
-                        >
-                            Precio de venta
-                        </th>
+                            <th
+                                scope="col"
+                                class="whitespace-nowrap px-4 py-3.5 text-left text-xs font-black uppercase tracking-wider text-slate-500 sm:px-5">
+                                Clasificación
+                            </th>
 
-                        <th
-                            scope="col"
-                            class="whitespace-nowrap px-5 py-3.5 text-center text-xs font-black uppercase tracking-wider text-slate-500"
-                        >
-                            Estado
-                        </th>
+                            <th
+                                scope="col"
+                                class="whitespace-nowrap px-4 py-3.5 text-right text-xs font-black uppercase tracking-wider text-slate-500 sm:px-5">
+                                Precio de venta
+                            </th>
 
-                        <th
-                            scope="col"
-                            class="whitespace-nowrap px-5 py-3.5 text-right text-xs font-black uppercase tracking-wider text-slate-500"
-                        >
-                            Acciones
-                        </th>
+                            <th
+                                scope="col"
+                                class="whitespace-nowrap px-4 py-3.5 text-center text-xs font-black uppercase tracking-wider text-slate-500 sm:px-5">
+                                Estado
+                            </th>
 
-                    </tr>
+                            <th
+                                scope="col"
+                                class="whitespace-nowrap px-4 py-3.5 text-right text-xs font-black uppercase tracking-wider text-slate-500 sm:px-5">
+                                Acciones
+                            </th>
 
-                </x-slot:head>
+                        </tr>
+
+                    </x-slot:head>
 
 
-                @forelse ($products as $product)
+                    @forelse ($products as $product)
 
                     @php
-                        $stockItem = $product->stockItem;
+                    $stockItem = $product->stockItem;
 
-                        $primaryBarcode =
-                            $stockItem?->barcodes->firstWhere('is_primary', true)?->barcode
-                            ?? $stockItem?->barcodes->first()?->barcode
-                            ?? null;
+                    $primaryBarcode =
+                    $stockItem?->barcodes->firstWhere('is_primary', true)?->barcode
+                    ?? $stockItem?->barcodes->first()?->barcode
+                    ?? null;
 
-                        $priceAmount =
-                            $stockItem?->prices->first()?->amount;
+                    $priceAmount =
+                    $stockItem?->prices->first()?->amount;
                     @endphp
 
 
@@ -303,7 +287,7 @@
 
                         <td class="px-5 py-4 sm:px-6">
 
-                            <div class="max-w-xs">
+                            <div class="min-w-0 max-w-full">
 
                                 <p class="truncate text-sm font-black text-slate-900">
                                     {{ $product->name }}
@@ -327,30 +311,30 @@
 
                             @if ($primaryBarcode)
 
-                                <p class="font-mono text-sm font-bold text-slate-700">
-                                    {{ $primaryBarcode }}
-                                </p>
+                            <p class="max-w-full truncate font-mono text-sm font-bold text-slate-700">
+                                {{ $primaryBarcode }}
+                            </p>
 
                             @else
 
-                                <span class="text-sm font-semibold text-slate-400">
-                                    Sin código
-                                </span>
+                            <span class="text-sm font-semibold text-slate-400">
+                                Sin código
+                            </span>
 
                             @endif
 
 
                             @if ($product->product_type === 'bulk')
 
-                                <span class="mt-1 inline-flex rounded-md border border-amber-200 bg-amber-50 px-2 py-1 text-xs font-bold text-amber-700">
-                                    A granel
-                                </span>
+                            <span class="mt-1 inline-flex rounded-md border border-amber-200 bg-amber-50 px-2 py-1 text-xs font-bold text-amber-700">
+                                A granel
+                            </span>
 
                             @else
 
-                                <span class="mt-1 inline-flex rounded-md border border-slate-200 bg-slate-100 px-2 py-1 text-xs font-bold text-slate-600">
-                                    Pieza
-                                </span>
+                            <span class="mt-1 inline-flex rounded-md border border-slate-200 bg-slate-100 px-2 py-1 text-xs font-bold text-slate-600">
+                                Pieza
+                            </span>
 
                             @endif
 
@@ -365,15 +349,15 @@
 
                             <div class="space-y-1">
 
-                                <span class="inline-flex max-w-[180px] truncate rounded-lg bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-700">
+                                <span class="inline-flex max-w-[120px] truncate rounded-lg bg-slate-100 px-2 py-1 text-xs font-bold text-slate-700 sm:max-w-[180px] sm:px-2.5">
                                     {{ $product->category?->name ?? 'Sin categoría' }}
                                 </span>
 
                                 @if ($product->brand)
 
-                                    <p class="text-xs font-semibold text-slate-400">
-                                        {{ $product->brand->name }}
-                                    </p>
+                                <p class="text-xs font-semibold text-slate-400">
+                                    {{ $product->brand->name }}
+                                </p>
 
                                 @endif
 
@@ -390,19 +374,19 @@
 
                             @if ($priceAmount !== null)
 
-                                <p class="whitespace-nowrap text-base font-black text-emerald-700">
-                                    $ {{ number_format((float) $priceAmount, 2) }}
-                                </p>
+                            <p class="whitespace-nowrap text-base font-black text-emerald-700">
+                                $ {{ number_format((float) $priceAmount, 2) }}
+                            </p>
 
-                                <p class="text-xs font-bold text-slate-400">
-                                    MXN
-                                </p>
+                            <p class="text-xs font-bold text-slate-400">
+                                MXN
+                            </p>
 
                             @else
 
-                                <span class="text-sm font-semibold text-rose-600">
-                                    Sin precio
-                                </span>
+                            <span class="text-sm font-semibold text-rose-600">
+                                Sin precio
+                            </span>
 
                             @endif
 
@@ -417,23 +401,23 @@
 
                             @if ($product->is_active)
 
-                                <span class="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-black text-emerald-700">
+                            <span class="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-black text-emerald-700">
 
-                                    <span class="h-2 w-2 rounded-full bg-emerald-500"></span>
+                                <span class="h-2 w-2 rounded-full bg-emerald-500"></span>
 
-                                    Activo
+                                Activo
 
-                                </span>
+                            </span>
 
                             @else
 
-                                <span class="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-100 px-3 py-1.5 text-xs font-black text-slate-500">
+                            <span class="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-100 px-3 py-1.5 text-xs font-black text-slate-500">
 
-                                    <span class="h-2 w-2 rounded-full bg-slate-400"></span>
+                                <span class="h-2 w-2 rounded-full bg-slate-400"></span>
 
-                                    Inactivo
+                                Inactivo
 
-                                </span>
+                            </span>
 
                             @endif
 
@@ -450,8 +434,7 @@
 
                                 <a
                                     href="{{ route('products.edit', $product) }}"
-                                    class="inline-flex min-h-10 items-center justify-center rounded-lg border border-slate-300 bg-white px-3 text-sm font-bold text-slate-700 transition hover:border-slate-400 hover:bg-slate-50 hover:text-slate-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-600"
-                                >
+                                    class="inline-flex min-h-10 items-center justify-center rounded-lg border border-slate-300 bg-white px-3 text-sm font-bold text-slate-700 transition hover:border-slate-400 hover:bg-slate-50 hover:text-slate-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-600">
                                     Editar
                                 </a>
 
@@ -461,14 +444,13 @@
 
                     </tr>
 
-                @empty
+                    @empty
 
                     <tr>
 
                         <td
                             colspan="6"
-                            class="px-6 py-16 text-center"
-                        >
+                            class="px-6 py-16 text-center">
 
                             <div class="mx-auto max-w-md">
 
@@ -486,21 +468,19 @@
 
                                 @if ($search || $categoryId || $brandId)
 
-                                    <a
-                                        href="{{ route('products.index') }}"
-                                        class="mt-4 inline-flex min-h-11 items-center justify-center rounded-xl border border-slate-300 bg-white px-5 text-sm font-bold text-slate-700 transition hover:bg-slate-50"
-                                    >
-                                        Limpiar filtros
-                                    </a>
+                                <a
+                                    href="{{ route('products.index') }}"
+                                    class="mt-4 inline-flex min-h-11 items-center justify-center rounded-xl border border-slate-300 bg-white px-5 text-sm font-bold text-slate-700 transition hover:bg-slate-50">
+                                    Limpiar filtros
+                                </a>
 
                                 @else
 
-                                    <a
-                                        href="{{ route('products.create') }}"
-                                        class="mt-4 inline-flex min-h-11 items-center justify-center rounded-xl bg-emerald-600 px-5 text-sm font-bold text-white transition hover:bg-emerald-700"
-                                    >
-                                        Registrar primer producto
-                                    </a>
+                                <a
+                                    href="{{ route('products.create') }}"
+                                    class="mt-4 inline-flex min-h-11 items-center justify-center rounded-xl bg-emerald-600 px-5 text-sm font-bold text-white transition hover:bg-emerald-700">
+                                    Registrar primer producto
+                                </a>
 
                                 @endif
 
@@ -510,24 +490,18 @@
 
                     </tr>
 
-                @endforelse
+                    @endforelse
 
-            </x-ui.table>
-
+                </x-ui.table>
+            </div>
 
             {{-- ========================================================= --}}
             {{-- PAGINACIÓN --}}
             {{-- ========================================================= --}}
 
-            @if ($products->hasPages())
-
-                <div class="border-t border-slate-200 bg-slate-50/60 px-5 py-4 sm:px-6">
-
-                    {{ $products->links() }}
-
-                </div>
-
-            @endif
+            <x-ui.table-pagination
+                :paginator="$products"
+                :per-page-options="[10, 25, 50, 100]" />
 
         </x-ui.card>
 
