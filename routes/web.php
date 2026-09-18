@@ -13,6 +13,7 @@ use App\Modules\Operation\Presentation\Http\Controllers\CashController;
 use App\Modules\Operation\Presentation\Http\Controllers\ExpenseCategoryController;
 use App\Modules\Operation\Presentation\Http\Controllers\ExpenseController;
 use App\Modules\Operation\Presentation\Http\Controllers\SaleController;
+use App\Modules\Operation\Presentation\Http\Controllers\SaleReturnController;
 use App\Modules\Payment\Presentation\Http\Controllers\MercadoPagoWebhookController;
 use Illuminate\Support\Facades\Route;
 
@@ -20,7 +21,6 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/search', [GlobalSearchController::class, 'index'])
         ->name('global.search');
-
 });
 
 // Rutas para Usuarios Invitados (Guest)
@@ -124,6 +124,16 @@ Route::middleware('auth')->group(function () {
         '/sales/point/{paymentTransaction}/finalize',
         [SaleController::class, 'finalizePointPayment']
     )->name('sales.point.finalize');
+
+    // Devoluciones
+    Route::get('/returns', [SaleReturnController::class, 'index'])
+        ->name('returns.index');
+
+    Route::get('/returns/sale/{sale}', [SaleReturnController::class, 'show'])
+        ->name('returns.show');
+
+    Route::post('/returns/sale/{sale}', [SaleReturnController::class, 'store'])
+        ->name('returns.store');
 });
 
 Route::post(

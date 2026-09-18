@@ -6,7 +6,7 @@
         description="Consulta ventas realizadas, revisa su detalle y administra cancelaciones.">
         <x-slot:actions>
             <a href="{{ route('sales.index') }}"
-                 class="mt-4 min-h-14 w-full rounded-xl bg-emerald-600 px-5 py-4 text-lg font-black text-white shadow-sm transition hover:bg-emerald-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-600 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400 disabled:shadow-none">
+                class="mt-4 min-h-14 w-full rounded-xl bg-emerald-600 px-5 py-4 text-lg font-black text-white shadow-sm transition hover:bg-emerald-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-600 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400 disabled:shadow-none">
                 Nueva venta
             </a>
         </x-slot:actions>
@@ -53,9 +53,10 @@
                 <label for="sales-status" class="mb-2 block text-sm font-bold text-slate-800">Estado</label>
                 <select id="sales-status" name="status" class="app-input">
                     <option value="">Todos</option>
-                    <option value="confirmed" @selected(request('status')==='confirmed' )>Confirmadas</option>
-                    <option value="cancelled" @selected(request('status')==='cancelled' )>Canceladas</option>
+                    <option value="confirmed"@selected(request('status')==='confirmed' )>Confirmadas</option>
+                    <option value="partially_returned"@selected(request('status')==='partially_returned' )>Devolución parcial</option>
                     <option value="returned" @selected(request('status')==='returned' )>Devueltas</option>
+                    <option value="cancelled" @selected(request('status')==='cancelled' )>Canceladas</option>
                 </select>
             </div>
 
@@ -78,122 +79,122 @@
         </form>
     </x-ui.card>
 
-   {{-- =========================================================
+    {{-- =========================================================
      HISTORIAL DE VENTAS
 ========================================================= --}}
-<x-ui.card class="mt-6 overflow-hidden p-0">
+    <x-ui.card class="mt-6 overflow-hidden p-0">
 
-    {{-- ENCABEZADO --}}
-    <div class="flex flex-col gap-3 border-b border-slate-200 bg-white px-5 py-5 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+        {{-- ENCABEZADO --}}
+        <div class="flex flex-col gap-3 border-b border-slate-200 bg-white px-5 py-5 sm:flex-row sm:items-center sm:justify-between sm:px-6">
 
-        <div>
-            <p class="text-xs font-black uppercase tracking-[0.14em] text-emerald-700">
-                Ventas
-            </p>
+            <div>
+                <p class="text-xs font-black uppercase tracking-[0.14em] text-emerald-700">
+                    Ventas
+                </p>
 
-            <h2 class="mt-1 text-lg font-black text-slate-950">
-                Ventas registradas
-            </h2>
+                <h2 class="mt-1 text-lg font-black text-slate-950">
+                    Ventas registradas
+                </h2>
 
-            <p class="mt-1 text-sm text-slate-500">
-                Consulta las operaciones realizadas.
-            </p>
+                <p class="mt-1 text-sm text-slate-500">
+                    Consulta las operaciones realizadas.
+                </p>
+            </div>
+
+            <span class="w-fit rounded-full bg-slate-100 px-3 py-1.5 text-xs font-bold text-slate-600">
+                {{ $sales->total() }}
+                {{ $sales->total() === 1 ? 'resultado' : 'resultados' }}
+            </span>
+
         </div>
 
-        <span class="w-fit rounded-full bg-slate-100 px-3 py-1.5 text-xs font-bold text-slate-600">
-            {{ $sales->total() }}
-            {{ $sales->total() === 1 ? 'resultado' : 'resultados' }}
-        </span>
 
-    </div>
-
-
-    {{-- =====================================================
+        {{-- =====================================================
          DESKTOP / TABLET
     ====================================================== --}}
-    <div class="hidden min-w-0 px-3 py-3 lg:block sm:px-5">
+        <div class="hidden min-w-0 px-3 py-3 lg:block sm:px-5">
 
-        <x-ui.table
-            caption="Historial de ventas"
-            maxHeight="clamp(280px, calc(100vh - 560px), 520px)"
-            class="table-fixed">
+            <x-ui.table
+                caption="Historial de ventas"
+                maxHeight="clamp(280px, calc(100vh - 560px), 520px)"
+                class="table-fixed">
 
-            <x-slot:head>
+                <x-slot:head>
 
-                <tr>
+                    <tr>
 
-                    {{-- FOLIO --}}
-                    <th
-                        scope="col"
-                        class="w-[190px] whitespace-nowrap border-b border-slate-200 bg-slate-50 px-4 py-3.5 text-left text-xs font-black uppercase tracking-wider text-slate-500 sm:px-5">
-                        Folio
-                    </th>
+                        {{-- FOLIO --}}
+                        <th
+                            scope="col"
+                            class="w-[190px] whitespace-nowrap border-b border-slate-200 bg-slate-50 px-4 py-3.5 text-left text-xs font-black uppercase tracking-wider text-slate-500 sm:px-5">
+                            Folio
+                        </th>
 
-                    {{-- FECHA --}}
-                    <th
-                        scope="col"
-                        class="w-[145px] whitespace-nowrap border-b border-slate-200 bg-slate-50 px-4 py-3.5 text-left text-xs font-black uppercase tracking-wider text-slate-500">
-                        Fecha
-                    </th>
+                        {{-- FECHA --}}
+                        <th
+                            scope="col"
+                            class="w-[145px] whitespace-nowrap border-b border-slate-200 bg-slate-50 px-4 py-3.5 text-left text-xs font-black uppercase tracking-wider text-slate-500">
+                            Fecha
+                        </th>
 
-                    {{-- CLIENTE --}}
-                    <th
-                        scope="col"
-                        class="border-b border-slate-200 bg-slate-50 px-4 py-3.5 text-left text-xs font-black uppercase tracking-wider text-slate-500">
-                        Cliente
-                    </th>
+                        {{-- CLIENTE --}}
+                        <th
+                            scope="col"
+                            class="border-b border-slate-200 bg-slate-50 px-4 py-3.5 text-left text-xs font-black uppercase tracking-wider text-slate-500">
+                            Cliente
+                        </th>
 
-                    {{-- ESTADO --}}
-                    <th
-                        scope="col"
-                        class="w-[135px] whitespace-nowrap border-b border-slate-200 bg-slate-50 px-4 py-3.5 text-left text-xs font-black uppercase tracking-wider text-slate-500">
-                        Estado
-                    </th>
+                        {{-- ESTADO --}}
+                        <th
+                            scope="col"
+                            class="w-[135px] whitespace-nowrap border-b border-slate-200 bg-slate-50 px-4 py-3.5 text-left text-xs font-black uppercase tracking-wider text-slate-500">
+                            Estado
+                        </th>
 
-                    {{-- TOTAL --}}
-                    <th
-                        scope="col"
-                        class="w-[145px] whitespace-nowrap border-b border-slate-200 bg-slate-50 px-4 py-3.5 text-right text-xs font-black uppercase tracking-wider text-slate-500">
-                        Total
-                    </th>
+                        {{-- TOTAL --}}
+                        <th
+                            scope="col"
+                            class="w-[145px] whitespace-nowrap border-b border-slate-200 bg-slate-50 px-4 py-3.5 text-right text-xs font-black uppercase tracking-wider text-slate-500">
+                            Total
+                        </th>
 
-                    {{-- ACCIONES --}}
-                    <th
-                        scope="col"
-                        class="w-[205px] whitespace-nowrap border-b border-slate-200 bg-slate-50 px-4 py-3.5 text-right text-xs font-black uppercase tracking-wider text-slate-500">
-                        Acción
-                    </th>
+                        {{-- ACCIONES --}}
+                        <th
+                            scope="col"
+                            class="w-[290px] whitespace-nowrap border-b border-slate-200 bg-slate-50 px-4 py-3.5 text-right text-xs font-black uppercase tracking-wider text-slate-500">
+                            Acción
+                        </th>
 
-                </tr>
+                    </tr>
 
-            </x-slot:head>
+                </x-slot:head>
 
 
-            @forelse ($sales as $sale)
+                @forelse ($sales as $sale)
 
                 @php
-                    $status = match ($sale->status) {
-                        'confirmed' => [
-                            'Confirmada',
-                            'bg-emerald-50 text-emerald-800 ring-1 ring-inset ring-emerald-200'
-                        ],
-                        'cancelled' => [
-                            'Cancelada',
-                            'bg-rose-50 text-rose-800 ring-1 ring-inset ring-rose-200'
-                        ],
-                        'returned' => [
-                            'Devuelta',
-                            'bg-amber-50 text-amber-800 ring-1 ring-inset ring-amber-200'
-                        ],
-                        'partially_returned' => [
-                            'Devolución parcial',
-                            'bg-amber-50 text-amber-800 ring-1 ring-inset ring-amber-200'
-                        ],
-                        default => [
-                            ucfirst($sale->status),
-                            'bg-slate-100 text-slate-700 ring-1 ring-inset ring-slate-200'
-                        ],
-                    };
+                $status = match ($sale->status) {
+                'confirmed' => [
+                'Confirmada',
+                'bg-emerald-50 text-emerald-800 ring-1 ring-inset ring-emerald-200'
+                ],
+                'cancelled' => [
+                'Cancelada',
+                'bg-rose-50 text-rose-800 ring-1 ring-inset ring-rose-200'
+                ],
+                'returned' => [
+                'Devuelta',
+                'bg-amber-50 text-amber-800 ring-1 ring-inset ring-amber-200'
+                ],
+                'partially_returned' => [
+                'Devolución parcial',
+                'bg-amber-50 text-amber-800 ring-1 ring-inset ring-amber-200'
+                ],
+                default => [
+                ucfirst($sale->status),
+                'bg-slate-100 text-slate-700 ring-1 ring-inset ring-slate-200'
+                ],
+                };
                 @endphp
 
 
@@ -280,15 +281,38 @@
                                 Ticket
                             </a>
 
+
+                            {{-- DEVOLUCIÓN --}}
+                            @if (in_array($sale->status, ['confirmed', 'partially_returned'], true))
+
+                            <a
+                                href="{{ route('returns.show', $sale) }}"
+                                title="Procesar devolución"
+                                class="inline-flex min-h-10 items-center justify-center rounded-lg border border-amber-300 bg-amber-50 px-3 text-xs font-black text-amber-700 transition hover:border-amber-400 hover:bg-amber-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-600">
+                                Devolución
+                            </a>
+
+                            @elseif ($sale->status === 'returned')
+
+                            <span
+                                class="inline-flex min-h-10 items-center justify-center rounded-lg bg-slate-100 px-3 text-xs font-black text-slate-400"
+                                title="Esta venta ya fue devuelta completamente">
+                                Devuelta
+                            </span>
+
+                            @endif
+
+
+                            {{-- CANCELACIÓN --}}
                             @if ($sale->status === 'confirmed')
 
-                                <button
-                                    type="button"
-                                    data-cancel-sale="{{ $sale->id }}"
-                                    data-sale-number="{{ $sale->sale_number }}"
-                                    class="inline-flex min-h-10 items-center justify-center rounded-lg border border-rose-200 bg-rose-50 px-3 text-xs font-bold text-rose-700 transition hover:border-rose-300 hover:bg-rose-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rose-600">
-                                    Cancelar
-                                </button>
+                            <button
+                                type="button"
+                                data-cancel-sale="{{ $sale->id }}"
+                                data-sale-number="{{ $sale->sale_number }}"
+                                class="inline-flex min-h-10 items-center justify-center rounded-lg border border-rose-200 bg-rose-50 px-3 text-xs font-bold text-rose-700 transition hover:border-rose-300 hover:bg-rose-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rose-600">
+                                Cancelar
+                            </button>
 
                             @endif
 
@@ -298,7 +322,7 @@
 
                 </tr>
 
-            @empty
+                @empty
 
                 <tr>
 
@@ -324,43 +348,43 @@
 
                 </tr>
 
-            @endforelse
+                @endforelse
 
-        </x-ui.table>
+            </x-ui.table>
 
-    </div>
+        </div>
 
 
-    {{-- =====================================================
+        {{-- =====================================================
          MOBILE
     ====================================================== --}}
-    <div class="divide-y divide-slate-100 lg:hidden">
+        <div class="divide-y divide-slate-100 lg:hidden">
 
-        @forelse ($sales as $sale)
+            @forelse ($sales as $sale)
 
             @php
-                $status = match ($sale->status) {
-                    'confirmed' => [
-                        'Confirmada',
-                        'bg-emerald-50 text-emerald-800 ring-1 ring-inset ring-emerald-200'
-                    ],
-                    'cancelled' => [
-                        'Cancelada',
-                        'bg-rose-50 text-rose-800 ring-1 ring-inset ring-rose-200'
-                    ],
-                    'returned' => [
-                        'Devuelta',
-                        'bg-amber-50 text-amber-800 ring-1 ring-inset ring-amber-200'
-                    ],
-                    'partially_returned' => [
-                        'Devolución parcial',
-                        'bg-amber-50 text-amber-800 ring-1 ring-inset ring-amber-200'
-                    ],
-                    default => [
-                        ucfirst($sale->status),
-                        'bg-slate-100 text-slate-700 ring-1 ring-inset ring-slate-200'
-                    ],
-                };
+            $status = match ($sale->status) {
+            'confirmed' => [
+            'Confirmada',
+            'bg-emerald-50 text-emerald-800 ring-1 ring-inset ring-emerald-200'
+            ],
+            'cancelled' => [
+            'Cancelada',
+            'bg-rose-50 text-rose-800 ring-1 ring-inset ring-rose-200'
+            ],
+            'returned' => [
+            'Devuelta',
+            'bg-amber-50 text-amber-800 ring-1 ring-inset ring-amber-200'
+            ],
+            'partially_returned' => [
+            'Devolución parcial',
+            'bg-amber-50 text-amber-800 ring-1 ring-inset ring-amber-200'
+            ],
+            default => [
+            ucfirst($sale->status),
+            'bg-slate-100 text-slate-700 ring-1 ring-inset ring-slate-200'
+            ],
+            };
             @endphp
 
 
@@ -449,6 +473,7 @@
                         Ver venta
                     </a>
 
+
                     <a
                         href="{{ route('sales.ticket', $sale) }}"
                         target="_blank"
@@ -456,15 +481,36 @@
                         Ver ticket
                     </a>
 
+
+                    {{-- DEVOLUCIÓN --}}
+                    @if (in_array($sale->status, ['confirmed', 'partially_returned'], true))
+
+                    <a
+                        href="{{ route('returns.show', $sale) }}"
+                        class="inline-flex min-h-12 items-center justify-center rounded-xl border border-amber-300 bg-amber-50 px-4 text-sm font-black text-amber-700 transition hover:bg-amber-100">
+                        Devolución
+                    </a>
+
+                    @elseif ($sale->status === 'returned')
+
+                    <span
+                        class="inline-flex min-h-12 items-center justify-center rounded-xl bg-slate-100 px-4 text-sm font-black text-slate-400">
+                        Devuelta
+                    </span>
+
+                    @endif
+
+
+                    {{-- CANCELACIÓN --}}
                     @if ($sale->status === 'confirmed')
 
-                        <button
-                            type="button"
-                            data-cancel-sale="{{ $sale->id }}"
-                            data-sale-number="{{ $sale->sale_number }}"
-                            class="inline-flex min-h-12 items-center justify-center rounded-xl border border-rose-200 bg-rose-50 px-4 text-sm font-black text-rose-700 transition hover:bg-rose-100 sm:col-span-2">
-                            Cancelar venta
-                        </button>
+                    <button
+                        type="button"
+                        data-cancel-sale="{{ $sale->id }}"
+                        data-sale-number="{{ $sale->sale_number }}"
+                        class="inline-flex min-h-12 items-center justify-center rounded-xl border border-rose-200 bg-rose-50 px-4 text-sm font-black text-rose-700 transition hover:bg-rose-100 sm:col-span-2">
+                        Cancelar venta
+                    </button>
 
                     @endif
 
@@ -472,7 +518,7 @@
 
             </article>
 
-        @empty
+            @empty
 
             <div class="px-5 py-16 text-center">
 
@@ -490,17 +536,17 @@
 
             </div>
 
-        @endforelse
+            @endforelse
 
-    </div>
+        </div>
 
 
-    {{-- PAGINACIÓN --}}
-    <x-ui.table-pagination
-        :paginator="$sales"
-        :per-page-options="[10, 20, 50, 100]" />
+        {{-- PAGINACIÓN --}}
+        <x-ui.table-pagination
+            :paginator="$sales"
+            :per-page-options="[10, 20, 50, 100]" />
 
-</x-ui.card>
+    </x-ui.card>
 
     {{-- Modal de cancelación --}}
     <x-ui.modal id="cancel-sale-modal" size="sm" title="Cancelar venta" description="Esta acción revertirá la operación y sus movimientos." close-id="close-cancel-sale">
