@@ -33,6 +33,12 @@ final class ProductController extends Controller
         $brandId = $request->input('brand_id');
         $stockFilter = $request->input('stock_filter');
 
+        $perPage = (int) $request->input('per_page', 10);
+
+        $perPage = in_array($perPage, [10, 25, 50, 100], true)
+            ? $perPage
+            : 10;
+
         $products = Product::query()
             ->with([
                 'category',
@@ -42,7 +48,6 @@ final class ProductController extends Controller
                     $query->where('is_active', true);
                 },
                 'stockItem.inventoryUnit',
-                // Eliminamos la carga de relaciones que daban error (inventoryBalance, reorderLevel)
             ])
             ->when($search, function ($query, $search) {
                 $query->where(function ($q) use ($search) {
@@ -56,14 +61,11 @@ final class ProductController extends Controller
             ->when($categoryId, function ($query, $categoryId) {
                 $query->where('category_id', $categoryId);
             })
-            // Agregamos el filtro por marca si está presente
             ->when($brandId, function ($query, $brandId) {
                 $query->where('brand_id', $brandId);
             })
-            // Nota: El filtro de stock ($stockFilter) no se aplica aquí
-            // porque no cargamos las relaciones de inventario.
             ->latest()
-            ->paginate(15)
+            ->paginate($perPage)
             ->withQueryString();
 
         $categories = Category::query()->where('is_active', true)->orderBy('name')->get();
@@ -78,7 +80,8 @@ final class ProductController extends Controller
             'search',
             'categoryId',
             'brandId', // <--- Agregada
-            'stockFilter' // <--- ESTA ES LA QUE FALTABA
+            'stockFilter', // <--- ESTA ES LA QUE FALTABA
+            'perPage'
         ));
     }
 

@@ -272,938 +272,956 @@
             </form>
         </x-ui.card>
 
+<x-ui.card padding="p-0" class="overflow-hidden">
 
-        {{-- =========================================================
-             INVENTARIO
-        ========================================================== --}}
-        <x-ui.card padding="p-0" class="overflow-hidden">
+    {{-- ENCABEZADO --}}
+    <div
+        class="flex flex-col gap-3 border-b border-slate-200 bg-white px-5 py-5 sm:flex-row sm:items-center sm:justify-between sm:px-6"
+    >
 
-            {{-- Encabezado de tabla --}}
-            <div class="flex flex-col gap-3 border-b border-slate-200 bg-white px-5 py-5 sm:px-6 lg:flex-row lg:items-center lg:justify-between">
+        <div>
 
-                <div>
-                    <p class="text-base font-black text-slate-950">
-                        Existencias registradas
-                    </p>
+            <p class="text-xs font-black uppercase tracking-[0.14em] text-emerald-700">
+                Inventario
+            </p>
 
-                    <p class="mt-1 text-sm text-slate-500">
-                        {{ $items->total() }} artículos encontrados
-                    </p>
-                </div>
+            <h2 class="mt-1 text-lg font-black text-slate-900">
+                Existencias registradas
+            </h2>
 
-                @if ($search || $categoryId || $stockStatus)
-                <span class="inline-flex w-fit items-center rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-700">
-                    Filtros activos
-                </span>
-                @endif
+            <p class="mt-1 text-sm text-slate-500">
+                {{ $items->total() }}
+                {{ $items->total() === 1 ? 'artículo encontrado' : 'artículos encontrados' }}
+            </p>
 
-            </div>
+        </div>
+
+
+        @if ($search || $categoryId || $stockStatus)
+
+            <span
+                class="inline-flex w-fit items-center rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-700"
+            >
+                Filtros activos
+            </span>
+
+        @endif
+
+    </div>
 
 
             {{-- =====================================================
-                 TABLA DESKTOP / TABLET
-            ====================================================== --}}
-            <div class="hidden overflow-x-auto lg:block">
+     TABLA DESKTOP / TABLET
+====================================================== --}}
+            <div class="hidden min-w-0 px-3 py-3 lg:block sm:px-5">
 
-                <table class="min-w-[980px] w-full text-left">
+                <x-ui.table
+                    caption="Existencias de inventario"
+                    maxHeight="clamp(280px, calc(100vh - 560px), 420px)">
 
-                    <caption class="sr-only">
-                        Existencias de inventario
-                    </caption>
+                    <x-slot:head>
 
-                    <thead class="border-b border-slate-200 bg-slate-50">
+                        <tr>
 
-                        <tr class="text-xs font-black uppercase tracking-[0.08em] text-slate-500">
-
-                            <th scope="col" class="px-6 py-4">
+                            <th
+                                scope="col"
+                                class="whitespace-nowrap border-b border-slate-200 bg-slate-50 px-4 py-3.5 text-left text-xs font-black uppercase tracking-wider text-slate-500 sm:px-5">
                                 Producto
                             </th>
 
-                            <th scope="col" class="px-6 py-4">
+                            <th
+                                scope="col"
+                                class="whitespace-nowrap border-b border-slate-200 bg-slate-50 px-4 py-3.5 text-left text-xs font-black uppercase tracking-wider text-slate-500 sm:px-5">
                                 Clasificación
                             </th>
 
-                            <th scope="col" class="px-6 py-4 text-right">
+                            <th
+                                scope="col"
+                                class="whitespace-nowrap border-b border-slate-200 bg-slate-50 px-4 py-3.5 text-right text-xs font-black uppercase tracking-wider text-slate-500 sm:px-5">
                                 Físico
                             </th>
 
-                            <th scope="col" class="px-6 py-4">
+                            <th
+                                scope="col"
+                                class="whitespace-nowrap border-b border-slate-200 bg-slate-50 px-4 py-3.5 text-left text-xs font-black uppercase tracking-wider text-slate-500 sm:px-5">
                                 Estado
                             </th>
 
-                            <th scope="col" class="px-6 py-4 text-right">
+                            <th
+                                scope="col"
+                                class="whitespace-nowrap border-b border-slate-200 bg-slate-50 px-4 py-3.5 text-right text-xs font-black uppercase tracking-wider text-slate-500 sm:px-5">
                                 Costo promedio
                             </th>
 
-                            <th scope="col" class="px-6 py-4 text-right">
+                            <th
+                                scope="col"
+                                class="whitespace-nowrap border-b border-slate-200 bg-slate-50 px-4 py-3.5 text-right text-xs font-black uppercase tracking-wider text-slate-500 sm:px-5">
                                 Acción
                             </th>
 
                         </tr>
 
-                    </thead>
+                    </x-slot:head>
 
 
-                    <tbody class="divide-y divide-slate-100">
+                    @forelse ($items as $item)
 
-                        @forelse ($items as $item)
+                    @php
+                    $balance = $item->inventoryBalance;
+                    $reorder = $item->reorderLevel;
 
-                        @php
-                        $balance = $item->inventoryBalance;
-                        $reorder = $item->reorderLevel;
+                    $unit = $item->inventoryUnit?->code ?? 'PZA';
 
-                        $unit = $item->inventoryUnit?->code ?? 'PZA';
+                    $onHand = (float) ($balance?->on_hand_quantity ?? 0);
+                    $available = $onHand;
 
-                        $onHand = (float) ($balance?->on_hand_quantity ?? 0);
-                        $available = $onHand;
-                        $minQty = (float) ($reorder?->minimum_quantity ?? 0);
-                        $cost = (float) ($balance?->weighted_average_cost ?? 0);
-                        @endphp
+                    $minQty = (float) ($reorder?->minimum_quantity ?? 0);
+                    $cost = (float) ($balance?->weighted_average_cost ?? 0);
+                    @endphp
 
-                        <tr class="transition hover:bg-slate-50/70">
 
-                            {{-- Producto --}}
-                            <td class="px-6 py-5 align-middle">
+                    <tr class="group transition hover:bg-slate-50/70">
 
-                                <div class="max-w-sm">
+                        {{-- =================================================
+                     PRODUCTO
+                ================================================== --}}
+                        <td class="px-5 py-4 align-middle sm:px-6">
 
-                                    <p class="text-sm font-black text-slate-950">
-                                        {{ $item->product?->name ?? 'Producto sin nombre' }}
-                                    </p>
+                            <div class="min-w-0 max-w-full">
 
-                                    <div class="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1">
+                                <p class="truncate text-sm font-black text-slate-900">
+                                    {{ $item->product?->name ?? 'Producto sin nombre' }}
+                                </p>
 
-                                        <span class="font-mono text-xs font-semibold text-slate-500">
-                                            SKU:
-                                            {{ $item->product?->sku ?? 'N/A' }}
-                                        </span>
+                                <div class="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1">
 
-                                        @php
-                                        $primaryBarcode =
-                                        $item->barcodes->firstWhere('is_primary', true)
-                                        ?? $item->barcodes->first();
-                                        @endphp
+                                    <span class="font-mono text-xs font-semibold text-slate-500">
+                                        SKU:
+                                        {{ $item->product?->sku ?? 'N/A' }}
+                                    </span>
 
-                                        @if ($primaryBarcode)
-                                        <span class="font-mono text-xs text-slate-400">
-                                            {{ $primaryBarcode->barcode }}
-                                        </span>
-                                        @endif
+                                    @php
+                                    $primaryBarcode =
+                                    $item->barcodes->firstWhere('is_primary', true)
+                                    ?? $item->barcodes->first();
+                                    @endphp
 
-                                    </div>
+                                    @if ($primaryBarcode)
+
+                                    <span class="font-mono text-xs text-slate-400">
+                                        {{ $primaryBarcode->barcode }}
+                                    </span>
+
+                                    @endif
 
                                 </div>
 
-                            </td>
+                            </div>
+
+                        </td>
 
 
-                            {{-- Clasificación --}}
-                            <td class="px-6 py-5 align-middle">
+                        {{-- =================================================
+                     CLASIFICACIÓN
+                ================================================== --}}
+                        <td class="px-5 py-4 align-middle">
 
-                                <span class="inline-flex items-center rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-bold text-slate-700">
+                            <div class="space-y-1">
+
+                                <span
+                                    class="inline-flex max-w-[160px] truncate rounded-lg bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-700">
                                     {{ $item->product?->category?->name ?? 'Sin categoría' }}
                                 </span>
 
                                 @if ($item->product?->brand)
-                                <p class="mt-1.5 text-xs font-medium text-slate-500">
+
+                                <p class="text-xs font-semibold text-slate-400">
                                     {{ $item->product->brand->name }}
                                 </p>
+
                                 @endif
 
-                            </td>
+                            </div>
+
+                        </td>
 
 
-                            {{-- Existencia --}}
-                            <td class="px-6 py-5 text-right align-middle">
+                        {{-- =================================================
+                     FÍSICO
+                ================================================== --}}
+                        <td class="px-5 py-4 text-right align-middle">
 
-                                <p class="text-base font-black tabular-nums text-slate-950">
-                                    {{ number_format($onHand, 2) }}
-                                </p>
+                            <p class="whitespace-nowrap text-base font-black tabular-nums text-slate-900">
+                                {{ number_format($onHand, 2) }}
+                            </p>
 
-                                <p class="mt-0.5 text-xs font-semibold text-slate-400">
-                                    {{ $unit }}
-                                </p>
+                            <p class="mt-0.5 text-xs font-bold text-slate-400">
+                                {{ $unit }}
+                            </p>
 
-                            </td>
+                        </td>
 
 
-                            {{-- Disponible --}}
-                            <td class="px-6 py-5 align-middle">
+                        {{-- =================================================
+                     ESTADO
+                ================================================== --}}
+                        <td class="px-5 py-4 align-middle">
 
-                                @if ($available <= 0)
+                            @if ($available <= 0)
 
-                                    <div class="inline-flex items-center gap-2 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2">
-                                    <span class="h-2 w-2 rounded-full bg-rose-500"></span>
+                                <span
+                                class="inline-flex items-center gap-2 rounded-full border border-rose-200 bg-rose-50 px-3 py-1.5 text-xs font-black text-rose-700">
+                                <span class="h-2 w-2 rounded-full bg-rose-500"></span>
 
-                                    <span>
-                                        <span class="block text-xs font-black text-rose-700">
-                                            Agotado
-                                        </span>
+                                Agotado
+                                </span>
 
-                                        <span class="block text-xs font-semibold text-rose-600">
-                                            0 {{ $unit }}
-                                        </span>
+                                @elseif ($minQty > 0 && $available <= $minQty)
+
+                                    <span
+                                    class="inline-flex items-center gap-2 rounded-full border border-amber-200 bg-amber-50 px-3 py-1.5 text-xs font-black text-amber-700">
+                                    <span class="h-2 w-2 rounded-full bg-amber-500"></span>
+
+                                    Stock bajo
                                     </span>
-            </div>
 
-            @elseif ($minQty > 0 && $available <= $minQty)
+                                    @else
 
-                <div
-                class="inline-flex items-center gap-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2"
-                title="Nivel mínimo: {{ number_format($minQty, 2) }} {{ $unit }}">
-                <span class="h-2 w-2 rounded-full bg-amber-500"></span>
+                                    <span
+                                        class="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-black text-emerald-700">
+                                        <span class="h-2 w-2 rounded-full bg-emerald-500"></span>
 
-                <span>
-                    <span class="block text-xs font-black text-amber-700">
-                        Stock bajo
-                    </span>
+                                        Disponible
+                                    </span>
 
-                    <span class="block text-xs font-bold text-amber-700 tabular-nums">
-                        {{ number_format($available, 2) }} {{ $unit }}
-                    </span>
-                </span>
-    </div>
+                                    @endif
 
-    @else
-
-    <div class="inline-flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2">
-
-        <span class="h-2 w-2 rounded-full bg-emerald-500"></span>
-
-        <span>
-            <span class="block text-xs font-black text-emerald-700">
-                Disponible
-            </span>
-
-            <span class="block text-xs font-bold text-emerald-700 tabular-nums">
-                {{ number_format($available, 2) }} {{ $unit }}
-            </span>
-        </span>
-
-    </div>
-
-    @endif
-
-    </td>
+                        </td>
 
 
-    {{-- Costo --}}
-    <td class="px-6 py-5 text-right align-middle">
+                        {{-- =================================================
+                     COSTO
+                ================================================== --}}
+                        <td class="px-5 py-4 text-right align-middle">
 
-        <p class="text-sm font-black tabular-nums text-slate-800">
-            ${{ number_format($cost, 2) }}
-        </p>
+                            <p class="whitespace-nowrap text-sm font-black tabular-nums text-slate-800">
+                                ${{ number_format($cost, 2) }}
+                            </p>
 
-        <p class="mt-0.5 text-xs font-medium text-slate-400">
-            MXN
-        </p>
+                            <p class="mt-0.5 text-xs font-medium text-slate-400">
+                                MXN
+                            </p>
 
-    </td>
+                        </td>
 
 
-    {{-- Acción --}}
-    <td class="px-6 py-5 text-right align-middle">
+                        {{-- =================================================
+                     ACCIÓN
+                ================================================== --}}
+                        <td class="px-5 py-4 text-right align-middle">
 
-        <button
-            type="button"
-            onclick="openAdjustModal(
-                                            @js($item->id),
-                                            @js($item->product?->name ?? 'Producto'),
-                                            @js(number_format($available, 2)),
-                                            @js($unit)
-                                        )"
-            class="inline-flex min-h-11 items-center justify-center rounded-xl border border-slate-300 bg-white px-4 text-sm font-bold text-slate-700 shadow-sm transition hover:border-slate-400 hover:bg-slate-50 hover:text-slate-950 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-600">
-            Ajustar
-        </button>
+                            <button
+                                type="button"
+                                onclick="openAdjustModal(
+                            @js($item->id),
+                            @js($item->product?->name ?? 'Producto'),
+                            @js(number_format($available, 2)),
+                            @js($unit)
+                        )"
+                                class="inline-flex min-h-10 items-center justify-center rounded-lg border border-slate-300 bg-white px-3 text-sm font-bold text-slate-700 transition hover:border-slate-400 hover:bg-slate-50 hover:text-slate-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-600">
+                                Ajustar
+                            </button>
 
-    </td>
+                        </td>
 
-    </tr>
+                    </tr>
 
-    @empty
 
-    <tr>
-        <td colspan="6" class="px-6 py-16 text-center">
+                    @empty
 
-            <div class="mx-auto max-w-md">
+                    <tr>
 
-                <div class="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-slate-100 text-xl font-black text-slate-400">
-                    ∅
-                </div>
+                        <td
+                            colspan="6"
+                            class="px-6 py-16 text-center">
 
-                <p class="mt-4 text-base font-black text-slate-900">
-                    No encontramos existencias
-                </p>
+                            <div class="mx-auto max-w-md">
 
-                <p class="mt-2 text-sm leading-6 text-slate-500">
-                    No existen artículos que coincidan con los filtros seleccionados.
-                </p>
+                                <div
+                                    class="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-slate-100 text-xl font-black text-slate-400">
+                                    ∅
+                                </div>
 
-                @if ($search || $categoryId || $stockStatus)
-                <a
-                    href="{{ route('stock.index') }}"
-                    class="mt-5 inline-flex min-h-11 items-center justify-center rounded-xl bg-slate-900 px-5 text-sm font-bold text-white transition hover:bg-slate-800">
-                    Limpiar filtros
-                </a>
-                @endif
+                                <p class="mt-4 text-base font-black text-slate-900">
+                                    No encontramos existencias
+                                </p>
+
+                                <p class="mt-2 text-sm leading-6 text-slate-500">
+                                    No existen artículos que coincidan con los filtros seleccionados.
+                                </p>
+
+                                @if ($search || $categoryId || $stockStatus)
+
+                                <a
+                                    href="{{ route('stock.index') }}"
+                                    class="mt-5 inline-flex min-h-11 items-center justify-center rounded-xl bg-slate-900 px-5 text-sm font-bold text-white transition hover:bg-slate-800">
+                                    Limpiar filtros
+                                </a>
+
+                                @endif
+
+                            </div>
+
+                        </td>
+
+                    </tr>
+
+                    @endforelse
+
+                </x-ui.table>
 
             </div>
 
-        </td>
-    </tr>
 
-    @endforelse
-
-    </tbody>
-
-    </table>
-
-    </div>
-
-
-    {{-- =====================================================
+            {{-- =====================================================
                  CARDS MOBILE
             ====================================================== --}}
-    <div class="divide-y divide-slate-100 lg:hidden">
+            <div class="divide-y divide-slate-100 lg:hidden">
 
-        @forelse ($items as $item)
+                @forelse ($items as $item)
 
-        @php
-        $balance = $item->inventoryBalance;
-        $reorder = $item->reorderLevel;
+                @php
+                $balance = $item->inventoryBalance;
+                $reorder = $item->reorderLevel;
 
-        $unit = $item->inventoryUnit?->code ?? 'PZA';
+                $unit = $item->inventoryUnit?->code ?? 'PZA';
 
-        $onHand = (float) ($balance?->on_hand_quantity ?? 0);
-        $available = $onHand;
+                $onHand = (float) ($balance?->on_hand_quantity ?? 0);
+                $available = $onHand;
 
-        $minQty = (float) ($reorder?->minimum_quantity ?? 0);
-        $cost = (float) ($balance?->weighted_average_cost ?? 0);
-        @endphp
+                $minQty = (float) ($reorder?->minimum_quantity ?? 0);
+                $cost = (float) ($balance?->weighted_average_cost ?? 0);
+                @endphp
 
-        <article class="p-5">
+                <article class="p-5">
 
-            {{-- Producto --}}
-            <div class="flex items-start justify-between gap-4">
+                    {{-- Producto --}}
+                    <div class="flex items-start justify-between gap-4">
 
-                <div class="min-w-0">
+                        <div class="min-w-0">
 
-                    <h3 class="truncate text-base font-black text-slate-950">
-                        {{ $item->product?->name ?? 'Producto sin nombre' }}
-                    </h3>
+                            <h3 class="truncate text-base font-black text-slate-950">
+                                {{ $item->product?->name ?? 'Producto sin nombre' }}
+                            </h3>
 
-                    <p class="mt-1 font-mono text-xs font-semibold text-slate-500">
-                        SKU:
-                        {{ $item->product?->sku ?? 'N/A' }}
-                    </p>
+                            <p class="mt-1 font-mono text-xs font-semibold text-slate-500">
+                                SKU:
+                                {{ $item->product?->sku ?? 'N/A' }}
+                            </p>
 
-                </div>
+                        </div>
 
 
-                {{-- Estado --}}
-                @if ($available <= 0)
+                        {{-- Estado --}}
+                        @if ($available <= 0)
 
-                    <span class="shrink-0 rounded-full border border-rose-200 bg-rose-50 px-2.5 py-1 text-xs font-black text-rose-700">
-                    Agotado
-                    </span>
+                            <span class="shrink-0 rounded-full border border-rose-200 bg-rose-50 px-2.5 py-1 text-xs font-black text-rose-700">
+                            Agotado
+                            </span>
 
-                    @elseif ($minQty > 0 && $available <= $minQty)
+                            @elseif ($minQty > 0 && $available <= $minQty)
 
-                        <span class="shrink-0 rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-xs font-black text-amber-700">
-                        Stock bajo
+                                <span class="shrink-0 rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-xs font-black text-amber-700">
+                                Stock bajo
+                                </span>
+
+                                @else
+
+                                <span class="shrink-0 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-black text-emerald-700">
+                                    Disponible
+                                </span>
+
+                                @endif
+
+                    </div>
+
+
+                    {{-- Clasificación --}}
+                    <div class="mt-3 flex flex-wrap items-center gap-2">
+
+                        <span class="rounded-lg bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-700">
+                            {{ $item->product?->category?->name ?? 'Sin categoría' }}
                         </span>
 
-                        @else
-
-                        <span class="shrink-0 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-black text-emerald-700">
-                            Disponible
+                        @if ($item->product?->brand)
+                        <span class="text-xs font-medium text-slate-500">
+                            {{ $item->product->brand->name }}
                         </span>
-
                         @endif
 
-            </div>
+                    </div>
 
 
-            {{-- Clasificación --}}
-            <div class="mt-3 flex flex-wrap items-center gap-2">
+                    {{-- Disponible principal --}}
+                    <div class="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-4">
 
-                <span class="rounded-lg bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-700">
-                    {{ $item->product?->category?->name ?? 'Sin categoría' }}
-                </span>
+                        <p class="text-xs font-black uppercase tracking-[0.1em] text-slate-500">
+                            Disponible
+                        </p>
 
-                @if ($item->product?->brand)
-                <span class="text-xs font-medium text-slate-500">
-                    {{ $item->product->brand->name }}
-                </span>
-                @endif
+                        <div class="mt-1 flex items-end gap-2">
 
-            </div>
+                            <span class="text-3xl font-black tracking-tight text-slate-950 tabular-nums">
+                                {{ number_format($available, 2) }}
+                            </span>
 
+                            <span class="pb-1 text-sm font-bold text-slate-500">
+                                {{ $unit }}
+                            </span>
 
-            {{-- Disponible principal --}}
-            <div class="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                        </div>
 
-                <p class="text-xs font-black uppercase tracking-[0.1em] text-slate-500">
-                    Disponible
-                </p>
-
-                <div class="mt-1 flex items-end gap-2">
-
-                    <span class="text-3xl font-black tracking-tight text-slate-950 tabular-nums">
-                        {{ number_format($available, 2) }}
-                    </span>
-
-                    <span class="pb-1 text-sm font-bold text-slate-500">
-                        {{ $unit }}
-                    </span>
-
-                </div>
-
-            </div>
+                    </div>
 
 
-            {{-- Detalles --}}
-            <div class="mt-4 grid grid-cols-3 gap-3">
+                    {{-- Detalles --}}
+                    <div class="mt-4 grid grid-cols-3 gap-3">
 
-                <div>
-                    <p class="text-xs font-semibold text-slate-400">
-                        Físico
-                    </p>
+                        <div>
+                            <p class="text-xs font-semibold text-slate-400">
+                                Físico
+                            </p>
 
-                    <p class="mt-1 text-sm font-black text-slate-800 tabular-nums">
-                        {{ number_format($onHand, 2) }}
-                    </p>
-                </div>
+                            <p class="mt-1 text-sm font-black text-slate-800 tabular-nums">
+                                {{ number_format($onHand, 2) }}
+                            </p>
+                        </div>
 
-                <div>
-                    <p class="text-xs font-semibold text-slate-400">
-                        Costo
-                    </p>
+                        <div>
+                            <p class="text-xs font-semibold text-slate-400">
+                                Costo
+                            </p>
 
-                    <p class="mt-1 text-sm font-black text-slate-800 tabular-nums">
-                        ${{ number_format($cost, 2) }}
-                    </p>
-                </div>
+                            <p class="mt-1 text-sm font-black text-slate-800 tabular-nums">
+                                ${{ number_format($cost, 2) }}
+                            </p>
+                        </div>
 
-            </div>
+                    </div>
 
 
-            {{-- Acción --}}
-            <button
-                type="button"
-                onclick="openAdjustModal(
+                    {{-- Acción --}}
+                    <button
+                        type="button"
+                        onclick="openAdjustModal(
                                 @js($item->id),
                                 @js($item->product?->name ?? 'Producto'),
                                 @js(number_format($available, 2)),
                                 @js($unit)
                             )"
-                class="mt-5 flex min-h-12 w-full items-center justify-center rounded-xl bg-slate-900 px-4 text-sm font-black text-white shadow-sm transition hover:bg-slate-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-600">
-                Ajustar existencia
-            </button>
+                        class="mt-5 flex min-h-12 w-full items-center justify-center rounded-xl bg-slate-900 px-4 text-sm font-black text-white shadow-sm transition hover:bg-slate-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-600">
+                        Ajustar existencia
+                    </button>
 
-        </article>
+                </article>
 
-        @empty
+                @empty
 
-        <div class="px-5 py-16 text-center">
+                <div class="px-5 py-16 text-center">
 
-            <div class="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-slate-100 text-xl font-black text-slate-400">
-                ∅
+                    <div class="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-slate-100 text-xl font-black text-slate-400">
+                        ∅
+                    </div>
+
+                    <p class="mt-4 text-base font-black text-slate-900">
+                        No encontramos existencias
+                    </p>
+
+                    <p class="mt-2 text-sm leading-6 text-slate-500">
+                        No existen artículos que coincidan con los filtros seleccionados.
+                    </p>
+
+                </div>
+
+                @endforelse
+
             </div>
 
-            <p class="mt-4 text-base font-black text-slate-900">
-                No encontramos existencias
-            </p>
 
-            <p class="mt-2 text-sm leading-6 text-slate-500">
-                No existen artículos que coincidan con los filtros seleccionados.
-            </p>
-
-        </div>
-
-        @endforelse
-
-    </div>
-
-
-    {{-- =====================================================
+            {{-- =====================================================
                  PAGINACIÓN
             ====================================================== --}}
-    @if ($items->hasPages())
+            <x-ui.table-pagination
+                :paginator="$items"
+                :per-page-options="[10, 25, 50, 100]" />
 
-    <div class="border-t border-slate-200 bg-slate-50/70 px-5 py-4 sm:px-6">
-        {{ $items->links() }}
-    </div>
+        </x-ui.card>
 
-    @endif
-
-    </x-ui.card>
-
-    {{-- =========================================================
+        {{-- =========================================================
      MODAL: AJUSTAR EXISTENCIA
 ========================================================= --}}
 
-    <x-ui.modal
-        id="adjustModal"
-        size="md"
-        title="Ajustar existencia"
-        description="Registra una entrada, salida o carga inicial de inventario."
-        close-id="close-adjust-modal">
+        <x-ui.modal
+            id="adjustModal"
+            size="md"
+            title="Ajustar existencia"
+            description="Registra una entrada, salida o carga inicial de inventario."
+            close-id="close-adjust-modal">
 
-        <form
-            method="POST"
-            action="{{ route('stock.adjust') }}"
-            id="adjust-stock-form"
-            class="flex min-h-0 flex-col">
+            <form
+                method="POST"
+                action="{{ route('stock.adjust') }}"
+                id="adjust-stock-form"
+                class="flex min-h-0 flex-col">
 
-            @csrf
+                @csrf
 
-            <input
-                type="hidden"
-                name="stock_item_id"
-                id="modal_stock_item_id">
+                <input
+                    type="hidden"
+                    name="stock_item_id"
+                    id="modal_stock_item_id">
 
 
-            {{-- BODY --}}
-            <div class="space-y-5 px-5 py-5 sm:px-6">
+                {{-- BODY --}}
+                <div class="space-y-5 px-5 py-5 sm:px-6">
 
-                {{-- Producto seleccionado --}}
-                <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                    {{-- Producto seleccionado --}}
+                    <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
 
-                    <p class="text-xs font-black uppercase tracking-[0.12em] text-slate-400">
-                        Producto seleccionado
-                    </p>
+                        <p class="text-xs font-black uppercase tracking-[0.12em] text-slate-400">
+                            Producto seleccionado
+                        </p>
 
-                    <p
-                        id="modal_item_name"
-                        class="mt-1 text-base font-black text-slate-950 sm:text-lg">
-                        -
-                    </p>
-
-                    <div class="mt-3 flex items-center justify-between border-t border-slate-200 pt-3">
-
-                        <span class="text-sm font-bold text-slate-500">
-                            Disponible actual
-                        </span>
-
-                        <span
-                            id="modal_available"
-                            class="text-base font-black tabular-nums text-slate-950">
+                        <p
+                            id="modal_item_name"
+                            class="mt-1 text-base font-black text-slate-950 sm:text-lg">
                             -
-                        </span>
+                        </p>
+
+                        <div class="mt-3 flex items-center justify-between border-t border-slate-200 pt-3">
+
+                            <span class="text-sm font-bold text-slate-500">
+                                Disponible actual
+                            </span>
+
+                            <span
+                                id="modal_available"
+                                class="text-base font-black tabular-nums text-slate-950">
+                                -
+                            </span>
+
+                        </div>
 
                     </div>
 
-                </div>
+                    {{-- ERROR DE STOCK --}}
+                    <div
+                        id="stock-adjust-error"
+                        class="hidden rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3"
+                        role="alert"
+                        aria-live="assertive">
+                        <div class="flex items-start gap-3">
+                            <span class="mt-0.5 grid h-6 w-6 shrink-0 place-items-center rounded-full bg-rose-600 text-xs font-black text-white">
+                                !
+                            </span>
 
-                {{-- ERROR DE STOCK --}}
-                <div
-                    id="stock-adjust-error"
-                    class="hidden rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3"
-                    role="alert"
-                    aria-live="assertive">
-                    <div class="flex items-start gap-3">
-                        <span class="mt-0.5 grid h-6 w-6 shrink-0 place-items-center rounded-full bg-rose-600 text-xs font-black text-white">
-                            !
-                        </span>
+                            <div class="min-w-0">
+                                <p class="text-sm font-black text-rose-800">
+                                    No se puede realizar la salida
+                                </p>
 
-                        <div class="min-w-0">
-                            <p class="text-sm font-black text-rose-800">
-                                No se puede realizar la salida
-                            </p>
-
-                            <p
-                                id="stock-adjust-error-message"
-                                class="mt-1 text-sm font-medium leading-5 text-rose-700"></p>
+                                <p
+                                    id="stock-adjust-error-message"
+                                    class="mt-1 text-sm font-medium leading-5 text-rose-700"></p>
+                            </div>
                         </div>
                     </div>
-                </div>
 
 
-                {{-- Tipo de movimiento --}}
-                <div>
-
-                    <label
-                        for="movement_type"
-                        class="mb-2 block text-sm font-bold text-slate-700">
-                        Tipo de movimiento
-                    </label>
-
-                    <select
-                        id="movement_type"
-                        name="movement_type"
-                        required
-                        class="app-input">
-
-                        <option value="initial_load">
-                            Carga inicial de stock
-                        </option>
-
-                        <option value="adjustment_in">
-                            Entrada / ajuste (+)
-                        </option>
-
-                        <option value="adjustment_out">
-                            Salida / merma (-)
-                        </option>
-
-                    </select>
-
-                    <p class="mt-2 text-xs leading-5 text-slate-500">
-                        Utiliza una entrada para aumentar la existencia y una salida
-                        para disminuirla.
-                    </p>
-
-                </div>
-
-
-                {{-- Cantidad / costo --}}
-                <div class="grid gap-4 sm:grid-cols-2">
-
-                    {{-- Cantidad --}}
+                    {{-- Tipo de movimiento --}}
                     <div>
 
                         <label
-                            for="quantity"
+                            for="movement_type"
                             class="mb-2 block text-sm font-bold text-slate-700">
-                            Cantidad
+                            Tipo de movimiento
                         </label>
 
-                        <input
-                            id="quantity"
-                            type="number"
-                            name="quantity"
-                            step="0.000001"
-                            min="0.000001"
-                            inputmode="decimal"
+                        <select
+                            id="movement_type"
+                            name="movement_type"
                             required
-                            class="app-input"
-                            placeholder="0.00">
+                            class="app-input">
+
+                            <option value="initial_load">
+                                Carga inicial de stock
+                            </option>
+
+                            <option value="adjustment_in">
+                                Entrada / ajuste (+)
+                            </option>
+
+                            <option value="adjustment_out">
+                                Salida / merma (-)
+                            </option>
+
+                        </select>
+
+                        <p class="mt-2 text-xs leading-5 text-slate-500">
+                            Utiliza una entrada para aumentar la existencia y una salida
+                            para disminuirla.
+                        </p>
 
                     </div>
 
 
-                    {{-- Costo --}}
-                    <div>
+                    {{-- Cantidad / costo --}}
+                    <div class="grid gap-4 sm:grid-cols-2">
 
-                        <label
-                            for="unit_cost"
-                            class="mb-2 block text-sm font-bold text-slate-700">
-                            Costo unitario
-                        </label>
+                        {{-- Cantidad --}}
+                        <div>
 
-                        <div class="relative">
+                            <label
+                                for="quantity"
+                                class="mb-2 block text-sm font-bold text-slate-700">
+                                Cantidad
+                            </label>
+
                             <input
-                                id="unit_cost"
+                                id="quantity"
                                 type="number"
-                                name="unit_cost"
-                                step="0.01"
-                                min="0"
+                                name="quantity"
+                                step="0.000001"
+                                min="0.000001"
                                 inputmode="decimal"
-                                class="app-input pl-8"
+                                required
+                                class="app-input"
                                 placeholder="0.00">
 
                         </div>
 
-                        <p class="mt-2 text-xs text-slate-400">
-                            Opcional
-                        </p>
+
+                        {{-- Costo --}}
+                        <div>
+
+                            <label
+                                for="unit_cost"
+                                class="mb-2 block text-sm font-bold text-slate-700">
+                                Costo unitario
+                            </label>
+
+                            <div class="relative">
+                                <input
+                                    id="unit_cost"
+                                    type="number"
+                                    name="unit_cost"
+                                    step="0.01"
+                                    min="0"
+                                    inputmode="decimal"
+                                    class="app-input pl-8"
+                                    placeholder="0.00">
+
+                            </div>
+
+                            <p class="mt-2 text-xs text-slate-400">
+                                Opcional
+                            </p>
+
+                        </div>
+
+                    </div>
+
+
+                    {{-- Notas --}}
+                    <div>
+
+                        <label
+                            for="stock_notes"
+                            class="mb-2 block text-sm font-bold text-slate-700">
+                            Motivo / notas
+                        </label>
+
+                        <textarea
+                            id="stock_notes"
+                            name="notes"
+                            rows="4"
+                            maxlength="500"
+                            class="app-input min-h-28 resize-none"
+                            placeholder="Ej. Inventario inicial, producto dañado, conteo físico..."></textarea>
+
+                        <div class="mt-2 flex items-center justify-between gap-3">
+
+                            <p class="text-xs text-slate-400">
+                                Máximo 500 caracteres.
+                            </p>
+
+                            <span
+                                id="stock-notes-counter"
+                                class="text-xs font-semibold text-slate-400">
+                                0 / 500
+                            </span>
+
+                        </div>
 
                     </div>
 
                 </div>
 
 
-                {{-- Notas --}}
-                <div>
+                {{-- FOOTER --}}
+                <x-slot:footer>
+                    <div class="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
 
-                    <label
-                        for="stock_notes"
-                        class="mb-2 block text-sm font-bold text-slate-700">
-                        Motivo / notas
-                    </label>
+                        <button
+                            type="button"
+                            id="cancel-adjust-modal"
+                            class="inline-flex min-h-12 items-center justify-center rounded-xl border border-slate-300 bg-white px-5 text-sm font-bold text-slate-700 transition hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-500">
+                            Cancelar
+                        </button>
 
-                    <textarea
-                        id="stock_notes"
-                        name="notes"
-                        rows="4"
-                        maxlength="500"
-                        class="app-input min-h-28 resize-none"
-                        placeholder="Ej. Inventario inicial, producto dañado, conteo físico..."></textarea>
-
-                    <div class="mt-2 flex items-center justify-between gap-3">
-
-                        <p class="text-xs text-slate-400">
-                            Máximo 500 caracteres.
-                        </p>
-
-                        <span
-                            id="stock-notes-counter"
-                            class="text-xs font-semibold text-slate-400">
-                            0 / 500
-                        </span>
+                        <x-ui.button
+                            type="submit"
+                            form="adjust-stock-form"
+                            variant="primary"
+                            size="lg"
+                            class="w-full sm:w-auto">
+                            Guardar ajuste
+                        </x-ui.button>
 
                     </div>
+                </x-slot:footer>
 
-                </div>
+            </form>
 
-            </div>
-
-
-            {{-- FOOTER --}}
-            <x-slot:footer>
-                <div class="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
-
-                    <button
-                        type="button"
-                        id="cancel-adjust-modal"
-                        class="inline-flex min-h-12 items-center justify-center rounded-xl border border-slate-300 bg-white px-5 text-sm font-bold text-slate-700 transition hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-500">
-                        Cancelar
-                    </button>
-
-                    <x-ui.button
-                        type="submit"
-                        form="adjust-stock-form"
-                        variant="primary"
-                        size="lg"
-                        class="w-full sm:w-auto">
-                        Guardar ajuste
-                    </x-ui.button>
-
-                </div>
-            </x-slot:footer>
-
-        </form>
-
-    </x-ui.modal>
+        </x-ui.modal>
 
 
-    {{-- =============================================================
+        {{-- =============================================================
          JAVASCRIPT
     ============================================================== --}}
-    <script>
-        function openAdjustModal(itemId, itemName, available, unit) {
-            const modal = document.getElementById('adjustModal');
+        <script>
+            function openAdjustModal(itemId, itemName, available, unit) {
+                const modal = document.getElementById('adjustModal');
 
-            const itemIdInput = document.getElementById('modal_stock_item_id');
-            const itemNameElement = document.getElementById('modal_item_name');
-            const availableElement = document.getElementById('modal_available');
-            const quantityInput = document.getElementById('quantity');
+                const itemIdInput = document.getElementById('modal_stock_item_id');
+                const itemNameElement = document.getElementById('modal_item_name');
+                const availableElement = document.getElementById('modal_available');
+                const quantityInput = document.getElementById('quantity');
 
-            const movementTypeInput = document.getElementById('movement_type');
-            const errorContainer = document.getElementById('stock-adjust-error');
-            const errorMessage = document.getElementById('stock-adjust-error-message');
+                const movementTypeInput = document.getElementById('movement_type');
+                const errorContainer = document.getElementById('stock-adjust-error');
+                const errorMessage = document.getElementById('stock-adjust-error-message');
 
 
 
-            if (!modal || !itemIdInput || !itemNameElement) {
-                return;
+                if (!modal || !itemIdInput || !itemNameElement) {
+                    return;
+                }
+
+                itemIdInput.value = itemId;
+                itemNameElement.textContent = itemName;
+
+                if (availableElement) {
+                    availableElement.textContent = `${available} ${unit}`;
+                }
+
+
+
+                modal.dataset.available = parseFloat(available) || 0;
+                modal.dataset.unit = unit;
+                hideStockAdjustError();
+                modal.classList.remove('hidden');
+                modal.classList.add('flex');
+
+                modal.setAttribute('aria-hidden', 'false');
+
+                document.body.classList.add('overflow-hidden');
+
+                window.setTimeout(() => {
+                    quantityInput?.focus();
+                }, 100);
             }
 
-            itemIdInput.value = itemId;
-            itemNameElement.textContent = itemName;
+            function showStockAdjustError(message) {
+                const errorContainer = document.getElementById('stock-adjust-error');
+                const errorMessage = document.getElementById('stock-adjust-error-message');
+                const quantityInput = document.getElementById('quantity');
 
-            if (availableElement) {
-                availableElement.textContent = `${available} ${unit}`;
-            }
+                if (!errorContainer || !errorMessage) {
+                    return;
+                }
 
+                errorMessage.textContent = message;
 
+                errorContainer.classList.remove('hidden');
 
-            modal.dataset.available = parseFloat(available) || 0;
-            modal.dataset.unit = unit;
-            hideStockAdjustError();
-            modal.classList.remove('hidden');
-            modal.classList.add('flex');
-
-            modal.setAttribute('aria-hidden', 'false');
-
-            document.body.classList.add('overflow-hidden');
-
-            window.setTimeout(() => {
-                quantityInput?.focus();
-            }, 100);
-        }
-
-        function showStockAdjustError(message) {
-            const errorContainer = document.getElementById('stock-adjust-error');
-            const errorMessage = document.getElementById('stock-adjust-error-message');
-            const quantityInput = document.getElementById('quantity');
-
-            if (!errorContainer || !errorMessage) {
-                return;
-            }
-
-            errorMessage.textContent = message;
-
-            errorContainer.classList.remove('hidden');
-
-            quantityInput?.classList.add(
-                'ring-2',
-                'ring-rose-500',
-                'bg-rose-50'
-            );
-        }
-
-        function hideStockAdjustError() {
-            const errorContainer = document.getElementById('stock-adjust-error');
-            const quantityInput = document.getElementById('quantity');
-
-            if (!errorContainer) {
-                return;
-            }
-
-            errorContainer.classList.add('hidden');
-
-            if (quantityInput) {
-                quantityInput.classList.remove(
+                quantityInput?.classList.add(
                     'ring-2',
                     'ring-rose-500',
                     'bg-rose-50'
                 );
             }
-        }
 
-        function validateStockOutput() {
-            const modal = document.getElementById('adjustModal');
-            const quantityInput = document.getElementById('quantity');
-            const movementTypeInput = document.getElementById('movement_type');
+            function hideStockAdjustError() {
+                const errorContainer = document.getElementById('stock-adjust-error');
+                const quantityInput = document.getElementById('quantity');
 
-            if (!modal || !quantityInput || !movementTypeInput) {
-                return true;
-            }
-
-            if (movementTypeInput.value !== 'adjustment_out') {
-                hideStockAdjustError();
-                return true;
-            }
-
-            const available = parseFloat(modal.dataset.available || '0');
-            const quantity = parseFloat(quantityInput.value || '0');
-            const unit = modal.dataset.unit || 'unidades';
-
-            if (!quantity || quantity <= 0) {
-                hideStockAdjustError();
-                return true;
-            }
-
-            if (quantity > available) {
-                showStockAdjustError(
-                    `No puedes retirar ${quantity.toFixed(2)} ${unit}. ` +
-                    `La existencia actual es de ${available.toFixed(2)} ${unit}.`
-                );
-
-                return false;
-            }
-
-            hideStockAdjustError();
-
-            return true;
-        }
-
-        function closeAdjustModal() {
-            const modal = document.getElementById('adjustModal');
-
-            if (!modal) {
-                return;
-            }
-
-            modal.classList.add('hidden');
-            modal.classList.remove('flex');
-
-            modal.setAttribute('aria-hidden', 'true');
-
-            document.body.classList.remove('overflow-hidden');
-
-            resetAdjustForm();
-        }
-
-
-        function resetAdjustForm() {
-            const form = document.getElementById('adjust-stock-form');
-
-            if (!form) {
-                return;
-            }
-
-            form.reset();
-
-            const itemId = document.getElementById('modal_stock_item_id');
-            const itemName = document.getElementById('modal_item_name');
-            const available = document.getElementById('modal_available');
-
-            if (itemId) {
-                itemId.value = '';
-            }
-
-            if (itemName) {
-                itemName.textContent = '-';
-            }
-
-            if (available) {
-                available.textContent = '-';
-            }
-
-
-            updateNotesCounter();
-            hideStockAdjustError();
-        }
-
-
-        function updateNotesCounter() {
-            const textarea = document.getElementById('stock_notes');
-            const counter = document.getElementById('stock-notes-counter');
-
-            if (!textarea || !counter) {
-                return;
-            }
-
-            counter.textContent = `${textarea.value.length} / 500`;
-        }
-
-
-        document.addEventListener('DOMContentLoaded', function() {
-
-            const closeButton = document.getElementById('close-adjust-modal');
-            const cancelButton = document.getElementById('cancel-adjust-modal');
-            const modal = document.getElementById('adjustModal');
-            const notes = document.getElementById('stock_notes');
-            const quantityInput = document.getElementById('quantity');
-            const movementTypeInput = document.getElementById('movement_type');
-            const form = document.getElementById('adjust-stock-form');
-
-            closeButton?.addEventListener('click', closeAdjustModal);
-
-            cancelButton?.addEventListener('click', closeAdjustModal);
-
-            notes?.addEventListener('input', updateNotesCounter);
-
-            quantityInput?.addEventListener('input', validateStockOutput);
-
-            movementTypeInput?.addEventListener('change', validateStockOutput);
-
-            updateNotesCounter();
-
-            form?.addEventListener('submit', function(event) {
-                if (!validateStockOutput()) {
-                    event.preventDefault();
-                    return;
-                }
-            });
-
-
-            document.addEventListener('keydown', function(event) {
-
-                if (event.key !== 'Escape') {
+                if (!errorContainer) {
                     return;
                 }
 
-                if (modal && !modal.classList.contains('hidden')) {
-                    closeAdjustModal();
+                errorContainer.classList.add('hidden');
+
+                if (quantityInput) {
+                    quantityInput.classList.remove(
+                        'ring-2',
+                        'ring-rose-500',
+                        'bg-rose-50'
+                    );
+                }
+            }
+
+            function validateStockOutput() {
+                const modal = document.getElementById('adjustModal');
+                const quantityInput = document.getElementById('quantity');
+                const movementTypeInput = document.getElementById('movement_type');
+
+                if (!modal || !quantityInput || !movementTypeInput) {
+                    return true;
                 }
 
-            });
+                if (movementTypeInput.value !== 'adjustment_out') {
+                    hideStockAdjustError();
+                    return true;
+                }
 
-        });
-    </script>
+                const available = parseFloat(modal.dataset.available || '0');
+                const quantity = parseFloat(quantityInput.value || '0');
+                const unit = modal.dataset.unit || 'unidades';
+
+                if (!quantity || quantity <= 0) {
+                    hideStockAdjustError();
+                    return true;
+                }
+
+                if (quantity > available) {
+                    showStockAdjustError(
+                        `No puedes retirar ${quantity.toFixed(2)} ${unit}. ` +
+                        `La existencia actual es de ${available.toFixed(2)} ${unit}.`
+                    );
+
+                    return false;
+                }
+
+                hideStockAdjustError();
+
+                return true;
+            }
+
+            function closeAdjustModal() {
+                const modal = document.getElementById('adjustModal');
+
+                if (!modal) {
+                    return;
+                }
+
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+
+                modal.setAttribute('aria-hidden', 'true');
+
+                document.body.classList.remove('overflow-hidden');
+
+                resetAdjustForm();
+            }
+
+
+            function resetAdjustForm() {
+                const form = document.getElementById('adjust-stock-form');
+
+                if (!form) {
+                    return;
+                }
+
+                form.reset();
+
+                const itemId = document.getElementById('modal_stock_item_id');
+                const itemName = document.getElementById('modal_item_name');
+                const available = document.getElementById('modal_available');
+
+                if (itemId) {
+                    itemId.value = '';
+                }
+
+                if (itemName) {
+                    itemName.textContent = '-';
+                }
+
+                if (available) {
+                    available.textContent = '-';
+                }
+
+
+                updateNotesCounter();
+                hideStockAdjustError();
+            }
+
+
+            function updateNotesCounter() {
+                const textarea = document.getElementById('stock_notes');
+                const counter = document.getElementById('stock-notes-counter');
+
+                if (!textarea || !counter) {
+                    return;
+                }
+
+                counter.textContent = `${textarea.value.length} / 500`;
+            }
+
+
+            document.addEventListener('DOMContentLoaded', function() {
+
+                const closeButton = document.getElementById('close-adjust-modal');
+                const cancelButton = document.getElementById('cancel-adjust-modal');
+                const modal = document.getElementById('adjustModal');
+                const notes = document.getElementById('stock_notes');
+                const quantityInput = document.getElementById('quantity');
+                const movementTypeInput = document.getElementById('movement_type');
+                const form = document.getElementById('adjust-stock-form');
+
+                closeButton?.addEventListener('click', closeAdjustModal);
+
+                cancelButton?.addEventListener('click', closeAdjustModal);
+
+                notes?.addEventListener('input', updateNotesCounter);
+
+                quantityInput?.addEventListener('input', validateStockOutput);
+
+                movementTypeInput?.addEventListener('change', validateStockOutput);
+
+                updateNotesCounter();
+
+                form?.addEventListener('submit', function(event) {
+                    if (!validateStockOutput()) {
+                        event.preventDefault();
+                        return;
+                    }
+                });
+
+
+                document.addEventListener('keydown', function(event) {
+
+                    if (event.key !== 'Escape') {
+                        return;
+                    }
+
+                    if (modal && !modal.classList.contains('hidden')) {
+                        closeAdjustModal();
+                    }
+
+                });
+
+            });
+        </script>
 
 </x-layouts.app>

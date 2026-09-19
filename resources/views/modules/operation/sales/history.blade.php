@@ -78,170 +78,429 @@
         </form>
     </x-ui.card>
 
-    {{-- Tabla --}}
-    <x-ui.card class="mt-6 overflow-hidden p-0">
+   {{-- =========================================================
+     HISTORIAL DE VENTAS
+========================================================= --}}
+<x-ui.card class="mt-6 overflow-hidden p-0">
 
-        <div class="flex items-center justify-between border-b border-slate-200 bg-slate-50 px-5 py-3.5">
-            <div>
-                <h2 class="text-lg font-black text-slate-950">
-                    Ventas registradas
-                </h2>
+    {{-- ENCABEZADO --}}
+    <div class="flex flex-col gap-3 border-b border-slate-200 bg-white px-5 py-5 sm:flex-row sm:items-center sm:justify-between sm:px-6">
 
-                <p class="mt-1 text-sm text-slate-500">
-                    Consulta las operaciones realizadas.
-                </p>
-            </div>
+        <div>
+            <p class="text-xs font-black uppercase tracking-[0.14em] text-emerald-700">
+                Ventas
+            </p>
 
-            <span class="text-sm font-bold text-slate-500">
-                {{ $sales->total() }} resultados
-            </span>
+            <h2 class="mt-1 text-lg font-black text-slate-950">
+                Ventas registradas
+            </h2>
+
+            <p class="mt-1 text-sm text-slate-500">
+                Consulta las operaciones realizadas.
+            </p>
         </div>
 
-     <x-ui.table
-    caption="Historial de ventas"
-    class="table-fixed"
->
+        <span class="w-fit rounded-full bg-slate-100 px-3 py-1.5 text-xs font-bold text-slate-600">
+            {{ $sales->total() }}
+            {{ $sales->total() === 1 ? 'resultado' : 'resultados' }}
+        </span>
 
-    <x-slot:head>
-        <tr>
-
-            <th class="w-[260px] px-5 py-3 text-left text-xs font-black uppercase tracking-wider text-slate-500">
-                Folio
-            </th>
-
-            <th class="w-[150px] px-5 py-3 text-left text-xs font-black uppercase tracking-wider text-slate-500">
-                Fecha
-            </th>
-
-            <th class="px-5 py-3 text-left text-xs font-black uppercase tracking-wider text-slate-500">
-                Cliente
-            </th>
-
-            <th class="w-[150px] px-5 py-3 text-left text-xs font-black uppercase tracking-wider text-slate-500">
-                Estado
-            </th>
-
-            <th class="w-[170px] px-5 py-3 text-right text-xs font-black uppercase tracking-wider text-slate-500">
-                Total
-            </th>
-
-            <th class="w-[250px] px-5 py-3 text-right text-xs font-black uppercase tracking-wider text-slate-500">
-                Acciones
-            </th>
-
-        </tr>
-    </x-slot:head>
-
-    @forelse ($sales as $sale)
-
-        @php
-            $status = match ($sale->status) {
-                'confirmed' => [
-                    'Confirmada',
-                    'bg-emerald-50 text-emerald-800 ring-1 ring-inset ring-emerald-200'
-                ],
-                'cancelled' => [
-                    'Cancelada',
-                    'bg-rose-600 px-4 text-sm font-bold text-white transition hover:bg-rose-700'
+    </div>
 
 
-                ],
-                'returned' => [
-                    'Devuelta',
-                    'bg-amber-50 text-amber-800 ring-1 ring-inset ring-amber-200'
-                ],
-                'partially_returned' => [
-                    'Devolución parcial',
-                    'bg-amber-50 text-amber-800 ring-1 ring-inset ring-amber-200'
-                ],
-                default => [
-                    ucfirst($sale->status),
-                    'bg-slate-100 text-slate-700 ring-1 ring-inset ring-slate-200'
-                ],
-            };
-        @endphp
+    {{-- =====================================================
+         DESKTOP / TABLET
+    ====================================================== --}}
+    <div class="hidden min-w-0 px-3 py-3 lg:block sm:px-5">
 
-        <tr class="transition hover:bg-slate-50">
+        <x-ui.table
+            caption="Historial de ventas"
+            maxHeight="clamp(280px, calc(100vh - 560px), 520px)"
+            class="table-fixed">
 
-            <td class="px-5 py-3.5">
-                <span class="font-black text-slate-950">
-                    {{ $sale->sale_number }}
-                </span>
-            </td>
+            <x-slot:head>
 
-            <td class="px-5 py-3.5 text-sm font-medium text-slate-600">
-                {{ $sale->created_at->format('d/m/Y H:i') }}
-            </td>
+                <tr>
 
-            <td class="px-5 py-3.5 text-sm font-semibold text-slate-700">
-                {{ $sale->customer?->name ?? 'Público general' }}
-            </td>
+                    {{-- FOLIO --}}
+                    <th
+                        scope="col"
+                        class="w-[190px] whitespace-nowrap border-b border-slate-200 bg-slate-50 px-4 py-3.5 text-left text-xs font-black uppercase tracking-wider text-slate-500 sm:px-5">
+                        Folio
+                    </th>
 
-            <td class="px-5 py-3.5">
-                <span class="inline-flex min-h-9 items-center rounded-lg px-3 py-1.5 text-xs font-black {{ $status[1] }}">
-                    {{ $status[0] }}
-                </span>
-            </td>
+                    {{-- FECHA --}}
+                    <th
+                        scope="col"
+                        class="w-[145px] whitespace-nowrap border-b border-slate-200 bg-slate-50 px-4 py-3.5 text-left text-xs font-black uppercase tracking-wider text-slate-500">
+                        Fecha
+                    </th>
 
-            <td class="px-5 py-3.5 text-right">
-                <span class="font-black text-slate-950">
-                    $ {{ number_format((float) $sale->total, 2) }} MXN
-                </span>
-            </td>
+                    {{-- CLIENTE --}}
+                    <th
+                        scope="col"
+                        class="border-b border-slate-200 bg-slate-50 px-4 py-3.5 text-left text-xs font-black uppercase tracking-wider text-slate-500">
+                        Cliente
+                    </th>
 
-            <td class="px-5 py-3.5">
-                <div class="flex items-center justify-end gap-1.5">
+                    {{-- ESTADO --}}
+                    <th
+                        scope="col"
+                        class="w-[135px] whitespace-nowrap border-b border-slate-200 bg-slate-50 px-4 py-3.5 text-left text-xs font-black uppercase tracking-wider text-slate-500">
+                        Estado
+                    </th>
+
+                    {{-- TOTAL --}}
+                    <th
+                        scope="col"
+                        class="w-[145px] whitespace-nowrap border-b border-slate-200 bg-slate-50 px-4 py-3.5 text-right text-xs font-black uppercase tracking-wider text-slate-500">
+                        Total
+                    </th>
+
+                    {{-- ACCIONES --}}
+                    <th
+                        scope="col"
+                        class="w-[205px] whitespace-nowrap border-b border-slate-200 bg-slate-50 px-4 py-3.5 text-right text-xs font-black uppercase tracking-wider text-slate-500">
+                        Acción
+                    </th>
+
+                </tr>
+
+            </x-slot:head>
+
+
+            @forelse ($sales as $sale)
+
+                @php
+                    $status = match ($sale->status) {
+                        'confirmed' => [
+                            'Confirmada',
+                            'bg-emerald-50 text-emerald-800 ring-1 ring-inset ring-emerald-200'
+                        ],
+                        'cancelled' => [
+                            'Cancelada',
+                            'bg-rose-50 text-rose-800 ring-1 ring-inset ring-rose-200'
+                        ],
+                        'returned' => [
+                            'Devuelta',
+                            'bg-amber-50 text-amber-800 ring-1 ring-inset ring-amber-200'
+                        ],
+                        'partially_returned' => [
+                            'Devolución parcial',
+                            'bg-amber-50 text-amber-800 ring-1 ring-inset ring-amber-200'
+                        ],
+                        default => [
+                            ucfirst($sale->status),
+                            'bg-slate-100 text-slate-700 ring-1 ring-inset ring-slate-200'
+                        ],
+                    };
+                @endphp
+
+
+                <tr class="group transition hover:bg-slate-50/70">
+
+                    {{-- FOLIO --}}
+                    <td class="px-5 py-4 align-middle">
+
+                        <span class="block truncate text-sm font-black text-slate-950">
+                            {{ $sale->sale_number }}
+                        </span>
+
+                    </td>
+
+
+                    {{-- FECHA --}}
+                    <td class="px-4 py-4 align-middle">
+
+                        <div class="whitespace-nowrap">
+
+                            <p class="text-sm font-bold text-slate-700">
+                                {{ $sale->created_at->format('d/m/Y') }}
+                            </p>
+
+                            <p class="mt-0.5 text-xs font-medium text-slate-400">
+                                {{ $sale->created_at->format('H:i') }}
+                            </p>
+
+                        </div>
+
+                    </td>
+
+
+                    {{-- CLIENTE --}}
+                    <td class="min-w-0 px-4 py-4 align-middle">
+
+                        <p class="truncate text-sm font-semibold text-slate-700">
+                            {{ $sale->customer?->name ?? 'Público general' }}
+                        </p>
+
+                    </td>
+
+
+                    {{-- ESTADO --}}
+                    <td class="px-4 py-4 align-middle">
+
+                        <span
+                            class="inline-flex min-h-8 items-center rounded-full px-2.5 py-1 text-xs font-black {{ $status[1] }}">
+                            {{ $status[0] }}
+                        </span>
+
+                    </td>
+
+
+                    {{-- TOTAL --}}
+                    <td class="px-4 py-4 text-right align-middle">
+
+                        <p class="whitespace-nowrap text-sm font-black tabular-nums text-slate-950">
+                            ${{ number_format((float) $sale->total, 2) }}
+                        </p>
+
+                        <p class="mt-0.5 text-xs font-medium text-slate-400">
+                            MXN
+                        </p>
+
+                    </td>
+
+
+                    {{-- ACCIONES --}}
+                    <td class="px-4 py-4 text-right align-middle">
+
+                        <div class="flex items-center justify-end gap-2">
+
+                            <a
+                                href="{{ route('sales.show', $sale) }}"
+                                class="inline-flex min-h-10 items-center justify-center rounded-lg bg-slate-950 px-3 text-xs font-bold text-white transition hover:bg-slate-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-950">
+                                Ver
+                            </a>
+
+                            <a
+                                href="{{ route('sales.ticket', $sale) }}"
+                                target="_blank"
+                                class="inline-flex min-h-10 items-center justify-center rounded-lg border border-slate-300 bg-white px-3 text-xs font-bold text-slate-700 transition hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-500">
+                                Ticket
+                            </a>
+
+                            @if ($sale->status === 'confirmed')
+
+                                <button
+                                    type="button"
+                                    data-cancel-sale="{{ $sale->id }}"
+                                    data-sale-number="{{ $sale->sale_number }}"
+                                    class="inline-flex min-h-10 items-center justify-center rounded-lg border border-rose-200 bg-rose-50 px-3 text-xs font-bold text-rose-700 transition hover:border-rose-300 hover:bg-rose-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rose-600">
+                                    Cancelar
+                                </button>
+
+                            @endif
+
+                        </div>
+
+                    </td>
+
+                </tr>
+
+            @empty
+
+                <tr>
+
+                    <td colspan="6" class="px-6 py-16 text-center">
+
+                        <div class="mx-auto max-w-md">
+
+                            <div class="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-slate-100 text-xl font-black text-slate-400">
+                                ∅
+                            </div>
+
+                            <p class="mt-4 text-base font-black text-slate-900">
+                                No hay ventas que coincidan con los filtros.
+                            </p>
+
+                            <p class="mt-2 text-sm leading-6 text-slate-500">
+                                Prueba con otros criterios de búsqueda.
+                            </p>
+
+                        </div>
+
+                    </td>
+
+                </tr>
+
+            @endforelse
+
+        </x-ui.table>
+
+    </div>
+
+
+    {{-- =====================================================
+         MOBILE
+    ====================================================== --}}
+    <div class="divide-y divide-slate-100 lg:hidden">
+
+        @forelse ($sales as $sale)
+
+            @php
+                $status = match ($sale->status) {
+                    'confirmed' => [
+                        'Confirmada',
+                        'bg-emerald-50 text-emerald-800 ring-1 ring-inset ring-emerald-200'
+                    ],
+                    'cancelled' => [
+                        'Cancelada',
+                        'bg-rose-50 text-rose-800 ring-1 ring-inset ring-rose-200'
+                    ],
+                    'returned' => [
+                        'Devuelta',
+                        'bg-amber-50 text-amber-800 ring-1 ring-inset ring-amber-200'
+                    ],
+                    'partially_returned' => [
+                        'Devolución parcial',
+                        'bg-amber-50 text-amber-800 ring-1 ring-inset ring-amber-200'
+                    ],
+                    default => [
+                        ucfirst($sale->status),
+                        'bg-slate-100 text-slate-700 ring-1 ring-inset ring-slate-200'
+                    ],
+                };
+            @endphp
+
+
+            <article class="p-5">
+
+                {{-- FOLIO + ESTADO --}}
+                <div class="flex items-start justify-between gap-4">
+
+                    <div class="min-w-0">
+
+                        <p class="text-xs font-black uppercase tracking-[0.1em] text-slate-400">
+                            Folio
+                        </p>
+
+                        <h3 class="mt-1 truncate text-base font-black text-slate-950">
+                            {{ $sale->sale_number }}
+                        </h3>
+
+                    </div>
+
+                    <span
+                        class="shrink-0 rounded-full px-2.5 py-1 text-xs font-black {{ $status[1] }}">
+                        {{ $status[0] }}
+                    </span>
+
+                </div>
+
+
+                {{-- INFORMACIÓN --}}
+                <div class="mt-4 grid grid-cols-2 gap-4">
+
+                    <div class="min-w-0">
+
+                        <p class="text-xs font-semibold text-slate-400">
+                            Cliente
+                        </p>
+
+                        <p class="mt-1 truncate text-sm font-bold text-slate-700">
+                            {{ $sale->customer?->name ?? 'Público general' }}
+                        </p>
+
+                    </div>
+
+                    <div>
+
+                        <p class="text-xs font-semibold text-slate-400">
+                            Fecha
+                        </p>
+
+                        <p class="mt-1 text-sm font-bold text-slate-700">
+                            {{ $sale->created_at->format('d/m/Y') }}
+                        </p>
+
+                        <p class="text-xs font-medium text-slate-400">
+                            {{ $sale->created_at->format('H:i') }}
+                        </p>
+
+                    </div>
+
+                </div>
+
+
+                {{-- TOTAL --}}
+                <div class="mt-4 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+
+                    <p class="text-xs font-black uppercase tracking-[0.1em] text-slate-500">
+                        Total
+                    </p>
+
+                    <p class="mt-1 text-2xl font-black tracking-tight text-slate-950 tabular-nums">
+                        ${{ number_format((float) $sale->total, 2) }}
+                        <span class="text-sm font-bold text-slate-500">
+                            MXN
+                        </span>
+                    </p>
+
+                </div>
+
+
+                {{-- ACCIONES --}}
+                <div class="mt-4 grid gap-2 sm:grid-cols-2">
 
                     <a
                         href="{{ route('sales.show', $sale) }}"
-                        class="inline-flex min-h-9 items-center justify-center rounded-lg bg-slate-950 px-3 text-xs font-bold text-white transition hover:bg-slate-800"
-                    >
-                        Ver
+                        class="inline-flex min-h-12 items-center justify-center rounded-xl bg-slate-950 px-4 text-sm font-black text-white transition hover:bg-slate-800">
+                        Ver venta
                     </a>
 
                     <a
                         href="{{ route('sales.ticket', $sale) }}"
                         target="_blank"
-                        class="inline-flex min-h-9 items-center justify-center rounded-lg border border-slate-300 bg-white px-3 text-xs font-bold text-slate-700 transition hover:bg-slate-50"
-                    >
-                        Ticket
+                        class="inline-flex min-h-12 items-center justify-center rounded-xl border border-slate-300 bg-white px-4 text-sm font-bold text-slate-700 transition hover:bg-slate-50">
+                        Ver ticket
                     </a>
 
                     @if ($sale->status === 'confirmed')
+
                         <button
                             type="button"
                             data-cancel-sale="{{ $sale->id }}"
                             data-sale-number="{{ $sale->sale_number }}"
-                            class="inline-flex items-center justify-center rounded-xl bg-rose-600 px-4  text-sm font-bold text-white transition hover:bg-rose-700"
-                        >
-                            Cancelar
+                            class="inline-flex min-h-12 items-center justify-center rounded-xl border border-rose-200 bg-rose-50 px-4 text-sm font-black text-rose-700 transition hover:bg-rose-100 sm:col-span-2">
+                            Cancelar venta
                         </button>
+
                     @endif
 
                 </div>
-            </td>
 
-        </tr>
+            </article>
 
-    @empty
+        @empty
 
-        <tr>
-            <td colspan="6" class="px-5 py-12 text-center">
-                <p class="text-base font-bold text-slate-600">
+            <div class="px-5 py-16 text-center">
+
+                <div class="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-slate-100 text-xl font-black text-slate-400">
+                    ∅
+                </div>
+
+                <p class="mt-4 text-base font-black text-slate-900">
                     No hay ventas que coincidan con los filtros.
                 </p>
 
-                <p class="mt-1 text-sm text-slate-400">
+                <p class="mt-2 text-sm leading-6 text-slate-500">
                     Prueba con otros criterios de búsqueda.
                 </p>
-            </td>
-        </tr>
 
-    @endforelse
+            </div>
 
-</x-ui.table>
+        @endforelse
 
-    </x-ui.card>
+    </div>
+
+
+    {{-- PAGINACIÓN --}}
+    <x-ui.table-pagination
+        :paginator="$sales"
+        :per-page-options="[10, 20, 50, 100]" />
+
+</x-ui.card>
 
     {{-- Modal de cancelación --}}
     <x-ui.modal id="cancel-sale-modal" size="sm" title="Cancelar venta" description="Esta acción revertirá la operación y sus movimientos." close-id="close-cancel-sale">
