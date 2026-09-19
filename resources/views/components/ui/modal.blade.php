@@ -21,7 +21,7 @@
 
 <div
     {{ $attributes->class([
-        'app-modal fixed inset-0 z-[100] hidden h-[100dvh] w-full items-center justify-center',
+        'app-modal fixed inset-0 z-[9999] hidden h-[100dvh] w-full items-center justify-center',
         'bg-slate-950/90 p-2 sm:p-4 lg:p-6',
         'backdrop-blur-md',
         'animate-modal-backdrop',

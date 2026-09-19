@@ -46,7 +46,7 @@
     <button type="button" class="print-button" onclick="window.print()">Imprimir ticket</button>
     <div class="ticket">
         <div class="center">
-            <div class="brand">ABARROTESBASE</div>
+            <div class="brand">ABARROTESMARGARITA</div>
             <div class="subtitle">Ticket de venta</div>
             <div class="status">{{ match ($sale->status) { 'confirmed' => 'Venta confirmada', 'cancelled' => 'Venta cancelada', 'returned' => 'Venta devuelta', 'partially_returned' => 'Devolución parcial', default => ucfirst($sale->status), } }}</div>
         </div>

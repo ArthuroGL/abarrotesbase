@@ -6,7 +6,7 @@
             <span class="grid h-12 w-12 place-items-center rounded-2xl bg-emerald-500 font-black text-xl text-slate-950 shadow-md shadow-emerald-500/20 ring-4 ring-emerald-500/10">A</span>
             <div class="mt-3">
                 <span class="block text-base font-black tracking-[0.18em] text-slate-900">ABARROTES</span>
-                <span class="block text-xs font-bold tracking-[0.22em] text-emerald-600">BASE</span>
+                <span class="block text-xs font-bold tracking-[0.22em] text-emerald-600">MARGARITA</span>
             </div>
         </div>
 
