@@ -7,10 +7,14 @@
 @layer components {
 
 
-    .app-modal {
-        isolation: isolate;
-    }
+   .app-modal {
+    isolation: isolate;
+    z-index: 9999 !important;
+}
 
+[data-table-wrapper] thead {
+    z-index: 10;
+}
     .animate-modal-backdrop {
         animation: modal-backdrop-in 160ms ease-out;
     }

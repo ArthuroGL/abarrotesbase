@@ -128,10 +128,25 @@ final class PointPaymentFinalizer
             $paymentStatus !== 'processed'
             || $paymentStatusDetail !== 'accredited'
         ) {
+            $transaction->update([
+                'status' => 'processing',
+                'status_detail' =>
+                $paymentStatusDetail
+                    ?: $paymentStatus
+                    ?: 'processing',
+                'response_payload' => $order,
+            ]);
+
+            return null;
+        }
+        /* if (
+            $paymentStatus !== 'processed'
+            || $paymentStatusDetail !== 'accredited'
+        ) {
             throw new RuntimeException(
                 'El pago de Mercado Pago no tiene estado processed/accredited.'
             );
-        }
+        } */
 
         /*
          * Validamos importe.
@@ -175,9 +190,9 @@ final class PointPaymentFinalizer
         ) {
             $lockedTransaction =
                 PaymentTransaction::query()
-                    ->where('id', $transaction->id)
-                    ->lockForUpdate()
-                    ->first();
+                ->where('id', $transaction->id)
+                ->lockForUpdate()
+                ->first();
 
             if (!$lockedTransaction) {
                 throw new RuntimeException(
@@ -220,7 +235,7 @@ final class PointPaymentFinalizer
                     'provider_payment_id' => $providerPaymentId,
                     'status' => 'approved',
                     'status_detail' =>
-                        $order['status_detail']
+                    $order['status_detail']
                         ?? $payment['status_detail']
                         ?? 'accredited',
                     'response_payload' => $order,
@@ -257,7 +272,7 @@ final class PointPaymentFinalizer
                 if (!$stockItem) {
                     throw ValidationException::withMessages([
                         'inventory' =>
-                            "No se encontró el producto de la línea {$line->line_number}.",
+                        "No se encontró el producto de la línea {$line->line_number}.",
                     ]);
                 }
 
@@ -295,32 +310,32 @@ final class PointPaymentFinalizer
                 ) {
                     throw ValidationException::withMessages([
                         'inventory' =>
-                            "Existencia insuficiente para {$line->description}. Disponible: {$currentStock}.",
+                        "Existencia insuficiente para {$line->description}. Disponible: {$currentStock}.",
                     ]);
                 }
 
                 $inventoryMovement =
                     InventoryMovement::create([
                         'organization_id' =>
-                            $sale->organization_id,
+                        $sale->organization_id,
                         'branch_id' =>
-                            $sale->branch_id,
+                        $sale->branch_id,
                         'stock_item_id' =>
-                            $line->stock_item_id,
+                        $line->stock_item_id,
                         'movement_type' => 'sale',
                         'quantity_delta' =>
-                            -$inventoryQuantity,
+                        -$inventoryQuantity,
                         'unit_cost' =>
-                            (float) $line->unit_cost,
+                        (float) $line->unit_cost,
                         'total_cost' => abs(
                             $inventoryQuantity
-                            * (float) $line->unit_cost
+                                * (float) $line->unit_cost
                         ),
                         'source_type' => 'SALE',
                         'source_id' => $sale->id,
                         'reason_code' => 'SALE',
                         'notes' =>
-                            'Salida por venta Mercado Pago Point',
+                        'Salida por venta Mercado Pago Point',
                         'created_by' => $confirmedBy,
                         'occurred_at' => now(),
                     ]);
@@ -341,16 +356,15 @@ final class PointPaymentFinalizer
                         )
                         ->update([
                             'on_hand_quantity' =>
-                                $currentStock
+                            $currentStock
                                 - $inventoryQuantity,
-                            'version' =>
-                                ((int) $balance->version) + 1,
+                            'version' => ((int) $balance->version) + 1,
                         ]);
                 }
 
                 $line->update([
                     'inventory_movement_id' =>
-                        $inventoryMovement->id,
+                    $inventoryMovement->id,
                 ]);
             }
 
@@ -361,23 +375,23 @@ final class PointPaymentFinalizer
                 'sale_id' => $sale->id,
                 'line_number' => 1,
                 'payment_method_id' =>
-                    $lockedTransaction->payment_method_id,
+                $lockedTransaction->payment_method_id,
                 'amount_received' =>
-                    $lockedTransaction->amount,
+                $lockedTransaction->amount,
                 'amount_applied' =>
-                    $lockedTransaction->amount,
+                $lockedTransaction->amount,
                 'reference' =>
-                    $lockedTransaction->external_reference,
+                $lockedTransaction->external_reference,
                 'metadata' => [
                     'provider' => 'mercadopago',
                     'provider_order_id' =>
-                        $lockedTransaction->provider_order_id,
+                    $lockedTransaction->provider_order_id,
                     'provider_payment_id' =>
-                        $providerPaymentId,
+                    $providerPaymentId,
                     'status' =>
-                        $order['status'] ?? null,
+                    $order['status'] ?? null,
                     'status_detail' =>
-                        $order['status_detail'] ?? null,
+                    $order['status_detail'] ?? null,
                 ],
                 'paid_at' => now(),
             ]);
@@ -398,7 +412,7 @@ final class PointPaymentFinalizer
                 'provider_payment_id' => $providerPaymentId,
                 'status' => 'approved',
                 'status_detail' =>
-                    $order['status_detail']
+                $order['status_detail']
                     ?? $payment['status_detail']
                     ?? 'accredited',
                 'response_payload' => $order,
