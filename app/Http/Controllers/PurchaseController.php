@@ -17,6 +17,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
+use Illuminate\Http\JsonResponse;
 
 class PurchaseController extends Controller
 {
@@ -34,6 +35,47 @@ class PurchaseController extends Controller
             ?? auth()->user()->branch_id
             ?? DB::table('branches')->where('organization_id', $this->getOrganizationId())->value('id')
             ?? throw new \Exception('No hay una sucursal registrada en el sistema.');
+    }
+    public function search(Request $request): JsonResponse
+    {
+        $search = trim((string) $request->input('q', ''));
+
+        if ($search === '') {
+            return response()->json([
+                'items' => [],
+            ]);
+        }
+
+        $purchases = Purchase::query()
+            ->with('supplier')
+            ->where('organization_id', $this->getOrganizationId())
+            ->where('branch_id', $this->getBranchId())
+            ->where(function ($query) use ($search) {
+                $query
+                    ->where('purchase_number', 'ilike', "%{$search}%")
+                    ->orWhere('supplier_reference', 'ilike', "%{$search}%")
+                    ->orWhereHas('supplier', function ($supplierQuery) use ($search) {
+                        $supplierQuery
+                            ->where('business_name', 'ilike', "%{$search}%")
+                            ->orWhere('code', 'ilike', "%{$search}%")
+                            ->orWhere('rfc', 'ilike', "%{$search}%");
+                    });
+            })
+            ->orderByDesc('created_at')
+            ->limit(8)
+            ->get();
+
+        return response()->json([
+            'items' => $purchases->map(function (Purchase $purchase) {
+                return [
+                    'purchase_id' => $purchase->id,
+                    'name' => $purchase->purchase_number,
+                    'sku' => $purchase->supplier_reference,
+                    'barcode' => $purchase->supplier?->business_name,
+                    'unit' => $purchase->status,
+                ];
+            })->values(),
+        ]);
     }
 
     public function index(Request $request): View
@@ -57,42 +99,32 @@ class PurchaseController extends Controller
         return view('modules.purchases.index', compact('purchases', 'search', 'status'));
     }
 
-    public function create(): View
+    public function productUnits(string $stockItemId): JsonResponse
     {
-        $orgId = $this->getOrganizationId();
-
-        $suppliers = Supplier::query()
-            ->where('organization_id', $orgId)
-            ->where('is_active', true)
-            ->orderBy('business_name')
-            ->get();
-
-        $stockItems = StockItem::query()
-            ->with('product')
-            ->where('organization_id', $orgId)
-            ->where('is_active', true)
-            ->get();
-
-        /*
-     * Unidades configuradas específicamente para cada artículo.
-     *
-     * No debemos cargar todas las ProductUnit de la organización,
-     * porque cada ProductUnit pertenece a un stock_item.
-     */
-        $productUnitsByStockItem = ProductUnit::query()
+        $units = ProductUnit::query()
             ->with('unit')
-            ->where('organization_id', $orgId)
+            ->where('organization_id', $this->getOrganizationId())
+            ->where('stock_item_id', $stockItemId)
             ->where('is_active', true)
             ->where('is_purchase_unit', true)
-            ->whereIn('stock_item_id', $stockItems->pluck('id'))
-            ->get()
-            ->groupBy('stock_item_id');
+            ->orderBy('conversion_factor')
+            ->get();
 
-        return view('modules.purchases.create', compact(
-            'suppliers',
-            'stockItems',
-            'productUnitsByStockItem'
-        ));
+        return response()->json([
+            'items' => $units->map(function (ProductUnit $productUnit) {
+                return [
+                    'id' => $productUnit->id,
+                    'name' => $productUnit->unit?->name ?? 'Unidad',
+                    'conversion_factor' => (float) $productUnit->conversion_factor,
+                    'allow_decimal' => (bool) $productUnit->allow_decimal,
+                ];
+            })->values(),
+        ]);
+    }
+
+    public function create(): View
+    {
+        return view('modules.purchases.create');
     }
 
     public function store(Request $request): RedirectResponse
@@ -385,21 +417,14 @@ class PurchaseController extends Controller
                         'organization_id' => $orgId,
                         'branch_id' => $branchId,
                         'stock_item_id' => $line->stock_item_id,
-
                         'on_hand_quantity' => $baseQuantity,
-
                         /*
                     | Ya no utilizamos reservas para determinar
                     | la existencia disponible.
                     */
                         'reserved_quantity' => 0,
-
                         'weighted_average_cost' => $unitCostBase,
-
                         'version' => 1,
-
-                        'created_at' => now(),
-                        'updated_at' => now(),
                     ]);
                 }
 

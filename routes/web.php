@@ -46,6 +46,9 @@ Route::middleware('auth')->group(function () {
     Route::put('/products/{product}', [ProductController::class, 'update'])->name('products.update');
     //Api para búsqueda de productos por código de barras
     Route::get('/api/products/lookup/{barcode}', [ProductController::class, 'lookup'])->name('products.lookup');
+
+    Route::get('/api/products/search', [ProductController::class, 'search'])
+        ->name('products.search');
 });
 
 Route::middleware('auth')->group(function () {
@@ -65,8 +68,17 @@ Route::middleware('auth')->group(function () {
     Route::resource('purchases', PurchaseController::class);
     Route::post('purchases/{purchase}/receive', [PurchaseController::class, 'receive'])->name('purchases.receive');
     Route::post('purchases/{purchase}/cancel', [PurchaseController::class, 'cancel'])->name('purchases.cancel');
+    Route::get('/api/purchases/search', [PurchaseController::class, 'search'])
+        ->name('purchases.search');
+
+    Route::get(
+        '/api/purchases/product-units/{stockItemId}',
+        [PurchaseController::class, 'productUnits']
+    )->name('purchases.product-units');
 
     Route::resource('suppliers', SupplierController::class);
+    Route::get('/api/suppliers/search', [SupplierController::class, 'search'])
+        ->name('suppliers.search');
 
 
     // Rutas para Caja
@@ -114,6 +126,9 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/sales/{sale}', [SaleController::class, 'show'])
         ->name('sales.show');
+
+    Route::get('/api/sales/search', [SaleController::class, 'search'])
+        ->name('sales.search');
 
     Route::post(
         '/sales/point/start',

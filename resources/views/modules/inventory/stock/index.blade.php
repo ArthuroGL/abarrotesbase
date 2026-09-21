@@ -182,7 +182,15 @@
                         Producto, SKU o código de barras
                     </label>
 
-                    <div class="relative">
+                    <x-ui.search
+                        id="stock-search"
+                        name="search"
+                        endpoint="{{ route('products.search') }}"
+                        :value="$search"
+                        placeholder="Ej. Coca-Cola, COCA600 o 750..."
+                        autofocus />
+
+                    <!-- <div class="relative">
                         <x-ui.input
                             id="search"
                             name="search"
@@ -191,7 +199,7 @@
                             placeholder="Ej. Coca-Cola, COCA600 o 750..."
                             autocomplete="off"
                             class="pl-11" />
-                    </div>
+                    </div> -->
                 </div>
 
 
@@ -272,42 +280,40 @@
             </form>
         </x-ui.card>
 
-<x-ui.card padding="p-0" class="overflow-hidden">
+        <x-ui.card padding="p-0" class="overflow-hidden">
 
-    {{-- ENCABEZADO --}}
-    <div
-        class="flex flex-col gap-3 border-b border-slate-200 bg-white px-5 py-5 sm:flex-row sm:items-center sm:justify-between sm:px-6"
-    >
+            {{-- ENCABEZADO --}}
+            <div
+                class="flex flex-col gap-3 border-b border-slate-200 bg-white px-5 py-5 sm:flex-row sm:items-center sm:justify-between sm:px-6">
 
-        <div>
+                <div>
 
-            <p class="text-xs font-black uppercase tracking-[0.14em] text-emerald-700">
-                Inventario
-            </p>
+                    <p class="text-xs font-black uppercase tracking-[0.14em] text-emerald-700">
+                        Inventario
+                    </p>
 
-            <h2 class="mt-1 text-lg font-black text-slate-900">
-                Existencias registradas
-            </h2>
+                    <h2 class="mt-1 text-lg font-black text-slate-900">
+                        Existencias registradas
+                    </h2>
 
-            <p class="mt-1 text-sm text-slate-500">
-                {{ $items->total() }}
-                {{ $items->total() === 1 ? 'artículo encontrado' : 'artículos encontrados' }}
-            </p>
+                    <p class="mt-1 text-sm text-slate-500">
+                        {{ $items->total() }}
+                        {{ $items->total() === 1 ? 'artículo encontrado' : 'artículos encontrados' }}
+                    </p>
 
-        </div>
+                </div>
 
 
-        @if ($search || $categoryId || $stockStatus)
+                @if ($search || $categoryId || $stockStatus)
 
-            <span
-                class="inline-flex w-fit items-center rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-700"
-            >
-                Filtros activos
-            </span>
+                <span
+                    class="inline-flex w-fit items-center rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-700">
+                    Filtros activos
+                </span>
 
-        @endif
+                @endif
 
-    </div>
+            </div>
 
 
             {{-- =====================================================
@@ -1218,6 +1224,26 @@
                     if (modal && !modal.classList.contains('hidden')) {
                         closeAdjustModal();
                     }
+
+                });
+
+            });
+        </script>
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+
+                const search = document.getElementById('stock-search');
+                const form = search?.closest('form');
+
+                if (!search || !form) {
+                    return;
+                }
+
+                search.addEventListener('ui-search-selected', function() {
+
+                    window.setTimeout(function() {
+                        form.submit();
+                    }, 0);
 
                 });
 

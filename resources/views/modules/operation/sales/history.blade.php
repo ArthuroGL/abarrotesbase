@@ -36,7 +36,7 @@
     </div>
 
     {{-- Filtros --}}
-    <x-ui.card class="mt-6 p-5 sm:p-6">
+    <x-ui.card class="relative z-30 mt-6 overflow-visible p-5 sm:p-6">
         <div class="mb-5">
             <h2 class="text-lg font-black text-slate-950">Buscar ventas</h2>
             <p class="mt-1 text-sm text-slate-500">Usa uno o varios filtros para localizar una operación.</p>
@@ -44,17 +44,25 @@
 
         <form method="GET" action="{{ route('sales.history') }}" class="grid gap-4 lg:grid-cols-[minmax(0,1fr)_200px_190px_auto_auto] lg:items-end">
             <div>
-                <label for="sales-search" class="mb-2 block text-sm font-bold text-slate-800">Folio o cliente</label>
-                <input id="sales-search" type="text" name="search" value="{{ request('search') }}"
-                    placeholder="Ej. V-20260911 o Juan Pérez" class="app-input">
+                <label for="sales-search" class="mb-2 block text-sm font-bold text-slate-800">
+                    Folio o cliente
+                </label>
+
+                <x-ui.search
+                    id="sales-search"
+                    name="search"
+                    endpoint="{{ route('sales.search') }}"
+                    :value="request('search')"
+                    placeholder="Ej. V-20260911 o Juan Pérez"
+                    autofocus />
             </div>
 
             <div>
                 <label for="sales-status" class="mb-2 block text-sm font-bold text-slate-800">Estado</label>
                 <select id="sales-status" name="status" class="app-input">
                     <option value="">Todos</option>
-                    <option value="confirmed"@selected(request('status')==='confirmed' )>Confirmadas</option>
-                    <option value="partially_returned"@selected(request('status')==='partially_returned' )>Devolución parcial</option>
+                    <option value="confirmed" @selected(request('status')==='confirmed' )>Confirmadas</option>
+                    <option value="partially_returned" @selected(request('status')==='partially_returned' )>Devolución parcial</option>
                     <option value="returned" @selected(request('status')==='returned' )>Devueltas</option>
                     <option value="cancelled" @selected(request('status')==='cancelled' )>Canceladas</option>
                 </select>
@@ -82,7 +90,7 @@
     {{-- =========================================================
      HISTORIAL DE VENTAS
 ========================================================= --}}
-    <x-ui.card class="mt-6 overflow-hidden p-0">
+    <x-ui.card class="relative z-10 mt-6 overflow-hidden p-0">
 
         {{-- ENCABEZADO --}}
         <div class="flex flex-col gap-3 border-b border-slate-200 bg-white px-5 py-5 sm:flex-row sm:items-center sm:justify-between sm:px-6">
@@ -599,6 +607,21 @@
         });
         document.addEventListener('keydown', event => {
             if (event.key === 'Escape') hideCancelModal();
+        });
+    </script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const search = document.getElementById('sales-search');
+            const form = search?.closest('form');
+
+            if (!search || !form) {
+                return;
+            }
+
+            search.addEventListener('ui-search-selected', function() {
+                form.requestSubmit();
+            });
         });
     </script>
 

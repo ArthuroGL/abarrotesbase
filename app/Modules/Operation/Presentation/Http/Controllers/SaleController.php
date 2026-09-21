@@ -1042,6 +1042,59 @@ final class SaleController
 
         return $number;
     }
+    public function search(Request $request): JsonResponse
+    {
+        $search = trim((string) $request->input('q', ''));
+
+        if ($search === '') {
+            return response()->json([
+                'items' => [],
+            ]);
+        }
+
+        $orgId = DB::table('organizations')->value('id');
+
+        $sales = Sale::query()
+            ->with('customer')
+            ->where('organization_id', $orgId)
+            ->where(function ($query) use ($search) {
+                $query
+                    ->where('sale_number', 'ilike', "%{$search}%")
+                    ->orWhereHas('customer', function ($customerQuery) use ($search) {
+                        $customerQuery->where(
+                            'name',
+                            'ilike',
+                            "%{$search}%"
+                        );
+                    });
+            })
+            ->orderByDesc('created_at')
+            ->limit(8)
+            ->get();
+
+        return response()->json([
+            'items' => $sales->map(function (Sale $sale) {
+                $status = match ($sale->status) {
+                    'confirmed' => 'Confirmada',
+                    'partially_returned' => 'Devolución parcial',
+                    'returned' => 'Devuelta',
+                    'cancelled' => 'Cancelada',
+                    default => ucfirst($sale->status),
+                };
+
+                return [
+                    'sale_id' => $sale->id,
+
+                    // Compatible con el x-ui.search actual
+                    'name' => $sale->sale_number,
+                    'sku' => $sale->customer?->name
+                        ?? 'Público general',
+                    'barcode' => $sale->created_at?->format('d/m/Y H:i'),
+                    'unit' => $status,
+                ];
+            })->values(),
+        ]);
+    }
     public function history(Request $request): View
     {
         $orgId = DB::table('organizations')->value('id');

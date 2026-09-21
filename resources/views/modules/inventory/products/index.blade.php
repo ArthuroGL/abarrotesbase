@@ -27,7 +27,7 @@
         {{-- FILTROS --}}
         {{-- ========================================================= --}}
 
-        <x-ui.card padding="p-0" class="overflow-hidden">
+        <x-ui.card padding="p-0" class="relative z-30 overflow-visible">
 
             <div class="border-b border-slate-200 bg-slate-50/70 px-5 py-4 sm:px-6">
 
@@ -65,18 +65,19 @@
                 <div class="lg:col-span-6">
 
                     <label
-                        for="search"
+                        for="product-search"
                         class="mb-2 block text-sm font-bold text-slate-800">
                         Producto, SKU o código de barras
                     </label>
 
-                    <x-ui.input
-                        id="search"
+                    <x-ui.search
+                        id="product-search"
                         name="search"
-                        type="search"
+                        endpoint="{{ route('products.search') }}"
                         :value="$search"
-                        placeholder="Ej. Coca-Cola, COC-001 o 7501234567890"
-                        autocomplete="off" />
+                        placeholder="Buscar producto..."
+                        primary-field="name"
+                        secondary-fields="sku,barcode" />
 
                 </div>
 
@@ -506,5 +507,20 @@
         </x-ui.card>
 
     </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const search = document.getElementById('product-search');
+            const form = search?.closest('form');
+
+            if (!search || !form) {
+                return;
+            }
+
+            search.addEventListener('ui-search-selected', function() {
+                form.requestSubmit();
+            });
+        });
+    </script>
 
 </x-layouts.app>

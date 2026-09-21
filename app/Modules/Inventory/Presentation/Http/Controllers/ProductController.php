@@ -337,6 +337,63 @@ final class ProductController extends Controller
 
         return redirect()->route('products.index')->with('status', 'Producto actualizado correctamente.');
     }
+
+    public function search(Request $request): JsonResponse
+    {
+        $search = trim((string) $request->input('q', ''));
+
+        if ($search === '') {
+            return response()->json([
+                'items' => [],
+            ]);
+        }
+
+        $orgId = DB::table('organizations')->value('id');
+
+        $items = StockItem::query()
+            ->where('organization_id', $orgId)
+            ->where('is_active', true)
+            ->with([
+                'product',
+                'inventoryUnit',
+                'barcodes' => fn($query) => $query
+                    ->where('is_active', true)
+                    ->orderByDesc('is_primary'),
+            ])
+            ->where(function ($query) use ($search) {
+                $query->whereHas('product', function ($productQuery) use ($search) {
+                    $productQuery
+                        ->where('name', 'ilike', "%{$search}%")
+                        ->orWhere('sku', 'ilike', "%{$search}%");
+                })
+                    ->orWhereHas('barcodes', function ($barcodeQuery) use ($search) {
+                        $barcodeQuery->where(
+                            'barcode',
+                            'ilike',
+                            "%{$search}%"
+                        );
+                    });
+            })
+            ->limit(8)
+            ->get();
+
+        return response()->json([
+            'items' => $items->map(function (StockItem $stockItem) {
+                $barcode = $stockItem->barcodes->first();
+
+                return [
+                    'stock_item_id' => $stockItem->id,
+                    'product_id' => $stockItem->product?->id,
+                    'name' => $stockItem->product?->name
+                        ?? 'Producto sin nombre',
+                    'sku' => $stockItem->product?->sku,
+                    'barcode' => $barcode?->barcode,
+                    'unit' => $stockItem->inventoryUnit?->code
+                        ?? 'PZA',
+                ];
+            })->values(),
+        ]);
+    }
     public function lookup(string $barcode): JsonResponse
     {
         try {

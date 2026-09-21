@@ -126,17 +126,13 @@
                         Orden, factura o proveedor
                     </label>
 
-                    <div class="relative">
-                        <x-ui.input
-                            id="purchase-search"
-                            name="search"
-                            type="search"
-                            :value="$search"
-                            placeholder="Ej. OC-A8F32D1C, FAC-99823 o Coca-Cola..."
-                            autocomplete="off"
-                            class="pl-11" />
-
-                    </div>
+                    <x-ui.search
+                        id="purchase-search"
+                        name="search"
+                        endpoint="{{ route('purchases.search') }}"
+                        :value="$search"
+                        placeholder="Ej. OC-A8F32D1C, FAC-99823 o Coca-Cola..."
+                        autofocus />
 
                 </div>
 
@@ -162,25 +158,25 @@
 
                         <option
                             value="draft"
-                            @selected($status === 'draft')>
+                            @selected($status==='draft' )>
                             Borrador
                         </option>
 
                         <option
                             value="approved"
-                            @selected($status === 'approved')>
+                            @selected($status==='approved' )>
                             Por recibir
                         </option>
 
                         <option
                             value="received"
-                            @selected($status === 'received')>
+                            @selected($status==='received' )>
                             Recibida
                         </option>
 
                         <option
                             value="cancelled"
-                            @selected($status === 'cancelled')>
+                            @selected($status==='cancelled' )>
                             Cancelada
                         </option>
 
@@ -192,15 +188,15 @@
                 {{-- Limpiar --}}
                 @if ($search || $status)
 
-                    <div class="flex justify-end lg:col-span-12">
+                <div class="flex justify-end lg:col-span-12">
 
-                        <a
-                            href="{{ route('purchases.index') }}"
-                            class="inline-flex min-h-11 items-center justify-center rounded-xl px-4 text-sm font-bold text-rose-600 transition hover:bg-rose-50">
-                            Limpiar filtros
-                        </a>
+                    <a
+                        href="{{ route('purchases.index') }}"
+                        class="inline-flex min-h-11 items-center justify-center rounded-xl px-4 text-sm font-bold text-rose-600 transition hover:bg-rose-50">
+                        Limpiar filtros
+                    </a>
 
-                    </div>
+                </div>
 
                 @endif
 
@@ -227,9 +223,9 @@
                 </div>
 
                 @if ($search || $status)
-                    <span class="inline-flex w-fit items-center rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-700">
-                        Filtros activos
-                    </span>
+                <span class="inline-flex w-fit items-center rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-700">
+                    Filtros activos
+                </span>
                 @endif
 
             </div>
@@ -283,157 +279,157 @@
 
                         @forelse ($purchases as $purchase)
 
-                            @php
-                                $statusConfig = match ($purchase->status) {
-                                    'received' => [
-                                        'label' => 'Recibida',
-                                        'class' => 'border-emerald-200 bg-emerald-50 text-emerald-700',
-                                        'dot' => 'bg-emerald-500',
-                                    ],
-                                    'approved' => [
-                                        'label' => 'Por recibir',
-                                        'class' => 'border-amber-200 bg-amber-50 text-amber-700',
-                                        'dot' => 'bg-amber-500',
-                                    ],
-                                    'cancelled' => [
-                                        'label' => 'Cancelada',
-                                        'class' => 'border-rose-200 bg-rose-50 text-rose-700',
-                                        'dot' => 'bg-rose-500',
-                                    ],
-                                    default => [
-                                        'label' => 'Borrador',
-                                        'class' => 'border-slate-200 bg-slate-100 text-slate-600',
-                                        'dot' => 'bg-slate-400',
-                                    ],
-                                };
-                            @endphp
+                        @php
+                        $statusConfig = match ($purchase->status) {
+                        'received' => [
+                        'label' => 'Recibida',
+                        'class' => 'border-emerald-200 bg-emerald-50 text-emerald-700',
+                        'dot' => 'bg-emerald-500',
+                        ],
+                        'approved' => [
+                        'label' => 'Por recibir',
+                        'class' => 'border-amber-200 bg-amber-50 text-amber-700',
+                        'dot' => 'bg-amber-500',
+                        ],
+                        'cancelled' => [
+                        'label' => 'Cancelada',
+                        'class' => 'border-rose-200 bg-rose-50 text-rose-700',
+                        'dot' => 'bg-rose-500',
+                        ],
+                        default => [
+                        'label' => 'Borrador',
+                        'class' => 'border-slate-200 bg-slate-100 text-slate-600',
+                        'dot' => 'bg-slate-400',
+                        ],
+                        };
+                        @endphp
 
-                            <tr class="transition hover:bg-slate-50/70">
+                        <tr class="transition hover:bg-slate-50/70">
 
-                                {{-- Orden --}}
-                                <td class="px-6 py-5 align-middle">
+                            {{-- Orden --}}
+                            <td class="px-6 py-5 align-middle">
 
-                                    <p class="text-sm font-black text-slate-950">
-                                        {{ $purchase->purchase_number }}
-                                    </p>
+                                <p class="text-sm font-black text-slate-950">
+                                    {{ $purchase->purchase_number }}
+                                </p>
 
-                                    <p class="mt-1 text-xs font-medium text-slate-400">
-                                        {{ $purchase->created_at->format('d/m/Y H:i') }}
-                                    </p>
+                                <p class="mt-1 text-xs font-medium text-slate-400">
+                                    {{ $purchase->created_at->format('d/m/Y H:i') }}
+                                </p>
 
-                                </td>
-
-
-                                {{-- Proveedor --}}
-                                <td class="px-6 py-5 align-middle">
-
-                                    <p class="max-w-xs truncate text-sm font-bold text-slate-800">
-                                        {{ $purchase->supplier?->business_name ?? 'Proveedor no disponible' }}
-                                    </p>
-
-                                    <p class="mt-1 text-xs text-slate-400">
-                                        {{ $purchase->supplier?->rfc ?? 'Sin RFC' }}
-                                    </p>
-
-                                </td>
+                            </td>
 
 
-                                {{-- Referencia --}}
-                                <td class="px-6 py-5 align-middle">
+                            {{-- Proveedor --}}
+                            <td class="px-6 py-5 align-middle">
 
-                                    @if ($purchase->supplier_reference)
+                                <p class="max-w-xs truncate text-sm font-bold text-slate-800">
+                                    {{ $purchase->supplier?->business_name ?? 'Proveedor no disponible' }}
+                                </p>
 
-                                        <span class="font-mono text-xs font-bold text-slate-700">
-                                            {{ $purchase->supplier_reference }}
-                                        </span>
+                                <p class="mt-1 text-xs text-slate-400">
+                                    {{ $purchase->supplier?->rfc ?? 'Sin RFC' }}
+                                </p>
 
-                                    @else
-
-                                        <span class="text-xs font-medium text-slate-400">
-                                            Sin referencia
-                                        </span>
-
-                                    @endif
-
-                                </td>
+                            </td>
 
 
-                                {{-- Total --}}
-                                <td class="px-6 py-5 text-right align-middle">
+                            {{-- Referencia --}}
+                            <td class="px-6 py-5 align-middle">
 
-                                    <p class="text-sm font-black text-slate-950">
-                                        ${{ number_format((float) $purchase->total, 2) }}
-                                    </p>
+                                @if ($purchase->supplier_reference)
 
-                                    <p class="mt-0.5 text-[11px] font-medium text-slate-400">
-                                        {{ $purchase->currency_code }}
-                                    </p>
+                                <span class="font-mono text-xs font-bold text-slate-700">
+                                    {{ $purchase->supplier_reference }}
+                                </span>
 
-                                </td>
+                                @else
 
+                                <span class="text-xs font-medium text-slate-400">
+                                    Sin referencia
+                                </span>
 
-                                {{-- Estado --}}
-                                <td class="px-6 py-5 text-center align-middle">
+                                @endif
 
-                                    <span class="inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-black {{ $statusConfig['class'] }}">
-
-                                        <span class="h-2 w-2 rounded-full {{ $statusConfig['dot'] }}"></span>
-
-                                        {{ $statusConfig['label'] }}
-
-                                    </span>
-
-                                </td>
+                            </td>
 
 
-                                {{-- Acción --}}
-                                <td class="px-6 py-5 text-right align-middle">
+                            {{-- Total --}}
+                            <td class="px-6 py-5 text-right align-middle">
 
-                                    <a
-                                        href="{{ route('purchases.show', $purchase) }}"
-                                        class="inline-flex min-h-10 items-center justify-center rounded-xl border border-slate-300 bg-white px-4 text-sm font-bold text-slate-700 shadow-sm transition hover:border-slate-400 hover:bg-slate-50 hover:text-slate-950 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-600">
-                                        Ver detalle
-                                    </a>
+                                <p class="text-sm font-black text-slate-950">
+                                    ${{ number_format((float) $purchase->total, 2) }}
+                                </p>
 
-                                </td>
+                                <p class="mt-0.5 text-[11px] font-medium text-slate-400">
+                                    {{ $purchase->currency_code }}
+                                </p>
 
-                            </tr>
+                            </td>
+
+
+                            {{-- Estado --}}
+                            <td class="px-6 py-5 text-center align-middle">
+
+                                <span class="inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-black {{ $statusConfig['class'] }}">
+
+                                    <span class="h-2 w-2 rounded-full {{ $statusConfig['dot'] }}"></span>
+
+                                    {{ $statusConfig['label'] }}
+
+                                </span>
+
+                            </td>
+
+
+                            {{-- Acción --}}
+                            <td class="px-6 py-5 text-right align-middle">
+
+                                <a
+                                    href="{{ route('purchases.show', $purchase) }}"
+                                    class="inline-flex min-h-10 items-center justify-center rounded-xl border border-slate-300 bg-white px-4 text-sm font-bold text-slate-700 shadow-sm transition hover:border-slate-400 hover:bg-slate-50 hover:text-slate-950 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-600">
+                                    Ver detalle
+                                </a>
+
+                            </td>
+
+                        </tr>
 
                         @empty
 
-                            <tr>
+                        <tr>
 
-                                <td colspan="6" class="px-6 py-16 text-center">
+                            <td colspan="6" class="px-6 py-16 text-center">
 
-                                    <div class="mx-auto max-w-md">
+                                <div class="mx-auto max-w-md">
 
-                                        <div class="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-slate-100 text-xl font-black text-slate-400">
-                                            ∅
-                                        </div>
-
-                                        <p class="mt-4 text-base font-black text-slate-900">
-                                            No encontramos órdenes de compra
-                                        </p>
-
-                                        <p class="mt-2 text-sm leading-6 text-slate-500">
-                                            No existen compras que coincidan con los filtros seleccionados.
-                                        </p>
-
-                                        @if ($search || $status)
-
-                                            <a
-                                                href="{{ route('purchases.index') }}"
-                                                class="mt-5 inline-flex min-h-11 items-center justify-center rounded-xl bg-slate-900 px-5 text-sm font-bold text-white transition hover:bg-slate-800">
-                                                Limpiar filtros
-                                            </a>
-
-                                        @endif
-
+                                    <div class="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-slate-100 text-xl font-black text-slate-400">
+                                        ∅
                                     </div>
 
-                                </td>
+                                    <p class="mt-4 text-base font-black text-slate-900">
+                                        No encontramos órdenes de compra
+                                    </p>
 
-                            </tr>
+                                    <p class="mt-2 text-sm leading-6 text-slate-500">
+                                        No existen compras que coincidan con los filtros seleccionados.
+                                    </p>
+
+                                    @if ($search || $status)
+
+                                    <a
+                                        href="{{ route('purchases.index') }}"
+                                        class="mt-5 inline-flex min-h-11 items-center justify-center rounded-xl bg-slate-900 px-5 text-sm font-bold text-white transition hover:bg-slate-800">
+                                        Limpiar filtros
+                                    </a>
+
+                                    @endif
+
+                                </div>
+
+                            </td>
+
+                        </tr>
 
                         @endforelse
 
@@ -451,108 +447,108 @@
 
                 @forelse ($purchases as $purchase)
 
-                    @php
-                        $statusConfig = match ($purchase->status) {
-                            'received' => [
-                                'label' => 'Recibida',
-                                'class' => 'border-emerald-200 bg-emerald-50 text-emerald-700',
-                            ],
-                            'approved' => [
-                                'label' => 'Por recibir',
-                                'class' => 'border-amber-200 bg-amber-50 text-amber-700',
-                            ],
-                            'cancelled' => [
-                                'label' => 'Cancelada',
-                                'class' => 'border-rose-200 bg-rose-50 text-rose-700',
-                            ],
-                            default => [
-                                'label' => 'Borrador',
-                                'class' => 'border-slate-200 bg-slate-100 text-slate-600',
-                            ],
-                        };
-                    @endphp
+                @php
+                $statusConfig = match ($purchase->status) {
+                'received' => [
+                'label' => 'Recibida',
+                'class' => 'border-emerald-200 bg-emerald-50 text-emerald-700',
+                ],
+                'approved' => [
+                'label' => 'Por recibir',
+                'class' => 'border-amber-200 bg-amber-50 text-amber-700',
+                ],
+                'cancelled' => [
+                'label' => 'Cancelada',
+                'class' => 'border-rose-200 bg-rose-50 text-rose-700',
+                ],
+                default => [
+                'label' => 'Borrador',
+                'class' => 'border-slate-200 bg-slate-100 text-slate-600',
+                ],
+                };
+                @endphp
 
-                    <article class="p-5">
+                <article class="p-5">
 
-                        <div class="flex items-start justify-between gap-4">
+                    <div class="flex items-start justify-between gap-4">
 
-                            <div class="min-w-0">
+                        <div class="min-w-0">
 
-                                <p class="font-mono text-xs font-bold text-slate-500">
-                                    {{ $purchase->purchase_number }}
-                                </p>
+                            <p class="font-mono text-xs font-bold text-slate-500">
+                                {{ $purchase->purchase_number }}
+                            </p>
 
-                                <h2 class="mt-1 truncate text-base font-black text-slate-950">
-                                    {{ $purchase->supplier?->business_name ?? 'Proveedor no disponible' }}
-                                </h2>
+                            <h2 class="mt-1 truncate text-base font-black text-slate-950">
+                                {{ $purchase->supplier?->business_name ?? 'Proveedor no disponible' }}
+                            </h2>
 
-                                <p class="mt-1 text-xs text-slate-400">
-                                    {{ $purchase->created_at->format('d/m/Y H:i') }}
-                                </p>
+                            <p class="mt-1 text-xs text-slate-400">
+                                {{ $purchase->created_at->format('d/m/Y H:i') }}
+                            </p>
 
-                            </div>
+                        </div>
 
-                            <span class="shrink-0 rounded-full border px-2.5 py-1 text-xs font-black {{ $statusConfig['class'] }}">
-                                {{ $statusConfig['label'] }}
-                            </span>
+                        <span class="shrink-0 rounded-full border px-2.5 py-1 text-xs font-black {{ $statusConfig['class'] }}">
+                            {{ $statusConfig['label'] }}
+                        </span>
+
+                    </div>
+
+
+                    <div class="mt-5 grid grid-cols-2 gap-3">
+
+                        <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
+
+                            <p class="text-xs font-black uppercase tracking-[0.1em] text-slate-400">
+                                Referencia
+                            </p>
+
+                            <p class="mt-1 truncate text-sm font-bold text-slate-800">
+                                {{ $purchase->supplier_reference ?: 'Sin referencia' }}
+                            </p>
 
                         </div>
 
 
-                        <div class="mt-5 grid grid-cols-2 gap-3">
+                        <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
 
-                            <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                            <p class="text-xs font-black uppercase tracking-[0.1em] text-slate-400">
+                                Total
+                            </p>
 
-                                <p class="text-xs font-black uppercase tracking-[0.1em] text-slate-400">
-                                    Referencia
-                                </p>
-
-                                <p class="mt-1 truncate text-sm font-bold text-slate-800">
-                                    {{ $purchase->supplier_reference ?: 'Sin referencia' }}
-                                </p>
-
-                            </div>
-
-
-                            <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
-
-                                <p class="text-xs font-black uppercase tracking-[0.1em] text-slate-400">
-                                    Total
-                                </p>
-
-                                <p class="mt-1 text-sm font-black text-slate-950">
-                                    ${{ number_format((float) $purchase->total, 2) }}
-                                    <span class="text-[10px] font-medium text-slate-400">
-                                        {{ $purchase->currency_code }}
-                                    </span>
-                                </p>
-
-                            </div>
+                            <p class="mt-1 text-sm font-black text-slate-950">
+                                ${{ number_format((float) $purchase->total, 2) }}
+                                <span class="text-[10px] font-medium text-slate-400">
+                                    {{ $purchase->currency_code }}
+                                </span>
+                            </p>
 
                         </div>
 
+                    </div>
 
-                        <a
-                            href="{{ route('purchases.show', $purchase) }}"
-                            class="mt-4 flex min-h-12 w-full items-center justify-center rounded-xl bg-slate-900 px-4 text-sm font-black text-white transition hover:bg-slate-800">
-                            Ver detalle de la compra
-                        </a>
 
-                    </article>
+                    <a
+                        href="{{ route('purchases.show', $purchase) }}"
+                        class="mt-4 flex min-h-12 w-full items-center justify-center rounded-xl bg-slate-900 px-4 text-sm font-black text-white transition hover:bg-slate-800">
+                        Ver detalle de la compra
+                    </a>
+
+                </article>
 
                 @empty
 
-                    <div class="px-5 py-16 text-center">
+                <div class="px-5 py-16 text-center">
 
-                        <div class="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-slate-100 text-xl font-black text-slate-400">
-                            ∅
-                        </div>
-
-                        <p class="mt-4 text-base font-black text-slate-900">
-                            No encontramos órdenes de compra
-                        </p>
-
+                    <div class="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-slate-100 text-xl font-black text-slate-400">
+                        ∅
                     </div>
+
+                    <p class="mt-4 text-base font-black text-slate-900">
+                        No encontramos órdenes de compra
+                    </p>
+
+                </div>
 
                 @endforelse
 
@@ -564,9 +560,9 @@
             ====================================================== --}}
             @if ($purchases->hasPages())
 
-                <div class="border-t border-slate-200 bg-slate-50/70 px-5 py-4 sm:px-6">
-                    {{ $purchases->links() }}
-                </div>
+            <div class="border-t border-slate-200 bg-slate-50/70 px-5 py-4 sm:px-6">
+                {{ $purchases->links() }}
+            </div>
 
             @endif
 
@@ -574,4 +570,18 @@
 
     </div>
 
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const search = document.getElementById('purchase-search');
+            const form = search?.closest('form');
+
+            if (!search || !form) {
+                return;
+            }
+
+            search.addEventListener('ui-search-selected', function() {
+                form.requestSubmit();
+            });
+        });
+    </script>
 </x-layouts.app>

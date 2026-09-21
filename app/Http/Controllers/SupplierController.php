@@ -6,6 +6,7 @@ use App\Models\Supplier;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Http\JsonResponse;
 
 class SupplierController extends Controller
 {
@@ -19,6 +20,46 @@ class SupplierController extends Controller
             ?? throw new \Exception('No hay una organización registrada en el sistema.');
     }
 
+    public function search(Request $request): JsonResponse
+    {
+        $search = trim((string) $request->input('q', ''));
+
+        if ($search === '') {
+            return response()->json([
+                'items' => [],
+            ]);
+        }
+
+        $orgId = $this->getOrganizationId();
+
+        $suppliers = Supplier::query()
+            ->where('organization_id', $orgId)
+            ->where(function ($query) use ($search) {
+                $query
+                    ->where('business_name', 'ilike', "%{$search}%")
+                    ->orWhere('code', 'ilike', "%{$search}%")
+                    ->orWhere('rfc', 'ilike', "%{$search}%")
+                    ->orWhere('contact_name', 'ilike', "%{$search}%");
+            })
+            ->orderBy('business_name')
+            ->limit(8)
+            ->get();
+
+        return response()->json([
+            'items' => $suppliers->map(function (Supplier $supplier) {
+                return [
+                    'supplier_id' => $supplier->id,
+                    'name' => $supplier->business_name,
+                    'code' => $supplier->code,
+                    'rfc' => $supplier->rfc,
+                    'contact_name' => $supplier->contact_name,
+                    'phone' => $supplier->phone,
+                    'email' => $supplier->email,
+                    'is_active' => $supplier->is_active,
+                ];
+            })->values(),
+        ]);
+    }
     public function index(Request $request)
     {
         $orgId = $this->getOrganizationId();
@@ -27,11 +68,25 @@ class SupplierController extends Controller
 
         $suppliers = Supplier::where('organization_id', $orgId)
             ->when($search, function ($q) use ($search) {
-                $q->where(function ($sub) use ($search) {
-                    $sub->where('business_name', 'ilike', "%{$search}%")
-                        ->orWhere('code', 'ilike', "%{$search}%")
-                        ->orWhere('rfc', 'ilike', "%{$search}%")
-                        ->orWhere('contact_name', 'ilike', "%{$search}%");
+                $q->where(function ($searchQuery) use ($search) {
+                    $searchQuery
+                        ->where(
+                            'purchase_number',
+                            'ilike',
+                            "%{$search}%"
+                        )
+                        ->orWhere(
+                            'supplier_reference',
+                            'ilike',
+                            "%{$search}%"
+                        )
+                        ->orWhereHas('supplier', function ($supplierQuery) use ($search) {
+                            $supplierQuery->where(
+                                'business_name',
+                                'ilike',
+                                "%{$search}%"
+                            );
+                        });
                 });
             })
             ->when($status !== null && $status !== '', function ($q) use ($status) {

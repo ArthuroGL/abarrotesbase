@@ -90,33 +90,21 @@
                             <span class="text-rose-600">*</span>
                         </label>
 
-                        <select
-                            id="supplier_id"
-                            name="supplier_id"
-                            class="app-input"
-                            required>
+                        <div class="relative z-50">
+                            <x-ui.search
+                                id="purchase-supplier-search"
+                                name="supplier_search"
+                                endpoint="{{ route('suppliers.search') }}"
+                                placeholder="Buscar proveedor..."
+                                autofocus />
 
-                            <option value="">
-                                Selecciona un proveedor
-                            </option>
-
-                            @foreach ($suppliers as $supplier)
-
-                            <option
-                                value="{{ $supplier->id }}"
-                                @selected(old('supplier_id')==$supplier->id)>
-
-                                {{ $supplier->business_name }}
-
-                                @if ($supplier->rfc)
-                                · {{ $supplier->rfc }}
-                                @endif
-
-                            </option>
-
-                            @endforeach
-
-                        </select>
+                            <input
+                                type="hidden"
+                                id="supplier_id"
+                                name="supplier_id"
+                                value="{{ old('supplier_id') }}"
+                                required>
+                        </div>
 
                     </div>
 
@@ -169,7 +157,7 @@
             {{-- =====================================================
                  PARTIDAS
             ====================================================== --}}
-            <x-ui.card padding="p-0" class="overflow-hidden">
+            <x-ui.card padding="p-0" class="relative z-30 overflow-visible">
 
                 <div class="flex flex-col gap-4 border-b border-slate-200 bg-white px-5 py-5 sm:px-6 sm:flex-row sm:items-center sm:justify-between">
 
@@ -279,25 +267,6 @@
         </form>
 
     </div>
-
-
-    @php
-    $purchaseUnitsJson = $productUnitsByStockItem->map(
-        fn ($units) => $units->map(
-            fn ($productUnit) => [
-                'id' => $productUnit->id,
-                'name' => $productUnit->unit?->name ?? 'Unidad',
-                'conversion_factor' => (float) $productUnit->conversion_factor,
-                'allow_decimal' => (bool) $productUnit->allow_decimal,
-            ]
-        )->values()
-    );
-@endphp
-
-<script>
-    const purchaseUnitsByStockItem = @json($purchaseUnitsJson);
-</script>
-
     {{-- =============================================================
          TEMPLATE DE PARTIDA
     ============================================================== --}}
@@ -339,29 +308,22 @@
                         Artículo
                     </label>
 
-                    <select
-                        name="items[INDEX][stock_item_id]"
-                        class="app-input stock-item-select"
-                        required
-                        onchange="updatePurchaseUnit(this)">
+                    <div class="relative z-50">
 
-                        <option value="">
-                            Selecciona artículo
-                        </option>
+                        <x-ui.search
+                            class="purchase-product-search"
+                            name="product_search"
+                            endpoint="{{ route('products.search') }}"
+                            placeholder="Buscar producto, SKU o código..." />
 
-                        @foreach ($stockItems as $si)
+                        <input
+                            type="hidden"
+                            name="items[INDEX][stock_item_id]"
+                            class="stock-item-id"
+                            required>
 
-                        <option value="{{ $si->id }}">
-                            {{ $si->product?->name ?? 'Producto' }}
+                    </div>
 
-                            @if ($si->product?->sku)
-                            · {{ $si->product->sku }}
-                            @endif
-                        </option>
-
-                        @endforeach
-
-                    </select>
 
                 </div>
 
@@ -459,57 +421,509 @@
 
 
     <script>
-        let purchaseRowCount = 0;
+    let purchaseRowCount = 0;
 
-        function updatePurchaseUnit(stockItemSelect) {
+    /*
+    |--------------------------------------------------------------------------
+    | BUSCADOR DINÁMICO DE PRODUCTOS
+    |--------------------------------------------------------------------------
+    */
 
-            const row = stockItemSelect.closest('.item-row');
+    function initializeDynamicProductSearch(row) {
 
-            if (!row) {
+        const searchRoot = row.querySelector('[data-ui-search]');
+        const input = searchRoot?.querySelector('input');
+        const results = searchRoot?.querySelector('[data-search-results]');
+        const loading = searchRoot?.querySelector('[data-search-loading]');
+
+        if (!searchRoot || !input || !results) {
+            console.error('No se pudo inicializar el buscador del producto.');
+            return;
+        }
+
+        // Evitar inicializar dos veces el mismo buscador.
+        if (searchRoot.dataset.searchInitialized === 'true') {
+            return;
+        }
+
+        searchRoot.dataset.searchInitialized = 'true';
+
+        const endpoint = searchRoot.dataset.endpoint;
+        const minChars = Number(searchRoot.dataset.minChars || 1);
+        const debounceTime = Number(searchRoot.dataset.debounce || 250);
+
+        let timer = null;
+        let controller = null;
+        let items = [];
+        let activeIndex = -1;
+
+        function showResults() {
+            results.classList.remove('hidden');
+            input.setAttribute('aria-expanded', 'true');
+        }
+
+        function hideResults() {
+            results.classList.add('hidden');
+            input.setAttribute('aria-expanded', 'false');
+            activeIndex = -1;
+        }
+
+        function setLoading(active) {
+
+            if (!loading) {
                 return;
             }
 
-            const unitSelect = row.querySelector('.product-unit-select');
+            loading.classList.toggle('hidden', !active);
+            loading.classList.toggle('flex', active);
+        }
 
-            if (!unitSelect) {
+        function escapeHtml(value) {
+            return String(value ?? '')
+                .replaceAll('&', '&amp;')
+                .replaceAll('<', '&lt;')
+                .replaceAll('>', '&gt;')
+                .replaceAll('"', '&quot;')
+                .replaceAll("'", '&#039;');
+        }
+
+        function renderMessage(message) {
+
+            results.innerHTML = `
+                <div class="px-4 py-4 text-sm font-medium text-slate-500">
+                    ${escapeHtml(message)}
+                </div>
+            `;
+
+            showResults();
+        }
+
+        function updateActiveResult() {
+
+            const buttons = results.querySelectorAll('[data-search-result]');
+
+            buttons.forEach(function (button, index) {
+
+                const active = index === activeIndex;
+
+                button.classList.toggle('bg-slate-50', active);
+
+                button.setAttribute(
+                    'aria-selected',
+                    active ? 'true' : 'false'
+                );
+            });
+        }
+
+        function selectItem(index) {
+
+            if (!items[index]) {
                 return;
             }
 
-            const stockItemId = stockItemSelect.value;
+            const item = items[index];
 
-            unitSelect.innerHTML = '';
+            input.value = item.name || '';
 
-            unitSelect.disabled = true;
+            searchRoot.dispatchEvent(
+                new CustomEvent('ui-search-selected', {
+                    bubbles: true,
+                    detail: item,
+                })
+            );
 
-            if (!stockItemId) {
+            hideResults();
+        }
 
-                unitSelect.innerHTML = `
+        function renderResults() {
+
+            if (!items.length) {
+
+                renderMessage('No encontramos productos.');
+
+                return;
+            }
+
+            results.innerHTML = items.map(function (item, index) {
+
+                const name = escapeHtml(
+                    item.name || 'Producto sin nombre'
+                );
+
+                const sku = escapeHtml(
+                    item.sku || 'Sin SKU'
+                );
+
+                const barcode = escapeHtml(
+                    item.barcode || ''
+                );
+
+                const unit = escapeHtml(
+                    item.unit || 'PZA'
+                );
+
+                return `
+                    <button
+                        type="button"
+                        class="flex w-full items-center justify-between gap-4 border-b border-slate-100 px-4 py-3.5 text-left transition last:border-b-0 hover:bg-slate-50 focus:bg-slate-50"
+                        data-search-result
+                        data-index="${index}"
+                        role="option"
+                        aria-selected="false">
+
+                        <span class="min-w-0">
+
+                            <span class="block truncate text-sm font-black text-slate-900">
+                                ${name}
+                            </span>
+
+                            <span class="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-slate-500">
+
+                                <span class="font-mono font-semibold">
+                                    ${sku}
+                                </span>
+
+                                ${
+                                    barcode
+                                        ? `
+                                            <span class="text-slate-300">•</span>
+                                            <span class="font-mono">
+                                                ${barcode}
+                                            </span>
+                                        `
+                                        : ''
+                                }
+
+                                <span class="text-slate-300">•</span>
+
+                                <span>${unit}</span>
+
+                            </span>
+
+                        </span>
+
+                    </button>
+                `;
+            }).join('');
+
+            showResults();
+
+            results
+                .querySelectorAll('[data-search-result]')
+                .forEach(function (button) {
+
+                    button.addEventListener(
+                        'mouseenter',
+                        function () {
+
+                            activeIndex =
+                                Number(button.dataset.index);
+
+                            updateActiveResult();
+                        }
+                    );
+
+                    button.addEventListener(
+                        'click',
+                        function () {
+
+                            const index =
+                                Number(button.dataset.index);
+
+                            selectItem(index);
+                        }
+                    );
+                });
+
+            updateActiveResult();
+        }
+
+        async function searchProducts(query) {
+
+            query = query.trim();
+
+            if (controller) {
+                controller.abort();
+                controller = null;
+            }
+
+            if (query.length < minChars) {
+
+                items = [];
+
+                results.innerHTML = '';
+
+                hideResults();
+
+                setLoading(false);
+
+                return;
+            }
+
+            controller = new AbortController();
+
+            setLoading(true);
+
+            try {
+
+                const url = new URL(
+                    endpoint,
+                    window.location.origin
+                );
+
+                url.searchParams.set('q', query);
+
+                const response = await fetch(url, {
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest',
+                    },
+                    signal: controller.signal,
+                });
+
+                if (!response.ok) {
+                    throw new Error(
+                        'No se pudo realizar la búsqueda.'
+                    );
+                }
+
+                const data = await response.json();
+
+                items = Array.isArray(data.items)
+                    ? data.items
+                    : [];
+
+                activeIndex = -1;
+
+                renderResults();
+
+            } catch (error) {
+
+                if (error.name === 'AbortError') {
+                    return;
+                }
+
+                console.error(
+                    'Error buscando productos:',
+                    error
+                );
+
+                items = [];
+
+                renderMessage(
+                    'No se pudo realizar la búsqueda.'
+                );
+
+            } finally {
+
+                setLoading(false);
+
+                controller = null;
+            }
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | ESCRITURA
+        |--------------------------------------------------------------------------
+        */
+
+        input.addEventListener('input', function () {
+
+            clearTimeout(timer);
+
+            activeIndex = -1;
+
+            timer = setTimeout(function () {
+
+                searchProducts(input.value);
+
+            }, debounceTime);
+        });
+
+        /*
+        |--------------------------------------------------------------------------
+        | TECLADO
+        |--------------------------------------------------------------------------
+        */
+
+        input.addEventListener('keydown', function (event) {
+
+            if (event.key === 'ArrowDown') {
+
+                if (!items.length) {
+                    return;
+                }
+
+                event.preventDefault();
+
+                activeIndex = Math.min(
+                    activeIndex + 1,
+                    items.length - 1
+                );
+
+                updateActiveResult();
+
+                return;
+            }
+
+            if (event.key === 'ArrowUp') {
+
+                if (!items.length) {
+                    return;
+                }
+
+                event.preventDefault();
+
+                activeIndex = Math.max(
+                    activeIndex - 1,
+                    0
+                );
+
+                updateActiveResult();
+
+                return;
+            }
+
+            if (event.key === 'Enter') {
+
+                /*
+                 * Si hay una opción seleccionada.
+                 */
+                if (
+                    activeIndex >= 0 &&
+                    items[activeIndex]
+                ) {
+
+                    event.preventDefault();
+
+                    selectItem(activeIndex);
+
+                    return;
+                }
+
+                /*
+                 * Si solamente existe un resultado,
+                 * lo seleccionamos automáticamente.
+                 *
+                 * Esto además será útil para el lector
+                 * de código de barras.
+                 */
+                if (items.length === 1) {
+
+                    event.preventDefault();
+
+                    selectItem(0);
+
+                    return;
+                }
+
+                return;
+            }
+
+            if (event.key === 'Escape') {
+
+                hideResults();
+
+                return;
+            }
+        });
+
+        /*
+        |--------------------------------------------------------------------------
+        | CLICK FUERA
+        |--------------------------------------------------------------------------
+        */
+
+        document.addEventListener('click', function (event) {
+
+            if (!searchRoot.contains(event.target)) {
+                hideResults();
+            }
+        });
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | UNIDADES DE COMPRA
+    |--------------------------------------------------------------------------
+    */
+
+    async function updatePurchaseUnit(row, stockItemId) {
+
+        if (!row) {
+            return;
+        }
+
+        const unitSelect =
+            row.querySelector('.product-unit-select');
+
+        if (!unitSelect) {
+            return;
+        }
+
+        unitSelect.innerHTML = `
             <option value="">
-                Primero selecciona un artículo
+                Cargando unidades...
             </option>
         `;
 
-                return;
+        unitSelect.disabled = true;
+
+        if (!stockItemId) {
+
+            unitSelect.innerHTML = `
+                <option value="">
+                    Primero selecciona un artículo
+                </option>
+            `;
+
+            return;
+        }
+
+        try {
+
+            const response = await fetch(
+                `/api/purchases/product-units/${stockItemId}`,
+                {
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest',
+                    },
+                }
+            );
+
+            if (!response.ok) {
+                throw new Error(
+                    'No se pudieron cargar las unidades.'
+                );
             }
 
-            const units = purchaseUnitsByStockItem[stockItemId] ?? [];
+            const data = await response.json();
+
+            const units = data.items ?? [];
+
+            unitSelect.innerHTML = '';
 
             if (units.length === 0) {
 
                 unitSelect.innerHTML = `
-            <option value="">
-                Sin unidad de compra configurada
-            </option>
-        `;
+                    <option value="">
+                        Sin unidad de compra configurada
+                    </option>
+                `;
 
                 return;
             }
 
-            units.forEach(unit => {
+            units.forEach(function (unit) {
 
-                const option = document.createElement('option');
+                const option =
+                    document.createElement('option');
 
                 option.value = unit.id;
+
                 option.textContent = unit.name;
 
                 option.dataset.allowDecimal =
@@ -519,164 +933,367 @@
                     unit.conversion_factor;
 
                 unitSelect.appendChild(option);
-
             });
 
             unitSelect.disabled = false;
 
-            /*
-             * Si solo existe una unidad para el artículo,
-             * la seleccionamos automáticamente.
-             */
             if (units.length === 1) {
-
                 unitSelect.value = units[0].id;
-
             }
 
+        } catch (error) {
+
+            console.error(error);
+
+            unitSelect.innerHTML = `
+                <option value="">
+                    No se pudieron cargar las unidades
+                </option>
+            `;
+        }
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | PRODUCTO SELECCIONADO
+    |--------------------------------------------------------------------------
+    */
+
+    function initializePurchaseProductSearch(row) {
+
+        const search =
+            row.querySelector('.purchase-product-search');
+
+        const stockItemId =
+            row.querySelector('.stock-item-id');
+
+        if (!search || !stockItemId) {
+            return;
         }
 
-        function addPurchaseRow() {
+        search.addEventListener(
+            'ui-search-selected',
+            function (event) {
 
-            const container = document.getElementById('items-container');
-            const template = document.getElementById('purchase-row-template');
+                const item = event.detail;
 
-            if (!container || !template) {
-                return;
-            }
+                const selectedStockItemId =
+                    item.stock_item_id ?? '';
 
-            const html = template.innerHTML
-                .replace(/INDEX/g, purchaseRowCount)
-                .replace(
-                    '<span class="row-number">1</span>',
-                    `<span class="row-number">${purchaseRowCount + 1}</span>`
+                stockItemId.value =
+                    selectedStockItemId;
+
+                updatePurchaseUnit(
+                    row,
+                    selectedStockItemId
                 );
-
-            const wrapper = document.createElement('div');
-
-            wrapper.innerHTML = html.trim();
-
-            const row = wrapper.firstElementChild;
-
-            container.appendChild(row);
-
-            purchaseRowCount++;
-
-
-
-            updateEmptyMessage();
-            updateGrandTotal();
-        }
-
-
-        function removePurchaseRow(button) {
-
-            const row = button.closest('.item-row');
-
-            if (!row) {
-                return;
             }
+        );
+    }
 
-            row.remove();
 
-            updateRowNumbers();
-            updateEmptyMessage();
-            updateGrandTotal();
+    /*
+    |--------------------------------------------------------------------------
+    | AGREGAR PARTIDA
+    |--------------------------------------------------------------------------
+    */
+
+    function addPurchaseRow() {
+
+        const container =
+            document.getElementById('items-container');
+
+        const template =
+            document.getElementById('purchase-row-template');
+
+        if (!container || !template) {
+            return;
         }
 
+        const html = template.innerHTML
+            .replace(
+                /INDEX/g,
+                purchaseRowCount
+            )
+            .replace(
+                '<span class="row-number">1</span>',
+                `<span class="row-number">${purchaseRowCount + 1}</span>`
+            );
 
-        function updateRowNumbers() {
+        const wrapper =
+            document.createElement('div');
 
-            document
-                .querySelectorAll('.item-row')
-                .forEach((row, index) => {
+        wrapper.innerHTML = html.trim();
 
-                    const number = row.querySelector('.row-number');
+        const row =
+            wrapper.firstElementChild;
 
-                    if (number) {
-                        number.textContent = index + 1;
-                    }
-
-                });
+        if (!row) {
+            return;
         }
 
+        container.appendChild(row);
 
-        function updateEmptyMessage() {
+        /*
+         * Primero inicializamos el buscador.
+         */
+        initializeDynamicProductSearch(row);
 
-            const container = document.getElementById('items-container');
-            const emptyMessage = document.getElementById('empty-items-message');
+        /*
+         * Después escuchamos qué producto
+         * fue seleccionado.
+         */
+        initializePurchaseProductSearch(row);
 
-            if (!container || !emptyMessage) {
-                return;
+        purchaseRowCount++;
+
+        updateEmptyMessage();
+
+        updateGrandTotal();
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | ELIMINAR PARTIDA
+    |--------------------------------------------------------------------------
+    */
+
+    function removePurchaseRow(button) {
+
+        const row =
+            button.closest('.item-row');
+
+        if (!row) {
+            return;
+        }
+
+        row.remove();
+
+        updateRowNumbers();
+
+        updateEmptyMessage();
+
+        updateGrandTotal();
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | NUMERACIÓN
+    |--------------------------------------------------------------------------
+    */
+
+    function updateRowNumbers() {
+
+        document
+            .querySelectorAll('.item-row')
+            .forEach(function (row, index) {
+
+                const number =
+                    row.querySelector('.row-number');
+
+                if (number) {
+                    number.textContent = index + 1;
+                }
+            });
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | MENSAJE SIN ARTÍCULOS
+    |--------------------------------------------------------------------------
+    */
+
+    function updateEmptyMessage() {
+
+        const container =
+            document.getElementById('items-container');
+
+        const emptyMessage =
+            document.getElementById('empty-items-message');
+
+        if (!container || !emptyMessage) {
+            return;
+        }
+
+        const hasItems =
+            container.querySelector('.item-row');
+
+        emptyMessage.classList.toggle(
+            'hidden',
+            Boolean(hasItems)
+        );
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | TOTAL DE PARTIDA
+    |--------------------------------------------------------------------------
+    */
+
+    function calculateRowTotal(input) {
+
+        const row =
+            input.closest('.item-row');
+
+        if (!row) {
+            return;
+        }
+
+        const quantity =
+            parseFloat(
+                row.querySelector('.qty-input')?.value
+            ) || 0;
+
+        const cost =
+            parseFloat(
+                row.querySelector('.cost-input')?.value
+            ) || 0;
+
+        const subtotal =
+            quantity * cost;
+
+        const subtotalElement =
+            row.querySelector('.row-subtotal');
+
+        if (subtotalElement) {
+
+            subtotalElement.textContent =
+                '$' + subtotal.toFixed(2);
+        }
+
+        updateGrandTotal();
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | TOTAL GENERAL
+    |--------------------------------------------------------------------------
+    */
+
+    function updateGrandTotal() {
+
+        let total = 0;
+
+        document
+            .querySelectorAll('.item-row')
+            .forEach(function (row) {
+
+                const quantity =
+                    parseFloat(
+                        row.querySelector('.qty-input')?.value
+                    ) || 0;
+
+                const cost =
+                    parseFloat(
+                        row.querySelector('.cost-input')?.value
+                    ) || 0;
+
+                total += quantity * cost;
+            });
+
+        const totalElement =
+            document.getElementById(
+                'grand-total-display'
+            );
+
+        if (totalElement) {
+
+            totalElement.innerHTML =
+                '$' + total.toFixed(2) +
+                ' <span class="text-sm font-bold text-slate-400">MXN</span>';
+        }
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | PROVEEDOR
+    |--------------------------------------------------------------------------
+    */
+
+    function initializePurchaseSupplierSearch() {
+
+        const supplierSearch =
+            document.getElementById(
+                'purchase-supplier-search'
+            );
+
+        const supplierId =
+            document.getElementById(
+                'supplier_id'
+            );
+
+        if (!supplierSearch || !supplierId) {
+            return;
+        }
+
+        supplierSearch.addEventListener(
+            'ui-search-selected',
+            function (event) {
+
+                const item = event.detail;
+
+                supplierId.value =
+                    item.supplier_id ?? '';
             }
+        );
+    }
 
-            const hasItems = container.querySelector('.item-row');
 
-            emptyMessage.classList.toggle('hidden', Boolean(hasItems));
+    /*
+    |--------------------------------------------------------------------------
+    | INICIALIZACIÓN
+    |--------------------------------------------------------------------------
+    */
+
+    document.addEventListener(
+        'DOMContentLoaded',
+        function () {
+
+            /*
+             * El buscador de proveedor ya existe
+             * directamente en la página.
+             */
+            initializePurchaseSupplierSearch();
+
+            /*
+             * La primera partida se crea
+             * dinámicamente.
+             */
+            addPurchaseRow();
         }
-
-
-        function calculateRowTotal(input) {
-
-            const row = input.closest('.item-row');
-
-            if (!row) {
-                return;
-            }
-
-            const quantity =
-                parseFloat(row.querySelector('.qty-input')?.value) || 0;
-
-            const cost =
-                parseFloat(row.querySelector('.cost-input')?.value) || 0;
-
-            const subtotal = quantity * cost;
-
-            const subtotalElement =
-                row.querySelector('.row-subtotal');
-
-            if (subtotalElement) {
-                subtotalElement.textContent =
-                    '$' + subtotal.toFixed(2);
-            }
-
-            updateGrandTotal();
-        }
-
-
-        function updateGrandTotal() {
-
-            let total = 0;
-
-            document
-                .querySelectorAll('.item-row')
-                .forEach(row => {
-
-                    const quantity =
-                        parseFloat(row.querySelector('.qty-input')?.value) || 0;
-
-                    const cost =
-                        parseFloat(row.querySelector('.cost-input')?.value) || 0;
-
-                    total += quantity * cost;
-
-                });
-
-            const totalElement =
-                document.getElementById('grand-total-display');
-
-            if (totalElement) {
-
-                totalElement.innerHTML =
-                    '$' + total.toFixed(2) +
-                    ' <span class="text-sm font-bold text-slate-400">MXN</span>';
-            }
-        }
-
-
+    );
+</script>
+    <script>
         document.addEventListener('DOMContentLoaded', function() {
 
-            addPurchaseRow();
+            const supplierSearch = document.getElementById(
+                'purchase-supplier-search'
+            );
+
+            const supplierId = document.getElementById(
+                'supplier_id'
+            );
+
+            if (supplierSearch && supplierId) {
+
+                supplierSearch.addEventListener(
+                    'ui-search-selected',
+                    function(event) {
+
+                        const item = event.detail;
+
+                        supplierId.value = item.supplier_id ?? '';
+
+                    }
+                );
+            }
 
         });
     </script>

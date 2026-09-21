@@ -134,20 +134,14 @@
                         Proveedor, código, RFC o contacto
                     </label>
 
-                    <div class="relative">
-
-
-
-                        <x-ui.input
-                            id="search"
-                            name="search"
-                            type="search"
-                            :value="$search"
-                            placeholder="Ej. Coca-Cola, PRV-0001, RFC o Carlos..."
-                            autocomplete="off"
-                            class="pl-11" />
-
-                    </div>
+                    <x-ui.search
+                        id="supplier-search"
+                        name="search"
+                        endpoint="{{ route('suppliers.search') }}"
+                        :value="$search"
+                        placeholder="Buscar proveedor..."
+                        primary-field="name"
+                        secondary-fields="code,rfc,contact_name" />
 
                 </div>
 
@@ -1405,4 +1399,18 @@
         });
     </script>
 
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const search = document.getElementById('supplier-search');
+            const form = search?.closest('form');
+
+            if (!search || !form) {
+                return;
+            }
+
+            search.addEventListener('ui-search-selected', function() {
+                form.requestSubmit();
+            });
+        });
+    </script>
 </x-layouts.app>
