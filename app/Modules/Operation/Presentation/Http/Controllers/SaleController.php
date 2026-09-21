@@ -921,28 +921,16 @@ final class SaleController
                     'branch_id' => $session->branch_id,
                     'cash_session_id' => $session->id,
                     'payment_method_id' => $paymentMethod->id,
+
+                    // La caja registra únicamente el importe real de la venta.
                     'movement_type' => 'sale_payment',
-                    'amount' => $amountReceived,
+                    'amount' => $total,
+
                     'source_type' => 'SALE',
                     'source_id' => $sale->id,
                     'created_by' => $user->id,
                     'occurred_at' => now(),
                 ]);
-
-                if ($change > 0) {
-                    CashMovement::create([
-                        'organization_id' => $session->organization_id,
-                        'branch_id' => $session->branch_id,
-                        'cash_session_id' => $session->id,
-                        'payment_method_id' => $paymentMethod->id,
-                        'movement_type' => 'sale_change',
-                        'amount' => $change,
-                        'source_type' => 'SALE',
-                        'source_id' => $sale->id,
-                        'created_by' => $user->id,
-                        'occurred_at' => now(),
-                    ]);
-                }
             }
 
             $sale->update([
@@ -987,7 +975,6 @@ final class SaleController
         $cashOut = (float) DB::table('cash_movements')
             ->where('cash_session_id', $cashSessionId)
             ->whereIn('movement_type', [
-                'sale_change',
                 'return_payment',
                 'expense',
                 'withdrawal',

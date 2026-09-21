@@ -5,14 +5,12 @@
         <x-layout.page-header
             eyebrow="Devoluciones"
             title="Procesar devolución"
-            description="Selecciona los productos y cantidades que serán devueltos."
-        >
+            description="Selecciona los productos y cantidades que serán devueltos.">
             <x-slot:actions>
                 <a
-                    href="{{ route('returns.index') }}"
-                    class="inline-flex min-h-12 items-center justify-center rounded-xl bg-white px-4 text-sm font-bold text-slate-700 ring-1 ring-inset ring-slate-300 transition hover:bg-slate-50"
-                >
-                    Buscar otra venta
+                    href="{{ route('sales.history') }}"
+                    class="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-bold text-slate-700 transition hover:bg-slate-50">
+                    Regresar a ventas
                 </a>
             </x-slot:actions>
         </x-layout.page-header>
@@ -104,63 +102,60 @@
 
                         @foreach ($sale->lines as $line)
 
-                            <tr
-                                data-line
-                                data-line-id="{{ $line->id }}"
-                                data-unit-price="{{ (float) $line->unit_price }}"
-                                data-original-quantity="{{ (float) $line->quantity }}"
-                                data-line-total="{{ (float) $line->line_total }}"
-                                data-available="{{ (float) $line->available_return_quantity }}"
-                            >
+                        <tr
+                            data-line
+                            data-line-id="{{ $line->id }}"
+                            data-unit-price="{{ (float) $line->unit_price }}"
+                            data-original-quantity="{{ (float) $line->quantity }}"
+                            data-line-total="{{ (float) $line->line_total }}"
+                            data-available="{{ (float) $line->available_return_quantity }}">
 
-                                <td>
-                                    <div>
-                                        <p class="font-bold text-slate-900">
-                                            {{ $line->description }}
-                                        </p>
+                            <td>
+                                <div>
+                                    <p class="font-bold text-slate-900">
+                                        {{ $line->description }}
+                                    </p>
 
-                                        <p class="mt-1 text-xs text-slate-400">
-                                            SKU: {{ $line->sku }}
-                                        </p>
-                                    </div>
-                                </td>
+                                    <p class="mt-1 text-xs text-slate-400">
+                                        SKU: {{ $line->sku }}
+                                    </p>
+                                </div>
+                            </td>
 
-                                <td>
-                                    {{ rtrim(rtrim(number_format((float) $line->quantity, 3), '0'), '.') }}
-                                </td>
+                            <td>
+                                {{ rtrim(rtrim(number_format((float) $line->quantity, 3), '0'), '.') }}
+                            </td>
 
-                                <td>
-                                    {{ rtrim(rtrim(number_format((float) $line->returned_quantity, 3), '0'), '.') }}
-                                </td>
+                            <td>
+                                {{ rtrim(rtrim(number_format((float) $line->returned_quantity, 3), '0'), '.') }}
+                            </td>
 
-                                <td>
-                                    <span class="font-bold text-slate-900">
-                                        {{ rtrim(rtrim(number_format((float) $line->available_return_quantity, 3), '0'), '.') }}
-                                    </span>
-                                </td>
+                            <td>
+                                <span class="font-bold text-slate-900">
+                                    {{ rtrim(rtrim(number_format((float) $line->available_return_quantity, 3), '0'), '.') }}
+                                </span>
+                            </td>
 
-                                <td>
+                            <td>
 
-                                    <input
-                                        type="number"
-                                        min="0"
-                                        max="{{ $line->available_return_quantity }}"
-                                        step="any"
-                                        value="0"
-                                        data-quantity
-                                        class="app-input w-28 text-center"
-                                        @disabled($line->available_return_quantity <= 0)
-                                    >
+                                <input
+                                    type="number"
+                                    min="0"
+                                    max="{{ $line->available_return_quantity }}"
+                                    step="any"
+                                    value="0"
+                                    data-quantity
+                                    class="app-input w-28 text-center"
+                                    @disabled($line->available_return_quantity <= 0)>
 
-                                </td>
+                            </td>
 
-                                <td>
+                            <td>
 
-                                    <select
-                                        data-condition
-                                        class="app-input min-w-44"
-                                        @disabled($line->available_return_quantity <= 0)
-                                    >
+                                <select
+                                    data-condition
+                                    class="app-input min-w-44"
+                                    @disabled($line->available_return_quantity <= 0)>
                                         <option value="resellable">
                                             Producto en buen estado
                                         </option>
@@ -172,11 +167,11 @@
                                         <option value="discarded">
                                             Desechado
                                         </option>
-                                    </select>
+                                </select>
 
-                                </td>
+                            </td>
 
-                            </tr>
+                        </tr>
 
                         @endforeach
 
@@ -192,114 +187,111 @@
 
                 @foreach ($sale->lines as $line)
 
-                    <article
-                        data-line
-                        data-line-id="{{ $line->id }}"
-                        data-unit-price="{{ (float) $line->unit_price }}"
-                        data-original-quantity="{{ (float) $line->quantity }}"
-                        data-line-total="{{ (float) $line->line_total }}"
-                        data-available="{{ (float) $line->available_return_quantity }}"
-                        class="rounded-2xl border border-slate-200 p-4"
-                    >
+                <article
+                    data-line
+                    data-line-id="{{ $line->id }}"
+                    data-unit-price="{{ (float) $line->unit_price }}"
+                    data-original-quantity="{{ (float) $line->quantity }}"
+                    data-line-total="{{ (float) $line->line_total }}"
+                    data-available="{{ (float) $line->available_return_quantity }}"
+                    class="rounded-2xl border border-slate-200 p-4">
 
-                        <div class="flex items-start justify-between gap-4">
+                    <div class="flex items-start justify-between gap-4">
 
-                            <div class="min-w-0">
+                        <div class="min-w-0">
 
-                                <p class="font-black text-slate-900">
-                                    {{ $line->description }}
-                                </p>
+                            <p class="font-black text-slate-900">
+                                {{ $line->description }}
+                            </p>
 
-                                <p class="mt-1 text-xs text-slate-400">
-                                    SKU: {{ $line->sku }}
-                                </p>
-
-                            </div>
-
-                            @if ($line->available_return_quantity > 0)
-
-                                <span class="shrink-0 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-bold text-emerald-700">
-                                    Disponible
-                                </span>
-
-                            @else
-
-                                <span class="shrink-0 rounded-full bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-500">
-                                    Devuelto
-                                </span>
-
-                            @endif
+                            <p class="mt-1 text-xs text-slate-400">
+                                SKU: {{ $line->sku }}
+                            </p>
 
                         </div>
 
+                        @if ($line->available_return_quantity > 0)
 
-                        <div class="mt-4 grid grid-cols-3 gap-3">
+                        <span class="shrink-0 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-bold text-emerald-700">
+                            Disponible
+                        </span>
 
-                            <div>
-                                <p class="text-xs text-slate-400">
-                                    Vendido
-                                </p>
+                        @else
 
-                                <p class="mt-1 font-bold text-slate-800">
-                                    {{ rtrim(rtrim(number_format((float) $line->quantity, 3), '0'), '.') }}
-                                </p>
-                            </div>
+                        <span class="shrink-0 rounded-full bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-500">
+                            Devuelto
+                        </span>
 
-                            <div>
-                                <p class="text-xs text-slate-400">
-                                    Devuelto
-                                </p>
+                        @endif
 
-                                <p class="mt-1 font-bold text-slate-800">
-                                    {{ rtrim(rtrim(number_format((float) $line->returned_quantity, 3), '0'), '.') }}
-                                </p>
-                            </div>
+                    </div>
 
-                            <div>
-                                <p class="text-xs text-slate-400">
-                                    Disponible
-                                </p>
 
-                                <p class="mt-1 font-bold text-slate-800">
-                                    {{ rtrim(rtrim(number_format((float) $line->available_return_quantity, 3), '0'), '.') }}
-                                </p>
-                            </div>
+                    <div class="mt-4 grid grid-cols-3 gap-3">
+
+                        <div>
+                            <p class="text-xs text-slate-400">
+                                Vendido
+                            </p>
+
+                            <p class="mt-1 font-bold text-slate-800">
+                                {{ rtrim(rtrim(number_format((float) $line->quantity, 3), '0'), '.') }}
+                            </p>
+                        </div>
+
+                        <div>
+                            <p class="text-xs text-slate-400">
+                                Devuelto
+                            </p>
+
+                            <p class="mt-1 font-bold text-slate-800">
+                                {{ rtrim(rtrim(number_format((float) $line->returned_quantity, 3), '0'), '.') }}
+                            </p>
+                        </div>
+
+                        <div>
+                            <p class="text-xs text-slate-400">
+                                Disponible
+                            </p>
+
+                            <p class="mt-1 font-bold text-slate-800">
+                                {{ rtrim(rtrim(number_format((float) $line->available_return_quantity, 3), '0'), '.') }}
+                            </p>
+                        </div>
+
+                    </div>
+
+
+                    <div class="mt-4 grid gap-3">
+
+                        <div>
+
+                            <label class="mb-1 block text-xs font-bold text-slate-600">
+                                Cantidad a devolver
+                            </label>
+
+                            <input
+                                type="number"
+                                min="0"
+                                max="{{ $line->available_return_quantity }}"
+                                step="any"
+                                value="0"
+                                data-quantity
+                                class="app-input w-full"
+                                @disabled($line->available_return_quantity <= 0)>
 
                         </div>
 
+                        <div>
 
-                        <div class="mt-4 grid gap-3">
+                            <label class="mb-1 block text-xs font-bold text-slate-600">
+                                Condición
+                            </label>
 
-                            <div>
-
-                                <label class="mb-1 block text-xs font-bold text-slate-600">
-                                    Cantidad a devolver
-                                </label>
-
-                                <input
-                                    type="number"
-                                    min="0"
-                                    max="{{ $line->available_return_quantity }}"
-                                    step="any"
-                                    value="0"
-                                    data-quantity
-                                    class="app-input w-full"
-                                    @disabled($line->available_return_quantity <= 0)
-                                >
-
-                            </div>
-
-                            <div>
-
-                                <label class="mb-1 block text-xs font-bold text-slate-600">
-                                    Condición
-                                </label>
-
-                                <select
-                                    data-condition
-                                    class="app-input w-full"
-                                    @disabled($line->available_return_quantity <= 0)
-                                >
+                            <select
+                                data-condition
+                                class="app-input w-full"
+                                @disabled($line->available_return_quantity <= 0)>
                                     <option value="resellable">
                                         Producto en buen estado
                                     </option>
@@ -311,13 +303,13 @@
                                     <option value="discarded">
                                         Desechado
                                     </option>
-                                </select>
-
-                            </div>
+                            </select>
 
                         </div>
 
-                    </article>
+                    </div>
+
+                </article>
 
                 @endforeach
 
@@ -343,15 +335,13 @@
 
                     <label
                         for="reason-code"
-                        class="mb-2 block text-sm font-bold text-slate-700"
-                    >
+                        class="mb-2 block text-sm font-bold text-slate-700">
                         Motivo
                     </label>
 
                     <select
                         id="reason-code"
-                        class="app-input"
-                    >
+                        class="app-input">
 
                         <option value="">
                             Selecciona un motivo
@@ -392,8 +382,7 @@
 
                 <p
                     id="return-total"
-                    class="mt-2 text-3xl font-black tracking-tight text-slate-900"
-                >
+                    class="mt-2 text-3xl font-black tracking-tight text-slate-900">
                     $ 0.00 MXN
                 </p>
 
@@ -402,8 +391,7 @@
                     <x-ui.button
                         id="process-return"
                         type="button"
-                        class="w-full"
-                    >
+                        class="w-full">
                         Procesar devolución
                     </x-ui.button>
 
@@ -416,112 +404,262 @@
 
         <div
             id="return-message"
-            class="hidden rounded-xl px-5 py-4 text-sm font-semibold"
-        ></div>
+            class="hidden rounded-xl px-5 py-4 text-sm font-semibold"></div>
 
     </div>
 
+    <x-ui.modal
+        id="confirm-return-modal"
+        title="Confirmar devolución"
+        description="Revisa el importe antes de confirmar la devolución."
+        size="md">
+        <div class="space-y-5">
 
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
+            <div class="rounded-xl border border-amber-200 bg-amber-50 p-4">
+                <p class="text-sm font-bold text-amber-900">
+                    Importe a devolver
+                </p>
 
-            const lines = [
-                ...document.querySelectorAll('[data-line]')
-            ];
+                <p
+                    id="confirm-return-total"
+                    class="mt-1 text-2xl font-black text-amber-950">
+                    $0.00 MXN
+                </p>
+            </div>
 
-            const totalElement =
-                document.getElementById('return-total');
+            <div>
+                <p class="text-sm font-bold text-slate-900">
+                    ¿Confirmar devolución?
+                </p>
 
-            const processButton =
-                document.getElementById('process-return');
+                <p class="mt-1 text-sm text-slate-500">
+                    Los productos seleccionados serán registrados como devueltos
+                    y se actualizará el inventario según la condición indicada.
+                </p>
+            </div>
 
-            const reasonSelect =
-                document.getElementById('reason-code');
+            <div class="flex justify-end gap-3">
 
-            const message =
-                document.getElementById('return-message');
+                <button
+                    type="button"
+                    id="cancel-confirm-return"
+                    class="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-bold text-slate-700 transition hover:bg-slate-50">
+                    Cancelar
+                </button>
+
+                <button
+                    type="button"
+                    id="confirm-return-button"
+                    class="inline-flex items-center justify-center rounded-xl bg-rose-600 px-5 py-2.5 text-sm font-bold text-white transition hover:bg-rose-700 disabled:cursor-not-allowed disabled:opacity-50">
+                    Confirmar devolución
+                </button>
+
+            </div>
+
+        </div>
+    </x-ui.modal>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+
+        const lines = [
+            ...document.querySelectorAll('[data-line]')
+        ];
+
+        const totalElement =
+            document.getElementById('return-total');
+
+        const processButton =
+            document.getElementById('process-return');
+
+        const confirmReturnTotal =
+            document.getElementById('confirm-return-total');
+
+        const confirmReturnButton =
+            document.getElementById('confirm-return-button');
+
+        const cancelConfirmReturn =
+            document.getElementById('cancel-confirm-return');
+
+        const reasonSelect =
+            document.getElementById('reason-code');
+
+        const message =
+            document.getElementById('return-message');
+
+        let pendingReturnPayload = null;
 
 
-            function money(value) {
+        /*
+         * Abrir modal
+         */
+       function openConfirmReturnModal() {
 
-                return `$ ${Number(value || 0).toLocaleString('es-MX', {
+    const modal =
+        document.getElementById('confirm-return-modal');
+
+    if (!modal) {
+        console.error(
+            'No se encontró el modal confirm-return-modal.'
+        );
+
+        return;
+    }
+
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+
+    modal.setAttribute(
+        'aria-hidden',
+        'false'
+    );
+
+    document.body.classList.add(
+        'overflow-hidden'
+    );
+}
+
+
+function closeConfirmReturnModal() {
+
+    const modal =
+        document.getElementById('confirm-return-modal');
+
+    if (!modal) {
+        return;
+    }
+
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+
+    modal.setAttribute(
+        'aria-hidden',
+        'true'
+    );
+
+    document.body.classList.remove(
+        'overflow-hidden'
+    );
+}
+
+
+        /*
+         * Formato monetario
+         */
+        function money(value) {
+
+            return `$ ${Number(value || 0).toLocaleString(
+                'es-MX',
+                {
                     minimumFractionDigits: 2,
                     maximumFractionDigits: 2
-                })} MXN`;
-
-            }
-
-
-            function showMessage(text, type = 'error') {
-
-                message.textContent = text;
-
-                message.className =
-                    'rounded-xl px-5 py-4 text-sm font-semibold ' +
-                    (
-                        type === 'success'
-                            ? 'bg-emerald-50 text-emerald-700'
-                            : 'bg-rose-50 text-rose-700'
-                    );
-
-            }
+                }
+            )} MXN`;
+        }
 
 
-            function calculateTotal() {
+        /*
+         * Mensajes
+         */
+        function showMessage(
+    text,
+    type = 'error'
+) {
 
-                let total = 0;
+    message.textContent = text;
 
-                lines.forEach(line => {
+    message.className =
+        'rounded-xl px-5 py-4 text-sm font-semibold ' +
+        (
+            type === 'success'
+                ? 'bg-emerald-50 text-emerald-700'
+                : 'bg-rose-50 text-rose-700'
+        );
 
-                    const quantityInput =
-                        line.querySelector('[data-quantity]');
+    message.classList.remove('hidden');
+}
 
-                    const quantity =
-                        Number(quantityInput?.value || 0);
 
-                    const originalQuantity =
-                        Number(line.dataset.originalQuantity || 0);
+        function clearMessage() {
 
-                    const lineTotal =
-                        Number(line.dataset.lineTotal || 0);
+            message.textContent = '';
 
-                    if (
-                        quantity <= 0 ||
-                        originalQuantity <= 0
-                    ) {
-                        return;
-                    }
+            message.classList.add('hidden');
+        }
 
-                    const amount =
-                        (lineTotal / originalQuantity) * quantity;
 
-                    total += amount;
+        /*
+         * Calcular total
+         */
+        function calculateTotal() {
 
-                });
-
-                total = Math.round(
-                    (total + Number.EPSILON) * 100
-                ) / 100;
-
-                totalElement.textContent = money(total);
-
-                return total;
-            }
-
+            let total = 0;
 
             lines.forEach(line => {
 
-                const input =
+                const quantityInput =
                     line.querySelector('[data-quantity]');
 
-                if (!input) {
+                const quantity =
+                    Number(quantityInput?.value || 0);
+
+                const originalQuantity =
+                    Number(
+                        line.dataset.originalQuantity || 0
+                    );
+
+                const lineTotal =
+                    Number(
+                        line.dataset.lineTotal || 0
+                    );
+
+                if (
+                    quantity <= 0 ||
+                    originalQuantity <= 0
+                ) {
                     return;
                 }
 
-                input.addEventListener('input', () => {
+                const amount =
+                    (lineTotal / originalQuantity)
+                    * quantity;
+
+                total += amount;
+
+            });
+
+            total =
+                Math.round(
+                    (total + Number.EPSILON) * 100
+                ) / 100;
+
+            totalElement.textContent =
+                money(total);
+
+            return total;
+        }
+
+
+        /*
+         * Controlar cantidades
+         */
+        lines.forEach(line => {
+
+            const input =
+                line.querySelector('[data-quantity]');
+
+            if (!input) {
+                return;
+            }
+
+            input.addEventListener(
+                'input',
+                () => {
 
                     const available =
-                        Number(line.dataset.available || 0);
+                        Number(
+                            line.dataset.available || 0
+                        );
 
                     let quantity =
                         Number(input.value || 0);
@@ -540,15 +678,22 @@
                             : quantity;
 
                     calculateTotal();
+                }
+            );
+        });
 
-                });
 
-            });
+        /*
+         * BOTÓN PRINCIPAL
+         *
+         * Aquí NO se procesa la devolución.
+         * Solo se prepara y abre el modal.
+         */
+        processButton.addEventListener(
+            'click',
+            () => {
 
-
-            processButton.addEventListener('click', async () => {
-
-                message.classList.add('hidden');
+                clearMessage();
 
                 const reason =
                     reasonSelect.value;
@@ -567,20 +712,28 @@
 
                 const selectedLines = [];
 
+
                 lines.forEach(line => {
 
                     const input =
-                        line.querySelector('[data-quantity]');
+                        line.querySelector(
+                            '[data-quantity]'
+                        );
 
                     const condition =
-                        line.querySelector('[data-condition]');
+                        line.querySelector(
+                            '[data-condition]'
+                        );
 
                     const quantity =
-                        Number(input?.value || 0);
+                        Number(
+                            input?.value || 0
+                        );
 
                     if (quantity <= 0) {
                         return;
                     }
+
 
                     selectedLines.push({
                         sale_line_id:
@@ -608,6 +761,7 @@
                 const total =
                     calculateTotal();
 
+
                 if (total <= 0) {
 
                     showMessage(
@@ -618,17 +772,54 @@
                 }
 
 
-                const confirmed =
-                    window.confirm(
-                        `Se devolverán ${money(total)}. ¿Deseas continuar?`
-                    );
+                /*
+                 * Guardamos temporalmente
+                 * la información de la devolución.
+                 */
+                pendingReturnPayload = {
+                    lines: selectedLines,
+                    reason_code: reason
+                };
 
-                if (!confirmed) {
+
+                /*
+                 * Mostramos importe en el modal.
+                 */
+                confirmReturnTotal.textContent =
+                    money(total);
+
+
+                /*
+                 * Abrimos modal.
+                 */
+                openConfirmReturnModal();
+
+            }
+        );
+
+
+        /*
+         * CONFIRMAR DEVOLUCIÓN
+         *
+         * Aquí sí se hace el POST.
+         */
+        confirmReturnButton.addEventListener(
+            'click',
+            async () => {
+
+                if (!pendingReturnPayload) {
                     return;
                 }
 
 
+                confirmReturnButton.disabled = true;
+
+                confirmReturnButton.textContent =
+                    'Procesando...';
+
+
                 processButton.disabled = true;
+
                 processButton.textContent =
                     'Procesando...';
 
@@ -652,10 +843,9 @@
                                         '{{ csrf_token() }}'
                                 },
 
-                                body: JSON.stringify({
-                                    lines: selectedLines,
-                                    reason_code: reason
-                                })
+                                body: JSON.stringify(
+                                    pendingReturnPayload
+                                )
                             }
                         );
 
@@ -672,25 +862,34 @@
                         ) {
 
                             const firstError =
-                                Object.values(data.errors)
-                                    .flat()[0];
+                                Object.values(
+                                    data.errors
+                                ).flat()[0];
 
                             throw new Error(
                                 firstError ||
                                 data.message ||
                                 'Los datos de la devolución no son válidos.'
                             );
-
                         }
+
 
                         throw new Error(
                             data.message ||
                             'No fue posible procesar la devolución.'
                         );
-
                     }
 
 
+                    /*
+                     * Cerrar modal
+                     */
+                    closeConfirmReturnModal();
+
+
+                    /*
+                     * Mostrar éxito
+                     */
                     showMessage(
                         `Devolución ${data.return.return_number} procesada correctamente.`,
                         'success'
@@ -701,34 +900,69 @@
                         'Devolución procesada';
 
 
+                    pendingReturnPayload = null;
+
+
+                    /*
+                     * Regresar al historial.
+                     */
                     setTimeout(() => {
 
                         window.location.href =
-                            '{{ route('returns.index') }}';
+                            '{{ route('sales.history') }}';
 
-                    }, 1800);
-
+                    }, 1500);
 
                 } catch (error) {
+
+                    closeConfirmReturnModal();
+
 
                     showMessage(
                         error.message ||
                         'No fue posible procesar la devolución.'
                     );
 
+
                     processButton.disabled = false;
 
                     processButton.textContent =
                         'Procesar devolución';
 
+                } finally {
+
+                    confirmReturnButton.disabled =
+                        false;
+
+                    confirmReturnButton.textContent =
+                        'Confirmar devolución';
                 }
 
-            });
+            }
+        );
 
 
-            calculateTotal();
+        /*
+         * CANCELAR MODAL
+         */
+        cancelConfirmReturn.addEventListener(
+            'click',
+            () => {
 
-        });
-    </script>
+                pendingReturnPayload = null;
+
+                closeConfirmReturnModal();
+
+            }
+        );
+
+
+        /*
+         * Cálculo inicial
+         */
+        calculateTotal();
+
+    });
+</script>
 
 </x-layouts.app>

@@ -57,10 +57,12 @@ final class CashController
             'activeSession' => $activeSession,
             'movements' => $movements,
 
-            'cashIn' => $cashSummary['cash_in'],
-            'cashOut' => $cashSummary['cash_out'],
+            'openingFloat' => $cashSummary['opening_float'],
             'cashSales' => $cashSummary['cash_sales'],
+            'extraIncome' => $cashSummary['extra_income'],
+            'cashOut' => $cashSummary['cash_out'],
             'theoreticalCash' => $cashSummary['theoretical_cash'],
+
         ]);
     }
 
@@ -441,62 +443,62 @@ final class CashController
      */
     private function calculateCashSummary($movements): array
     {
-        $cashIn = 0.0;
-        $cashOut = 0.0;
+        $openingFloat = 0.0;
         $cashSales = 0.0;
+        $extraIncome = 0.0;
+        $cashOut = 0.0;
 
         foreach ($movements as $movement) {
             $amount = (float) $movement->amount;
 
             switch ($movement->movement_type) {
 
-                /*
-             * ENTRADAS
-             */
                 case 'opening_float':
-                case 'sale_payment':
-                case 'income':
-
-                    $cashIn += $amount;
-
-                    /*
-                 * Separamos las ventas en efectivo para
-                 * mostrarlas como indicador independiente.
-                 */
-                    if ($movement->movement_type === 'sale_payment') {
-                        $cashSales += $amount;
-                    }
-
+                    $openingFloat += $amount;
                     break;
 
-                /*
-             * SALIDAS
-             */
-                case 'sale_change':
+                case 'sale_payment':
+                    $cashSales += $amount;
+                    break;
+
+                case 'income':
+                    $extraIncome += $amount;
+                    break;
+
                 case 'return_payment':
                 case 'expense':
                 case 'withdrawal':
                 case 'deposit':
-
                     $cashOut += $amount;
-
                     break;
 
-                /*
-             * AJUSTES DE CIERRE
-             *
-             * No modifican automáticamente el efectivo teórico.
-             */
+                case 'sale_change':
                 case 'closing_adjustment':
+                    // Los movimientos históricos de cambio no deben
+                    // seguir afectando el cálculo de nuevas sesiones.
                     break;
             }
         }
 
+        $theoreticalCash =
+            $openingFloat
+            + $cashSales
+            + $extraIncome
+            - $cashOut;
+
         return [
-            'cash_in' => round($cashIn, 2),
-            'cash_out' => round($cashOut, 2),
+            'opening_float' => round($openingFloat, 2),
             'cash_sales' => round($cashSales, 2),
-            'theoretical_cash' => round($cashIn - $cashOut, 2),
+            'extra_income' => round($extraIncome, 2),
+            'cash_out' => round($cashOut, 2),
+            'theoretical_cash' => round($theoreticalCash, 2),
+
+            'cash_in' => round(
+                $openingFloat
+                    + $cashSales
+                    + $extraIncome,
+                2
+            ),
         ];
     }
 

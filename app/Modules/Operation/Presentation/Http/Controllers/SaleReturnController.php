@@ -18,41 +18,41 @@ use Illuminate\Validation\ValidationException;
 final class SaleReturnController
 {
     public function index(Request $request)
-{
-    $saleNumber = trim((string) $request->query('sale'));
+    {
+        $saleNumber = trim((string) $request->query('sale'));
 
-    if ($saleNumber === '') {
-        return view('modules.operation.returns.index');
-    }
-
-    $user = $request->user();
-
-    $sale = Sale::query()
-        ->where('organization_id', $user->organization_id)
-        ->where('sale_number', $saleNumber)
-        ->first();
-
-    if (!$sale) {
-        if ($request->expectsJson()) {
-            return response()->json([
-                'message' => 'No se encontró una venta con ese folio.',
-            ], 404);
+        if ($saleNumber === '') {
+            return view('modules.operation.returns.index');
         }
 
-        return back()
-            ->withInput()
-            ->with('error', 'No se encontró una venta con ese folio.');
-    }
+        $user = $request->user();
 
-    return redirect()->route('returns.show', $sale);
-}
+        $sale = Sale::query()
+            ->where('organization_id', $user->organization_id)
+            ->where('sale_number', $saleNumber)
+            ->first();
+
+        if (!$sale) {
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'message' => 'No se encontró una venta con ese folio.',
+                ], 404);
+            }
+
+            return back()
+                ->withInput()
+                ->with('error', 'No se encontró una venta con ese folio.');
+        }
+
+        return redirect()->route('returns.show', $sale);
+    }
 
     public function show(Request $request, string $sale)
     {
-        $user = $request->user();
+        $orgId = DB::table('organizations')->value('id');
 
         $saleModel = Sale::query()
-            ->where('organization_id', $user->organization_id)
+            ->where('organization_id', $orgId)
             ->with([
                 'customer',
                 'lines.stockItem.product',
@@ -84,21 +84,31 @@ final class SaleReturnController
                 DB::raw('SUM(quantity) as returned_quantity')
             )
             ->groupBy('original_sale_line_id')
-            ->pluck('returned_quantity', 'original_sale_line_id');
+            ->pluck(
+                'returned_quantity',
+                'original_sale_line_id'
+            );
 
         $saleModel->lines->each(function ($line) use ($returnedQuantities) {
-            $returned = (float) ($returnedQuantities[$line->id] ?? 0);
+
+            $returned = (float) (
+                $returnedQuantities[$line->id] ?? 0
+            );
 
             $line->returned_quantity = $returned;
+
             $line->available_return_quantity = max(
                 0,
                 (float) $line->quantity - $returned
             );
         });
 
-        return view('modules.operation.returns.show', [
-            'sale' => $saleModel,
-        ]);
+        return view(
+            'modules.operation.returns.show',
+            [
+                'sale' => $saleModel,
+            ]
+        );
     }
 
     public function store(Request $request, string $sale): JsonResponse
@@ -113,8 +123,22 @@ final class SaleReturnController
                 'required',
                 'in:resellable,damaged,discarded',
             ],
-            'reason_code' => ['required', 'string', 'max:50'],
+            'reason_code' => [
+                'required',
+                'string',
+                'in:CUSTOMER_REQUEST,DEFECTIVE,WRONG_PRODUCT,DAMAGED,OTHER',
+            ],
         ]);
+
+        $lineIds = collect($validated['lines'])
+            ->pluck('sale_line_id');
+
+        if ($lineIds->duplicates()->isNotEmpty()) {
+            throw ValidationException::withMessages([
+                'lines' =>
+                'Una misma línea de venta no puede aparecer más de una vez.',
+            ]);
+        }
 
         try {
             $result = DB::transaction(function () use (
@@ -122,8 +146,10 @@ final class SaleReturnController
                 $sale,
                 $user
             ) {
+                $orgId = DB::table('organizations')->value('id');
+
                 $saleModel = Sale::query()
-                    ->where('organization_id', $user->organization_id)
+                    ->where('organization_id', $orgId)
                     ->lockForUpdate()
                     ->find($sale);
 
@@ -146,16 +172,41 @@ final class SaleReturnController
                     'lines',
                     'payments.paymentMethod',
                 ]);
+                $hasNonCashPayment = $saleModel->payments
+                    ->contains(function ($payment) {
+                        return !$payment->paymentMethod
+                            || !$payment->paymentMethod->affects_cash;
+                    });
+
+                if ($hasNonCashPayment) {
+                    throw ValidationException::withMessages([
+                        'payment' =>
+                        'Esta devolución requiere reembolso mediante el método de pago original. Actualmente solo se permiten devoluciones de ventas pagadas en efectivo.',
+                    ]);
+                }
+
+                $cashPayment = $saleModel->payments
+                    ->first(function ($payment) {
+                        return $payment->paymentMethod
+                            && $payment->paymentMethod->affects_cash;
+                    });
+
+                if (!$cashPayment) {
+                    throw ValidationException::withMessages([
+                        'payment' =>
+                        'No se encontró un método de pago en efectivo para realizar el reembolso.',
+                    ]);
+                }
 
                 $saleLines = $saleModel->lines
                     ->keyBy('id');
 
                 $returnNumber = $this->generateReturnNumber(
-                    $user->organization_id
+                    $orgId
                 );
 
                 $return = SaleReturn::create([
-                    'organization_id' => $user->organization_id,
+                    'organization_id' => $orgId,
                     'branch_id' => $saleModel->branch_id,
                     'original_sale_id' => $saleModel->id,
                     'cash_session_id' => null,
@@ -173,25 +224,62 @@ final class SaleReturnController
 
                     if (!$saleLine) {
                         throw ValidationException::withMessages([
-                            'lines' => 'Una de las líneas no pertenece a la venta.',
+                            'lines' =>
+                            'Una de las líneas no pertenece a la venta.',
                         ]);
                     }
 
                     $quantity = (float) $inputLine['quantity'];
-                    $originalQuantity = (float) $saleLine->quantity;
 
-                    $alreadyReturned = (float) SaleReturnLine::query()
-                        ->where('original_sale_line_id', $saleLine->id)
-                        ->whereHas('saleReturn', function ($query) use ($saleModel) {
-                            $query
-                                ->where('original_sale_id', $saleModel->id)
-                                ->where('status', 'confirmed');
-                        })
-                        ->sum('quantity');
+                    if ($quantity <= 0) {
+                        throw ValidationException::withMessages([
+                            'lines' =>
+                            'La cantidad a devolver debe ser mayor a cero.',
+                        ]);
+                    }
 
-                    $available = $originalQuantity - $alreadyReturned;
+                    $originalQuantity =
+                        (float) $saleLine->quantity;
+
+                    $alreadyReturned =
+                        (float) SaleReturnLine::query()
+                            ->where(
+                                'original_sale_line_id',
+                                $saleLine->id
+                            )
+                            ->whereHas(
+                                'saleReturn',
+                                function ($query) use ($saleModel) {
+
+                                    $query
+                                        ->where(
+                                            'original_sale_id',
+                                            $saleModel->id
+                                        )
+                                        ->where(
+                                            'status',
+                                            'confirmed'
+                                        );
+                                }
+                            )
+                            ->sum('quantity');
+
+                    $available =
+                        $originalQuantity - $alreadyReturned;
+
+                    if ($available <= 0) {
+
+                        throw ValidationException::withMessages([
+                            'lines' =>
+                            sprintf(
+                                'El producto "%s" ya no tiene cantidad disponible para devolución.',
+                                $saleLine->description
+                            ),
+                        ]);
+                    }
 
                     if ($quantity > $available) {
+
                         throw ValidationException::withMessages([
                             'lines' => sprintf(
                                 'No puedes devolver %.3f unidades de "%s". Solo hay %.3f disponibles.',
@@ -204,7 +292,7 @@ final class SaleReturnController
 
                     $lineTotal = round(
                         ((float) $saleLine->line_total / $originalQuantity)
-                        * $quantity,
+                            * $quantity,
                         2
                     );
 
@@ -250,7 +338,7 @@ final class SaleReturnController
 
                 if ($cashPayment) {
                     $cashSession = CashSession::query()
-                        ->where('organization_id', $user->organization_id)
+                        ->where('organization_id', $orgId)
                         ->where('branch_id', $saleModel->branch_id)
                         ->where('status', 'open')
                         ->lockForUpdate()
@@ -266,7 +354,7 @@ final class SaleReturnController
                     $return->save();
 
                     CashMovement::create([
-                        'organization_id' => $user->organization_id,
+                        'organization_id' => $orgId,
                         'branch_id' => $saleModel->branch_id,
                         'cash_session_id' => $cashSession->id,
                         'payment_method_id' => $cashPayment->payment_method_id,

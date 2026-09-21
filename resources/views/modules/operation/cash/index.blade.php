@@ -205,27 +205,22 @@
 
     @endif
 
-
-    {{-- ===================================================== --}}
-    {{-- RESUMEN --}}
-    {{-- ===================================================== --}}
-
-    <div class="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4 2xl:grid-cols-5">
-
+    {{-- Resumen --}}
+    <div class="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
 
         {{-- Fondo inicial --}}
         <x-ui.card>
 
-            <p class="text-xs font-black uppercase tracking-wider text-slate-500">
+            <p class="text-xs font-bold uppercase tracking-wider text-slate-500">
                 Fondo inicial
             </p>
 
-            <p class="mt-2 text-2xl font-black tabular-nums text-slate-900">
-                ${{ number_format((float) $activeSession->opening_float, 2) }}
+            <p class="mt-2 text-2xl font-black text-slate-900">
+                ${{ number_format($openingFloat, 2) }}
             </p>
 
             <p class="mt-1 text-xs text-slate-500">
-                Efectivo de apertura
+                Dinero con el que abrió la caja
             </p>
 
         </x-ui.card>
@@ -234,76 +229,75 @@
         {{-- Ventas en efectivo --}}
         <x-ui.card>
 
-            <p class="text-xs font-black uppercase tracking-wider text-slate-500">
+            <p class="text-xs font-bold uppercase tracking-wider text-slate-500">
                 Ventas en efectivo
             </p>
 
-            <p class="mt-2 text-2xl font-black tabular-nums text-emerald-600">
+            <p class="mt-2 text-2xl font-black text-emerald-600">
                 +${{ number_format($cashSales, 2) }}
             </p>
 
             <p class="mt-1 text-xs text-slate-500">
-                Cobros realizados en efectivo
+                Total vendido y cobrado en efectivo
             </p>
 
         </x-ui.card>
 
 
-        {{-- Entradas --}}
+        {{-- Entradas extra --}}
         <x-ui.card>
 
-            <p class="text-xs font-black uppercase tracking-wider text-slate-500">
-                Entradas acumuladas
+            <p class="text-xs font-bold uppercase tracking-wider text-slate-500">
+                Entradas extra
             </p>
 
-            <p class="mt-2 text-2xl font-black tabular-nums text-emerald-600">
-                +${{ number_format($cashIn, 2) }}
+            <p class="mt-2 text-2xl font-black text-emerald-600">
+                +${{ number_format($extraIncome, 2) }}
             </p>
 
             <p class="mt-1 text-xs text-slate-500">
-                Movimientos que incrementan efectivo
+                Dinero agregado fuera de las ventas
             </p>
 
         </x-ui.card>
 
 
-        {{-- Salidas --}}
+        {{-- Salidas / gastos --}}
         <x-ui.card>
 
-            <p class="text-xs font-black uppercase tracking-wider text-slate-500">
-                Salidas acumuladas
+            <p class="text-xs font-bold uppercase tracking-wider text-slate-500">
+                Salidas / gastos
             </p>
 
-            <p class="mt-2 text-2xl font-black tabular-nums text-rose-600">
+            <p class="mt-2 text-2xl font-black text-rose-600">
                 -${{ number_format($cashOut, 2) }}
             </p>
 
             <p class="mt-1 text-xs text-slate-500">
-                Movimientos que disminuyen efectivo
+                Gastos, retiros y devoluciones
             </p>
 
         </x-ui.card>
 
 
-        {{-- Efectivo esperado --}}
+        {{-- Efectivo en cajón --}}
         <x-ui.card>
 
-            <p class="text-xs font-black uppercase tracking-wider text-slate-500">
-                Efectivo esperado
+            <p class="text-xs font-bold uppercase tracking-wider text-slate-500">
+                Efectivo en cajón
             </p>
 
-            <p class="mt-2 text-2xl font-black tabular-nums text-slate-900">
+            <p class="mt-2 text-2xl font-black text-slate-900">
                 ${{ number_format($theoreticalCash, 2) }}
             </p>
 
             <p class="mt-1 text-xs text-slate-500">
-                Saldo físico esperado
+                Dinero que debe haber físicamente
             </p>
 
         </x-ui.card>
 
     </div>
-
 
     {{-- ===================================================== --}}
     {{-- ACCIONES --}}
@@ -1371,7 +1365,7 @@
                 document.getElementById('counting-difference-box');
 
 
-            const theoreticalCash = Number(@json ( $activeSession ?-> theoretical_total ?? $theoreticalCash ?? 0 ));
+            const theoreticalCash = Number(@json($activeSession ?-> theoretical_total ?? $theoreticalCash ?? 0));
 
 
             function formatMoney(value) {
