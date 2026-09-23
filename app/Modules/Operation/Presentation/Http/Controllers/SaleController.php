@@ -537,9 +537,24 @@ final class SaleController
                 'gt:0',
             ],
 
-            'payment_method_id' => ['required', 'uuid'],
-            'amount_received' => ['required', 'numeric', 'gt:0'],
-            'reference' => ['nullable', 'string', 'max:120'],
+            'payments' => ['required', 'array', 'min:1'],
+
+            'payments.*.payment_method_id' => [
+                'required',
+                'uuid',
+            ],
+
+            'payments.*.amount' => [
+                'required',
+                'numeric',
+                'gt:0',
+            ],
+
+            'payments.*.reference' => [
+                'nullable',
+                'string',
+                'max:120',
+            ],
         ]);
 
         $user = $request->user();
@@ -557,25 +572,68 @@ final class SaleController
                 ]);
             }
 
-            $paymentMethod = PaymentMethod::query()
-                ->where('organization_id', $session->organization_id)
-                ->where('id', $validated['payment_method_id'])
-                ->where('is_active', true)
-                ->first();
+            $paymentInputs = collect($validated['payments'])
+                ->values();
 
-            if (!$paymentMethod) {
+            $paymentMethodIds = $paymentInputs
+                ->pluck('payment_method_id')
+                ->unique()
+                ->values();
+
+            $paymentMethods = PaymentMethod::query()
+                ->where('organization_id', $session->organization_id)
+                ->whereIn('id', $paymentMethodIds)
+                ->where('is_active', true)
+                ->get()
+                ->keyBy('id');
+
+            if ($paymentMethods->count() !== $paymentMethodIds->count()) {
                 throw ValidationException::withMessages([
-                    'payment_method_id' => 'El método de pago no es válido.',
+                    'payments' => 'Uno o más métodos de pago no son válidos.',
                 ]);
             }
 
-            if (
-                $paymentMethod->requires_reference
-                && empty($validated['reference'])
-            ) {
-                throw ValidationException::withMessages([
-                    'reference' => 'Este método de pago requiere una referencia.',
-                ]);
+            foreach ($paymentInputs as $index => $payment) {
+                $method = $paymentMethods->get($payment['payment_method_id']);
+
+                if (!$method) {
+                    throw ValidationException::withMessages([
+                        "payments.{$index}.payment_method_id" =>
+                        'El método de pago no es válido.',
+                    ]);
+                }
+
+                /*
+     * Mercado Pago Point mantiene su propio flujo
+     * asíncrono y no debe entrar por sales.store().
+     */
+                if ($method->code === 'MP_POINT') {
+                    throw ValidationException::withMessages([
+                        "payments.{$index}.payment_method_id" =>
+                        'Mercado Pago Point debe procesarse desde su flujo de cobro.',
+                    ]);
+                }
+
+                /*
+     * Tarjeta física queda fuera del flujo normal.
+     * El cobro con tarjeta se realiza mediante Mercado Pago Point.
+     */
+                if ($method->code === 'CARD') {
+                    throw ValidationException::withMessages([
+                        "payments.{$index}.payment_method_id" =>
+                        'El pago con tarjeta debe realizarse mediante Mercado Pago Point.',
+                    ]);
+                }
+
+                if (
+                    $method->requires_reference
+                    && empty(trim((string) ($payment['reference'] ?? '')))
+                ) {
+                    throw ValidationException::withMessages([
+                        "payments.{$index}.reference" =>
+                        'Este método de pago requiere una referencia.',
+                    ]);
+                }
             }
 
             $subtotal = 0.0;
@@ -770,27 +828,170 @@ final class SaleController
                 ];
             }
 
-            $amountReceived = (float) $validated['amount_received'];
+            /*
+ * ============================================================
+ * VALIDACIÓN Y DISTRIBUCIÓN DE PAGOS
+ * ============================================================
+ *
+ * `amount` representa el importe recibido por cada método.
+ *
+ * Ejemplo:
+ *
+ * Venta: $40.50
+ *
+ * Efectivo recibido:   $20.00
+ * Transferencia:       $20.50
+ *
+ * Total aplicado:      $40.50
+ * Cambio:               $0.00
+ *
+ * Si el cliente entrega $50 en efectivo:
+ *
+ * Venta:               $40.50
+ * Efectivo recibido:   $50.00
+ * Importe aplicado:    $40.50
+ * Cambio:                $9.50
+ *
+ * IMPORTANTE:
+ * Solo el importe aplicado en efectivo afecta Caja.
+ */
 
-            if (!$paymentMethod->affects_cash && $amountReceived != $total) {
+            $paymentRows = [];
+
+            $remaining = round($total, 2);
+            $totalReceived = 0.0;
+            $totalApplied = 0.0;
+            $change = 0.0;
+
+            foreach ($paymentInputs as $index => $paymentInput) {
+                $method = $paymentMethods->get(
+                    $paymentInput['payment_method_id']
+                );
+
+                $amountReceived = round(
+                    (float) $paymentInput['amount'],
+                    2
+                );
+
+                if ($amountReceived <= 0) {
+                    throw ValidationException::withMessages([
+                        "payments.{$index}.amount" =>
+                        'El importe del pago debe ser mayor a cero.',
+                    ]);
+                }
+
+                /*
+     * Los pagos que NO afectan efectivo deben aplicarse
+     * exactamente al importe pendiente.
+     */
+                if (!$method->affects_cash && $amountReceived > $remaining) {
+                    throw ValidationException::withMessages([
+                        "payments.{$index}.amount" =>
+                        'El importe excede el saldo pendiente de la venta.',
+                    ]);
+                }
+
+                /*
+     * Efectivo:
+     *
+     * Puede recibirse más de lo pendiente.
+     * La diferencia será el cambio.
+     */
+                if ($method->affects_cash) {
+                    $amountApplied = min(
+                        $amountReceived,
+                        $remaining
+                    );
+
+                    $paymentChange = max(
+                        0,
+                        $amountReceived - $amountApplied
+                    );
+
+                    $change += $paymentChange;
+                } else {
+                    $amountApplied = $amountReceived;
+                }
+
+                $amountApplied = round($amountApplied, 2);
+
+                $totalReceived += $amountReceived;
+                $totalApplied += $amountApplied;
+                $remaining = round(
+                    $remaining - $amountApplied,
+                    2
+                );
+
+                $paymentRows[] = [
+                    'payment_method' => $method,
+                    'amount_received' => $amountReceived,
+                    'amount_applied' => $amountApplied,
+                    'reference' => $paymentInput['reference'] ?? null,
+                ];
+            }
+
+            /*
+ * La venta debe quedar completamente cubierta.
+ */
+            if ($remaining > 0.009) {
                 throw ValidationException::withMessages([
-                    'amount_received' =>
-                    'Los pagos que no afectan efectivo deben cubrir exactamente el total.',
+                    'payments' =>
+                    sprintf(
+                        'Los pagos no cubren el total de la venta. Pendiente: $%0.2f.',
+                        $remaining
+                    ),
                 ]);
             }
 
-            if ($amountReceived < $total) {
+            /*
+ * Protección adicional contra importes inconsistentes.
+ */
+            if (abs($totalApplied - $total) > 0.009) {
                 throw ValidationException::withMessages([
-                    'amount_received' =>
-                    'El importe recibido es menor al total de la venta.',
+                    'payments' =>
+                    'La suma de los pagos no coincide con el total de la venta.',
                 ]);
             }
 
-            $change = $paymentMethod->affects_cash
-                ? max(0, $amountReceived - $total)
-                : 0;
+            $change = round($change, 2);
 
-            if ($paymentMethod->affects_cash && $change > 0) {
+            /*
+ * El cambio SOLO puede existir si hubo efectivo.
+ */
+            if ($change > 0) {
+                $cashReceived = collect($paymentRows)
+                    ->filter(
+                        fn(array $payment) =>
+                        $payment['payment_method']->affects_cash
+                    )
+                    ->sum('amount_received');
+
+                $cashApplied = collect($paymentRows)
+                    ->filter(
+                        fn(array $payment) =>
+                        $payment['payment_method']->affects_cash
+                    )
+                    ->sum('amount_applied');
+
+                $cashReceived = round($cashReceived, 2);
+                $cashApplied = round($cashApplied, 2);
+
+                $calculatedChange = round(
+                    $cashReceived - $cashApplied,
+                    2
+                );
+
+                if (abs($calculatedChange - $change) > 0.009) {
+                    throw ValidationException::withMessages([
+                        'payments' =>
+                        'No fue posible determinar correctamente el cambio.',
+                    ]);
+                }
+
+                /*
+     * Verificamos que Caja tenga efectivo suficiente
+     * ANTES de crear la venta.
+     */
                 $cashIn = (float) DB::table('cash_movements')
                     ->where('cash_session_id', $session->id)
                     ->whereIn('movement_type', [
@@ -811,11 +1012,14 @@ final class SaleController
                     ])
                     ->sum('amount');
 
-                $availableCash = round($cashIn - $cashOut, 2);
+                $availableCash = round(
+                    $cashIn - $cashOut,
+                    2
+                );
 
                 if ($change > $availableCash) {
                     throw ValidationException::withMessages([
-                        'amount_received' => sprintf(
+                        'payments' => sprintf(
                             'No hay suficiente efectivo en caja para entregar el cambio. Caja disponible: $%0.2f. Cambio requerido: $%0.2f.',
                             $availableCash,
                             $change
@@ -905,26 +1109,65 @@ final class SaleController
                 ]);
             }
 
-            SalePayment::create([
-                'sale_id' => $sale->id,
-                'line_number' => 1,
-                'payment_method_id' => $paymentMethod->id,
-                'amount_received' => $amountReceived,
-                'amount_applied' => $total,
-                'reference' => $validated['reference'] ?? null,
-                'paid_at' => now(),
-            ]);
+            foreach ($paymentRows as $index => $payment) {
+                SalePayment::create([
+                    'sale_id' => $sale->id,
+                    'line_number' => $index + 1,
+                    'payment_method_id' =>
+                    $payment['payment_method']->id,
+                    'amount_received' =>
+                    $payment['amount_received'],
+                    'amount_applied' =>
+                    $payment['amount_applied'],
+                    'reference' =>
+                    $payment['reference'],
+                    'paid_at' => now(),
+                ]);
+            }
 
-            if ($paymentMethod->affects_cash) {
+            /*
+ * ============================================================
+ * AFECTACIÓN DE CAJA
+ * ============================================================
+ *
+ * Solo se registra en Caja el importe aplicado
+ * de los pagos cuyo método afecta efectivo.
+ *
+ * Transferencia / MP Point:
+ *   NO generan CashMovement.
+ *
+ * Efectivo:
+ *   SÍ genera CashMovement.
+ */
+            foreach ($paymentRows as $payment) {
+                $method = $payment['payment_method'];
+
+                if (!$method->affects_cash) {
+                    continue;
+                }
+
+                $cashApplied = round(
+                    (float) $payment['amount_applied'],
+                    2
+                );
+
+                if ($cashApplied <= 0) {
+                    continue;
+                }
+
                 CashMovement::create([
                     'organization_id' => $session->organization_id,
                     'branch_id' => $session->branch_id,
                     'cash_session_id' => $session->id,
-                    'payment_method_id' => $paymentMethod->id,
+                    'payment_method_id' => $method->id,
 
-                    // La caja registra únicamente el importe real de la venta.
+                    /*
+         * IMPORTANTE:
+         * Caja registra lo aplicado a la venta,
+         * no lo que recibió el cajero.
+         */
                     'movement_type' => 'sale_payment',
-                    'amount' => $total,
+                    'amount' => $cashApplied,
 
                     'source_type' => 'SALE',
                     'source_id' => $sale->id,

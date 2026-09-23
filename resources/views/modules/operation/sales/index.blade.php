@@ -1,73 +1,48 @@
 <x-layouts.app title="Ventas | ABARROTESBASE">
-
     <x-layout.page-header
         eyebrow="Operación"
         title="Ventas"
         description="Punto de venta y registro de operaciones.">
-
         <x-slot:actions>
-
             <a
                 href="{{ route('sales.history') }}"
                 class="inline-flex items-center rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-bold text-slate-700 transition hover:border-slate-400 hover:bg-slate-50">
                 Historial
             </a>
-
             @if ($activeSession)
             <span class="inline-flex items-center gap-2 rounded-xl bg-emerald-50 px-3 py-2 text-xs font-bold text-emerald-700">
                 <span class="h-2 w-2 rounded-full bg-emerald-500"></span>
                 Caja {{ $activeSession->register?->name }}
             </span>
             @else
-            <span class="rounded-xl bg-rose-50 px-3 py-2 text-xs font-bold text-rose-700">
-                Sin caja abierta
-            </span>
+            <span class="rounded-xl bg-rose-50 px-3 py-2 text-xs font-bold text-rose-700">Sin caja abierta</span>
             @endif
-
         </x-slot:actions>
-
     </x-layout.page-header>
-
-
     @if (!$activeSession)
-
     <x-ui.card class="mt-6">
         <div class="mx-auto max-w-xl py-12 text-center">
-
-            <div class="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-rose-50 text-xl font-black text-rose-600">
-                !
-            </div>
-
-            <h2 class="mt-5 text-xl font-black text-slate-900">
-                No puedes realizar ventas
-            </h2>
-
+            <div class="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-rose-50 text-xl font-black text-rose-600">!</div>
+            <h2 class="mt-5 text-xl font-black text-slate-900">No puedes realizar ventas</h2>
             <p class="mx-auto mt-2 max-w-md text-sm leading-6 text-slate-500">
                 Debes tener una sesión de caja abierta para comenzar a vender.
             </p>
-
             <a
                 href="{{ route('cash.index') }}"
                 class="mt-6 inline-flex rounded-xl bg-emerald-600 px-5 py-3 text-sm font-bold text-white hover:bg-emerald-700">
                 Ir a Caja
             </a>
-
         </div>
     </x-ui.card>
-
     @else
-
     <div
         id="pos-app"
         class="mt-6 grid gap-6 xl:grid-cols-[minmax(0,1fr)_440px]">
-
         {{-- =========================
          BUSCADOR / PRODUCTOS
     ========================== --}}
         <x-ui.card class="min-w-0">
-
             <div class="border-b border-slate-200 pb-6">
-
                 <div class="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
                     <div>
                         <label
@@ -75,17 +50,14 @@
                             class="block text-base font-black text-slate-900">
                             Buscar producto
                         </label>
-
                         <p class="mt-1 text-sm text-slate-500">
                             Escanea el código de barras o escribe el nombre del producto.
                         </p>
                     </div>
-
                     <span class="shrink-0 text-xs font-bold uppercase tracking-wider text-slate-400">
                         Catálogo interno
                     </span>
                 </div>
-
                 <div class="relative mt-4">
                     <input
                         id="product-search"
@@ -94,77 +66,40 @@
                         autofocus
                         placeholder="Código de barras, SKU o nombre..."
                         class="app-input min-h-14 pr-14 text-lg font-semibold">
-
                     <span
                         class="pointer-events-none absolute inset-y-0 right-4 grid place-items-center text-sm font-black text-slate-400"
                         aria-hidden="true">
                         ↵
                     </span>
                 </div>
-
                 <div class="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs font-medium text-slate-500">
-                    <span>
-                        El código de barras se busca primero.
-                    </span>
-
+                    <span>El código de barras se busca primero.</span>
                     <span class="hidden h-1 w-1 rounded-full bg-slate-300 sm:block"></span>
-
-                    <span>
-                        Enter para buscar.
-                    </span>
+                    <span>Enter para buscar.</span>
                 </div>
-
             </div>
-
-
             {{-- RESULTADOS --}}
             <div
                 id="search-results"
                 class="mt-6 space-y-3">
-
                 <div class="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-10 text-center">
-
-                    <div class="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-white text-2xl font-black text-slate-400 shadow-sm ring-1 ring-slate-200">
-                        +
-                    </div>
-
-                    <p class="mt-4 text-base font-bold text-slate-600">
-                        Busca o escanea un producto
-                    </p>
-
-                    <p class="mt-1 text-sm text-slate-400">
-                        Los resultados aparecerán aquí.
-                    </p>
-
+                    <div class="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-white text-2xl font-black text-slate-400 shadow-sm ring-1 ring-slate-200">+</div>
+                    <p class="mt-4 text-base font-bold text-slate-600">Busca o escanea un producto</p>
+                    <p class="mt-1 text-sm text-slate-400">Los resultados aparecerán aquí.</p>
                 </div>
-
             </div>
-
         </x-ui.card>
-
-
         {{-- =========================
          TICKET
     ========================== --}}
         <x-ui.card class="flex min-h-0 flex-col xl:sticky xl:top-24 xl:max-h-[calc(100vh-7rem)]">
-
             {{-- CABECERA --}}
             <div class="flex items-start justify-between gap-4 border-b border-slate-200 pb-5">
-
                 <div>
-                    <p class="text-xs font-bold uppercase tracking-[0.14em] text-emerald-700">
-                        Venta actual
-                    </p>
-
-                    <h2 class="mt-1 text-xl font-black text-slate-900">
-                        Ticket
-                    </h2>
-
-                    <p class="mt-1 text-sm text-slate-500">
-                        Productos agregados a esta venta.
-                    </p>
+                    <p class="text-xs font-bold uppercase tracking-[0.14em] text-emerald-700">Venta actual</p>
+                    <h2 class="mt-1 text-xl font-black text-slate-900">Ticket</h2>
+                    <p class="mt-1 text-sm text-slate-500">Productos agregados a esta venta.</p>
                 </div>
-
                 <button
                     type="button"
                     id="clear-cart"
@@ -373,230 +308,313 @@
 ========================== --}}
     <x-ui.modal
         id="payment-modal"
-        size="md"
+        size="xl"
         title="Cobrar venta"
-        description="Selecciona el método de pago."
+        description="Selecciona cómo realizará el pago el cliente."
         close-id="close-payment">
 
         {{-- CONTENIDO --}}
-        <div class="px-5 py-5 sm:px-6">
+        <div class="px-5 py-5 sm:px-6 lg:px-8">
 
             {{-- TOTAL --}}
-            <div class="rounded-2xl border border-slate-800 bg-slate-950 p-5 shadow-inner sm:p-6">
+            <div class="rounded-2xl border border-slate-800 bg-slate-950 p-6 shadow-inner sm:p-7">
 
-                <p class="text-xs font-bold uppercase tracking-[0.16em] text-slate-400">
-                    Total a pagar
+                <p class="text-sm font-bold uppercase tracking-[0.16em] text-slate-400">
+                    TOTAL A COBRAR
                 </p>
 
                 <p
                     id="payment-total"
-                    class="mt-2 text-4xl font-black tracking-tight text-white sm:text-[2.75rem]">
+                    class="mt-2 text-5xl font-black tracking-tight text-white sm:text-6xl">
                     0.00 MXN
                 </p>
 
             </div>
 
+            {{-- ===================================================== --}}
+            {{-- CONTENIDO DEL COBRO --}}
+            {{-- ===================================================== --}}
 
-            {{-- MÉTODO DE PAGO --}}
-            <div class="mt-6">
+            <div class="mt-6 grid gap-6 lg:grid-cols-[1.05fr_0.95fr]">
 
-                <label
-                    for="payment-method"
-                    class="mb-2 block text-sm font-black text-slate-900">
-                    Método de pago
-                </label>
+                {{-- ================================================= --}}
+                {{-- COLUMNA IZQUIERDA: PAGOS --}}
+                {{-- ================================================= --}}
 
-                <select
-                    id="payment-method"
-                    class="app-input min-h-14 text-base font-bold">
+                <div class="min-w-0">
 
-                    @foreach ($paymentMethods as $method)
+                    <div class="mb-4">
+                        <h3 class="text-lg font-black text-slate-900">
+                            Pagos realizados
+                        </h3>
 
-                    <option
-                        value="{{ $method->id }}"
-                        data-code="{{ $method->code }}"
-                        data-affects-cash="{{ $method->affects_cash ? '1' : '0' }}"
-                        data-requires-reference="{{ $method->requires_reference ? '1' : '0' }}">
-                        {{ $method->name }}
-                    </option>
-
-                    @endforeach
-
-                </select>
-
-            </div>
-
-
-            {{-- IMPORTE RECIBIDO --}}
-            <div class="mt-6">
-
-                <label
-                    for="amount-received"
-                    class="mb-2 block text-sm font-black text-slate-900">
-                    Importe recibido
-                </label>
-
-                <div class="relative">
-
-                    <span
-                        class="pointer-events-none absolute inset-y-0 left-4 flex items-center text-xl font-black text-slate-400"
-                        aria-hidden="true">
-                        $
-                    </span>
-
-                    <input
-                        id="amount-received"
-                        type="number"
-                        step="0.01"
-                        min="0"
-                        value="0"
-                        inputmode="decimal"
-                        class="app-input min-h-16 pl-10 text-2xl font-black">
-
-                </div>
-
-                <p class="mt-2 text-xs leading-5 text-slate-500">
-                    Captura el importe que entrega el cliente.
-                </p>
-
-            </div>
-
-
-            {{-- REFERENCIA --}}
-            <div
-                id="reference-group"
-                class="mt-6 hidden">
-
-                <label
-                    for="payment-reference"
-                    class="mb-2 block text-sm font-black text-slate-900">
-                    Referencia del pago
-                </label>
-
-                <input
-                    id="payment-reference"
-                    type="text"
-                    maxlength="120"
-                    autocomplete="off"
-                    class="app-input min-h-14 text-base font-semibold"
-                    placeholder="Ej. TRX-123456789">
-
-                <p class="mt-2 text-xs leading-5 text-slate-500">
-                    Captura la referencia de la transferencia.
-                </p>
-
-            </div>
-
-
-            {{-- CAMBIO --}}
-            {{-- CAMBIO --}}
-            <div
-                id="change-box"
-                class="mt-6 hidden overflow-hidden rounded-2xl border-2 border-emerald-200 bg-emerald-50">
-
-                <div class="flex items-center justify-between gap-4 p-5">
-
-                    <div class="min-w-0">
-
-                        <p
-                            id="change-title"
-                            class="text-sm font-black uppercase tracking-wide text-emerald-800">
-                            Cambio
+                        <p class="mt-1 text-sm text-slate-500">
+                            Aquí aparecen los pagos registrados para esta venta.
                         </p>
-
-                        <p
-                            id="change-description"
-                            class="mt-1 text-xs leading-5 text-emerald-700">
-                            Entregar al cliente.
-                        </p>
-
                     </div>
 
-                    <p
-                        id="change"
-                        class="shrink-0 text-2xl font-black text-emerald-700 sm:text-3xl">
-                        0.00 MXN
-                    </p>
-
-                </div>
-
-            </div>
-
-            {{-- DISPONIBILIDAD DE CAJA --}}
-            <div
-                id="cash-availability-box"
-                class="mt-3 rounded-2xl border border-slate-200 bg-slate-50 p-4">
-
-                <div class="flex items-center justify-between gap-4">
-
-                    <span class="text-sm font-semibold text-slate-600">
-                        Efectivo disponible en caja
-                    </span>
-
-                    <strong
-                        id="available-cash"
-                        class="text-base font-black text-slate-900">
-                        0.00 MXN
-                    </strong>
-
-                </div>
-
-            </div>
-
-            {{-- ERROR DE CAMBIO --}}
-            <div
-                id="change-error-box"
-                class="mt-3 hidden rounded-2xl border-2 border-rose-200 bg-rose-50 p-4">
-
-                <div class="flex items-start gap-3">
-
+                    {{-- PAGOS AGREGADOS --}}
                     <div
-                        class="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-rose-100 text-sm font-black text-rose-600">
-                        !
+                        id="payment-list"
+                        class="mt-4 space-y-3">
                     </div>
 
-                    <div class="min-w-0">
+                    {{-- RESUMEN DE PAGOS --}}
+                    <div class="mt-4 rounded-2xl border border-slate-200 bg-slate-50">
 
-                        <p class="text-sm font-black text-rose-900">
-                            No hay suficiente efectivo para entregar el cambio
-                        </p>
+                        <div class="flex items-center justify-between gap-4 px-4 py-3">
+                            <span class="text-sm font-semibold text-slate-500">
+                                Total de la venta
+                            </span>
 
-                        <p
-                            id="change-error-message"
-                            class="mt-1 text-xs leading-5 text-rose-700">
-                        </p>
+                            <strong
+                                id="payment-summary-total"
+                                class="text-sm font-black text-slate-900">
+                                $0.00 MXN
+                            </strong>
+                        </div>
+
+                        <div class="flex items-center justify-between gap-4 border-t border-slate-200 px-4 py-3">
+                            <span class="text-sm font-semibold text-slate-500">
+                                Total aplicado
+                            </span>
+
+                            <strong
+                                id="payment-summary-applied"
+                                class="text-sm font-black text-slate-900">
+                                $0.00 MXN
+                            </strong>
+                        </div>
+
+                        <div class="flex items-center justify-between gap-4 border-t border-slate-200 px-4 py-3">
+                            <span class="text-sm font-semibold text-slate-500">
+                                Pendiente
+                            </span>
+
+                            <strong
+                                id="payment-summary-pending"
+                                class="text-sm font-black text-amber-700">
+                                $0.00 MXN
+                            </strong>
+                        </div>
 
                     </div>
+
+                </div> {{-- fin columna izquierda --}}
+
+                {{-- ================================================= --}}
+                {{-- COLUMNA DERECHA: AGREGAR PAGO --}}
+                {{-- ================================================= --}}
+
+                <div class="min-w-0">
+
+                    <div class="mb-4">
+                        <h3 class="text-lg font-black text-slate-900">
+                            Agregar pago
+                        </h3>
+
+                        <p class="mt-1 text-sm text-slate-500">
+                            Selecciona el método y captura el importe recibido.
+                        </p>
+                    </div>
+
+                    <div class="rounded-2xl border border-slate-200 bg-white p-5">
+
+                        <div class="mt-4 grid gap-4 sm:grid-cols-2">
+
+                            <div>
+                                <label
+                                    for="payment-method"
+                                    class="mb-2 block text-base font-black text-slate-900">
+                                    Método de pago
+                                </label>
+
+                                <select
+                                    id="payment-method"
+                                    class="app-input min-h-16 text-lg font-black">
+
+                                    @foreach ($paymentMethods as $method)
+
+                                    @if (in_array($method->code, ['CASH', 'TRANSFER', 'MP_POINT'], true))
+
+                                    <option
+                                        value="{{ $method->id }}"
+                                        data-code="{{ $method->code }}"
+                                        data-name="{{ $method->name }}"
+                                        data-affects-cash="{{ $method->affects_cash ? '1' : '0' }}"
+                                        data-requires-reference="{{ $method->requires_reference ? '1' : '0' }}">
+                                        {{ $method->name }}
+                                    </option>
+
+                                    @endif
+
+                                    @endforeach
+
+                                </select>
+                            </div>
+
+                            <div>
+                                <label
+                                    for="amount-received"
+                                    class="mb-2 block text-base font-black text-slate-900">
+                                    Importe recibido
+                                </label>
+
+                                <div class="relative">
+
+                                    <span class="pointer-events-none absolute inset-y-0 left-4 flex items-center text-2xl font-black text-slate-400">
+                                        $
+                                    </span>
+
+                                    <input
+                                        id="amount-received"
+                                        type="number"
+                                        step="0.01"
+                                        min="0"
+                                        value="0"
+                                        inputmode="decimal"
+                                        class="app-input min-h-16 pl-12 text-2xl font-black tabular-nums">
+
+                                </div>
+                            </div>
+
+                        </div>
+
+                        {{-- REFERENCIA --}}
+                        <div
+                            id="reference-group"
+                            class="mt-4 hidden">
+
+                            <label
+                                for="payment-reference"
+                                class="mb-2 block text-sm font-bold text-slate-800">
+                                Referencia del pago
+                            </label>
+
+                            <input
+                                id="payment-reference"
+                                type="text"
+                                maxlength="120"
+                                autocomplete="off"
+                                class="app-input min-h-14 text-base font-semibold"
+                                placeholder="Ej. TRX-123456789">
+
+                            <p class="mt-2 text-xs leading-5 text-slate-500">
+                                Captura la referencia de la transferencia.
+                            </p>
+
+                        </div>
+
+                        <button
+                            type="button"
+                            id="add-payment"
+                            class="mt-5 min-h-16 w-full rounded-xl bg-slate-950 px-5 py-4 text-lg font-black text-white shadow-sm transition hover:bg-slate-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-900">
+                            + Agregar pago
+                        </button>
+
+                    </div>
+
+                    <div class="mt-5 space-y-3">
+
+                        {{-- CAMBIO --}}
+                        <div
+                            id="change-box"
+                            class="hidden overflow-hidden rounded-2xl border-2 border-emerald-200 bg-emerald-50">
+
+                            <div class="flex items-center justify-between gap-4 p-5">
+
+                                <div>
+                                    <p
+                                        id="change-title"
+                                        class="text-base font-black uppercase tracking-wide text-emerald-800">
+                                        Cambio
+                                    </p>
+
+                                    <p
+                                        id="change-description"
+                                        class="mt-1 text-sm font-semibold text-emerald-700">
+                                        Entregar al cliente.
+                                    </p>
+                                </div>
+
+                                <p
+                                    id="change"
+                                    class="shrink-0 text-3xl font-black text-emerald-700">
+                                    $0.00 MXN
+                                </p>
+
+                            </div>
+
+                        </div>
+
+
+                        {{-- EFECTIVO DISPONIBLE --}}
+                        <div
+                            id="cash-availability-box"
+                            class="rounded-2xl border border-slate-200 bg-slate-50 p-5">
+
+                            <div class="flex items-center justify-between gap-4">
+
+                                <span class="text-base font-semibold text-slate-600">
+                                    Efectivo disponible en caja
+                                </span>
+
+                                <strong
+                                    id="available-cash"
+                                    class="text-lg font-black text-slate-950">
+                                    $0.00 MXN
+                                </strong>
+
+                            </div>
+
+                        </div>
+
+
+                        {{-- ERROR --}}
+                        <div
+                            id="change-error-box"
+                            class="mt-3 hidden rounded-2xl border-2 border-rose-200 bg-rose-50 p-5">
+
+                            <p class="text-base font-black text-rose-900">
+                                No hay suficiente efectivo para entregar el cambio
+                            </p>
+
+                            <p
+                                id="change-error-message"
+                                class="mt-2 text-sm leading-6 text-rose-700">
+                            </p>
+
+                        </div>
+
+                    </div>
+                </div>
+
+
+            </div>
+
+
+            {{-- ACCIONES --}}
+            <x-slot:footer>
+
+                <div class="grid gap-4 sm:grid-cols-2">
+
+                    <button
+                        type="button"
+                        id="cancel-payment"
+                        class="min-h-16 rounded-xl border-2 border-slate-300 bg-white px-6 py-4 text-lg font-black text-slate-700 transition hover:border-slate-400 hover:bg-slate-100">
+                        Cancelar
+                    </button>
+
+                    <button
+                        type="button"
+                        id="confirm-payment"
+                        class="min-h-16 rounded-xl bg-emerald-600 px-6 py-4 text-lg font-black text-white shadow-sm transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400">
+                        CONFIRMAR VENTA
+                    </button>
 
                 </div>
 
-            </div>
-
-        </div>
-
-
-        {{-- ACCIONES --}}
-        <x-slot:footer>
-
-            <div class="grid gap-3 sm:grid-cols-2 sm:gap-4">
-
-                <button
-                    type="button"
-                    id="cancel-payment"
-                    class="min-h-14 rounded-xl border-2 border-slate-300 bg-white px-5 py-3 text-base font-black text-slate-700 transition hover:border-slate-400 hover:bg-slate-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-500">
-                    Cancelar
-                </button>
-
-                <button
-                    type="button"
-                    id="confirm-payment"
-                    class="min-h-14 rounded-xl bg-emerald-600 px-5 py-3 text-base font-black text-white shadow-sm transition hover:bg-emerald-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-600">
-                    Confirmar venta
-                </button>
-
-            </div>
-
-        </x-slot:footer>
+            </x-slot:footer>
 
     </x-ui.modal>
 
@@ -734,7 +752,16 @@
 
         const paymentModal = $('payment-modal');
         const paymentMethod = $('payment-method');
-        const amountReceived = $('amount-received');
+        const amountReceivedInput = $('amount-received');
+
+        const paymentList = $('payment-list');
+        const addPaymentButton = $('add-payment');
+
+        const paymentSummaryTotal = $('payment-summary-total');
+        const paymentSummaryApplied = $('payment-summary-applied');
+        const paymentSummaryPending = $('payment-summary-pending');
+
+        let paymentPayments = [];
 
         const referenceGroup = $('reference-group');
         const paymentReference = $('payment-reference');
@@ -1620,26 +1647,210 @@
             $('total').textContent = money(subtotal);
         }
 
+        function paymentTotal() {
+
+            return paymentPayments.reduce(
+                (sum, payment) =>
+                sum + Number(payment.amount_applied || 0),
+                0
+            );
+        }
+
+        function paymentPending() {
+            return Math.max(
+                0,
+                cartTotal() - paymentTotal()
+            );
+        }
+
+        function renderPaymentList() {
+
+            if (!paymentPayments.length) {
+
+                paymentList.innerHTML = `
+            <div class="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-5 text-center">
+                <p class="text-sm font-bold text-slate-500">
+                    Aún no has agregado ningún pago.
+                </p>
+
+                <p class="mt-1 text-xs text-slate-400">
+                    Agrega efectivo, transferencia o Mercado Pago Point.
+                </p>
+            </div>
+        `;
+
+            } else {
+
+                paymentList.innerHTML = paymentPayments.map(
+                    (payment, index) => {
+
+                        return `
+                    <div class="rounded-2xl border border-slate-200 bg-white p-4">
+
+                        <div class="flex items-start justify-between gap-4">
+
+                            <div class="min-w-0">
+
+                                <p class="text-sm font-black text-slate-900">
+                                    ${escapeHtml(payment.name)}
+                                </p>
+
+                                ${
+                                    payment.reference
+                                        ? `
+                                            <p class="mt-1 text-xs text-slate-500">
+                                                Ref: ${escapeHtml(payment.reference)}
+                                            </p>
+                                        `
+                                        : ''
+                                }
+
+                            </div>
+
+                            <button
+                                type="button"
+                                data-payment-index="${index}"
+                                class="remove-payment shrink-0 rounded-lg px-2 py-1.5 text-xs font-black text-rose-600 hover:bg-rose-50">
+                                Quitar
+                            </button>
+
+                        </div>
+
+                        <div class="mt-3 space-y-2">
+
+    <div class="flex items-center justify-between gap-4">
+
+        <span class="text-xs font-semibold text-slate-500">
+            Recibido
+        </span>
+
+        <strong class="text-base font-black text-slate-900">
+            ${money(payment.amount_received)}
+        </strong>
+
+    </div>
+
+    <div class="flex items-center justify-between gap-4">
+
+        <span class="text-xs font-semibold text-slate-500">
+            Aplicado
+        </span>
+
+        <strong class="text-base font-black text-slate-900">
+            ${money(payment.amount_applied)}
+        </strong>
+
+    </div>
+
+    ${
+        payment.change > 0
+            ? `
+                <div class="flex items-center justify-between gap-4 border-t border-slate-200 pt-2">
+
+                    <span class="text-xs font-black text-emerald-700">
+                        Cambio
+                    </span>
+
+                    <strong class="text-base font-black text-emerald-700">
+                        ${money(payment.change)}
+                    </strong>
+
+                </div>
+            `
+            : ''
+    }
+
+</div>
+
+                    </div>
+                `;
+
+                    }
+                ).join('');
+            }
+
+            document.querySelectorAll('.remove-payment').forEach(button => {
+
+                button.addEventListener('click', () => {
+
+                    const index = Number(
+                        button.dataset.paymentIndex
+                    );
+
+                    paymentPayments.splice(index, 1);
+
+                    renderPaymentList();
+                    updatePaymentSummary();
+                    updateChange();
+
+                });
+
+            });
+
+            updatePaymentSummary();
+        }
+
+        function updatePaymentSummary() {
+
+            const total = cartTotal();
+            const applied = paymentTotal();
+            const pending = Math.max(0, total - applied);
+
+            paymentSummaryTotal.textContent =
+                money(total);
+
+            paymentSummaryApplied.textContent =
+                money(applied);
+
+            paymentSummaryPending.textContent =
+                money(pending);
+
+            paymentSummaryPending.classList.toggle(
+                'text-emerald-700',
+                pending <= 0
+            );
+
+            paymentSummaryPending.classList.toggle(
+                'text-amber-700',
+                pending > 0
+            );
+        }
+
         function openPaymentModal() {
 
-            if (!state.cart.length) return;
+            if (!state.cart.length) {
+                return;
+            }
 
             const total = cartTotal();
 
-            $('payment-total').textContent = money(total);
+            paymentPayments = [];
 
-            amountReceived.value = total.toFixed(2);
+            $('payment-total').textContent =
+                money(total);
+
+            paymentMethod.selectedIndex = 0;
+
+            amountReceivedInput.value =
+                total.toFixed(2);
+
+            paymentReference.value = '';
+
+            renderPaymentList();
+
+            updatePaymentFields();
 
             paymentModal.classList.remove('hidden');
             paymentModal.classList.add('flex');
 
-            /* updateChange(); */
-
-            updatePaymentFields();
-
-            amountReceived.focus();
-            amountReceived.select();
+            amountReceivedInput.focus();
+            amountReceivedInput.select();
         }
+
+        addPaymentButton.addEventListener(
+            'click',
+            addPayment
+        );
 
         function closePaymentModal() {
 
@@ -1648,31 +1859,36 @@
         }
 
         function updateChange() {
-            const total = cartTotal();
 
-            const received = Number(amountReceived.value || 0);
+            const applied = paymentTotal();
 
-            const option =
-                paymentMethod.options[paymentMethod.selectedIndex];
+            const cashPayments = paymentPayments.filter(
+                payment => payment.affects_cash
+            );
 
-            const affectsCash =
-                option?.dataset.affectsCash === '1';
+            const change = roundMoney(
+                cashPayments.reduce(
+                    (sum, payment) =>
+                    sum + Number(payment.change || 0),
+                    0
+                )
+            );
 
-            const change =
-                affectsCash ?
-                Math.max(0, received - total) :
-                0;
+            const hasCash =
+                cashPayments.length > 0;
 
             const hasChange =
-                affectsCash && change > 0;
+                change > 0;
 
-            changeAvailable = !hasChange || change <= availableCash;
+            changeAvailable = !hasChange ||
+                change <= availableCash;
 
-            $('change').textContent = money(change);
+            $('change').textContent =
+                money(change);
 
             $('cash-availability-box').classList.toggle(
                 'hidden',
-                !affectsCash
+                !hasCash
             );
 
             $('available-cash').textContent =
@@ -1747,9 +1963,141 @@
                 );
             }
 
-            $('confirm-payment').disabled = !changeAvailable;
+            const total =
+                cartTotal();
+
+            const complete =
+                Math.abs(applied - total) < 0.001;
+
+            $('confirm-payment').disabled = !complete ||
+                !changeAvailable;
         }
 
+        function addPayment() {
+
+            const option =
+                paymentMethod.options[paymentMethod.selectedIndex];
+
+            if (!option) {
+                return;
+            }
+
+            const code = option.dataset.code;
+            const name = option.dataset.name;
+            const paymentMethodId = paymentMethod.value;
+
+            /*
+             * Mercado Pago Point tiene un flujo independiente.
+             * No se agrega como pago manual.
+             */
+            if (code === 'MP_POINT') {
+
+                showMessage(
+                    'Mercado Pago Point se confirma directamente con el botón "Confirmar venta".',
+                    'error'
+                );
+
+                return;
+            }
+
+            const received = Number(
+                amountReceivedInput.value || 0
+            );
+
+            const reference =
+                paymentReference.value.trim();
+
+            if (!received || received <= 0) {
+
+                showMessage(
+                    'Captura un importe válido.',
+                    'error'
+                );
+
+                amountReceivedInput.focus();
+
+                return;
+            }
+
+            const pending = paymentPending();
+
+            /*
+             * Para pagos que NO son efectivo,
+             * nunca podemos recibir más que lo pendiente.
+             */
+            const affectsCash =
+                option.dataset.affectsCash === '1';
+
+            if (!affectsCash && received > pending + 0.001) {
+
+                showMessage(
+                    `El importe supera el saldo pendiente de ${money(pending)}.`,
+                    'error'
+                );
+
+                return;
+            }
+
+            const requiresReference =
+                option.dataset.requiresReference === '1';
+
+            if (requiresReference && !reference) {
+
+                showMessage(
+                    'Debes capturar la referencia del pago.',
+                    'error'
+                );
+
+                paymentReference.focus();
+
+                return;
+            }
+
+            /*
+             * EFECTIVO
+             *
+             * Puede recibir más de lo pendiente.
+             *
+             * Ejemplo:
+             * Venta:      $40.50
+             * Recibido:   $50.00
+             * Aplicado:   $40.50
+             * Cambio:      $9.50
+             */
+            const amountApplied = affectsCash ?
+                Math.min(received, pending) :
+                received;
+
+            const change = affectsCash ?
+                Math.max(0, received - amountApplied) :
+                0;
+
+            paymentPayments.push({
+                payment_method_id: paymentMethodId,
+                code: code,
+                name: name,
+
+                amount_received: roundMoney(received),
+                amount_applied: roundMoney(amountApplied),
+                change: roundMoney(change),
+
+                reference: reference || null,
+
+                affects_cash: affectsCash,
+            });
+
+            renderPaymentList();
+
+            amountReceivedInput.value =
+                paymentPending().toFixed(2);
+
+            paymentReference.value = '';
+
+            updatePaymentFields();
+
+            amountReceivedInput.focus();
+            amountReceivedInput.select();
+        }
 
         async function waitForPointPayment(transactionId) {
             const maxAttempts = 60;
@@ -1842,91 +2190,60 @@
         }
 
         async function confirmPayment() {
+
             if (state.submitting || !state.cart.length) {
                 return;
             }
 
             const total = cartTotal();
 
-            const received =
-                Number(amountReceived.value || 0);
-
             const option =
                 paymentMethod.options[paymentMethod.selectedIndex];
 
-            const affectsCash =
-                option?.dataset.affectsCash === '1';
-
-            const change =
-                affectsCash ?
-                Math.max(0, received - total) :
-                0;
-
-            if (affectsCash && change > availableCash) {
-                showMessage(
-                    `No hay suficiente efectivo en caja para entregar ${money(change)} de cambio.`,
-                    'error'
-                );
-
+            if (!option) {
                 return;
             }
 
-            const requiresReference =
-                option?.dataset.requiresReference === '1';
-
-            const reference =
-                paymentReference.value.trim();
+            const code =
+                option.dataset.code;
 
             /*
-             * Validaciones normales de efectivo / transferencia.
+             * ============================================================
+             * MERCADO PAGO POINT
+             * ============================================================
+             *
+             * Point funciona como un flujo independiente.
+             *
+             * No requiere agregarlo previamente a paymentPayments.
              */
-            if (affectsCash && received < total) {
-                showMessage(
-                    'El importe recibido es menor al total.',
-                    'error'
-                );
-                return;
-            }
+            if (code === 'MP_POINT') {
 
-            if (!affectsCash && received !== total) {
-                showMessage(
-                    'Para este método de pago, el importe debe ser exactamente igual al total.',
-                    'error'
-                );
-                return;
-            }
+                if (paymentPayments.length > 0) {
 
-            if (requiresReference && !reference) {
-                showMessage(
-                    'Debes capturar la referencia del pago.',
-                    'error'
-                );
+                    showMessage(
+                        'Mercado Pago Point debe utilizarse como único método de pago en esta operación.',
+                        'error'
+                    );
 
-                paymentReference.focus();
-                return;
-            }
+                    return;
+                }
 
-            state.submitting = true;
+                state.submitting = true;
 
-            try {
-                const items = state.cart.map(item => ({
-                    stock_item_id: item.stock_item_id,
-                    product_unit_id: item.product_unit_id,
-                    quantity: item.quantity,
-                    sale_mode: item.sale_mode || 'unit',
-                    sale_amount: item.sale_amount ?? null,
-                }));
+                try {
 
-                /*
-                 * MERCADO PAGO POINT
-                 *
-                 * Este flujo NO registra todavía la venta como confirmada.
-                 * Primero crea la orden en Mercado Pago y la envía al Point.
-                 */
-                if (option?.dataset.code === 'MP_POINT') {
+                    const items = state.cart.map(item => ({
+                        stock_item_id: item.stock_item_id,
+                        product_unit_id: item.product_unit_id,
+                        quantity: item.quantity,
+                        sale_mode: item.sale_mode || 'unit',
+                        sale_amount: item.sale_amount ?? null,
+                    }));
+
                     const response = await fetch(
                         "{{ route('sales.point.start') }}", {
                             method: 'POST',
+
                             headers: {
                                 'Content-Type': 'application/json',
                                 'Accept': 'application/json',
@@ -1936,15 +2253,18 @@
                                     )
                                     .content
                             },
+
                             body: JSON.stringify({
                                 items: items
                             })
                         }
                     );
 
-                    const data = await response.json();
+                    const data =
+                        await response.json();
 
                     if (!response.ok) {
+
                         const firstError =
                             data.errors ?
                             Object.values(data.errors).flat()[0] :
@@ -1957,30 +2277,100 @@
                     }
 
                     /*
-                     * IMPORTANTE:
-                     * Aquí todavía NO mostramos "Venta completada".
-                     *
-                     * La venta está esperando la confirmación de Mercado Pago.
+                     * Cerramos el modal de cobro.
+                     * La venta todavía NO está completada.
                      */
                     closePaymentModal();
 
                     showMessage(
-                        'Pago enviado a Mercado Pago Point. Esperando confirmación...',
+                        'Pago enviado a Mercado Pago Point. Esperando confirmación del cliente...',
                         'ok'
                     );
 
-                    await waitForPointPayment(data.transaction_id);
+                    await waitForPointPayment(
+                        data.transaction_id
+                    );
+
                     return;
+
+                } catch (error) {
+
+                    showMessage(
+                        error.message,
+                        'error'
+                    );
+
+                } finally {
+
+                    state.submitting = false;
+
                 }
 
-                /*
-                 * FLUJO NORMAL
-                 *
-                 * Efectivo, transferencia, etc.
-                 */
+                return;
+            }
+
+            /*
+             * ============================================================
+             * FLUJO NORMAL
+             * ============================================================
+             *
+             * Efectivo
+             * Transferencia
+             */
+
+            const applied =
+                paymentTotal();
+
+            if (!paymentPayments.length) {
+
+                showMessage(
+                    'Debes agregar al menos un pago.',
+                    'error'
+                );
+
+                return;
+            }
+
+            if (
+                Math.abs(applied - total) > 0.001
+            ) {
+
+                showMessage(
+                    `La venta todavía tiene un saldo pendiente de ${money(
+                Math.max(0, total - applied)
+            )}.`,
+                    'error'
+                );
+
+                return;
+            }
+
+            if (!changeAvailable) {
+
+                showMessage(
+                    'No hay suficiente efectivo en caja para entregar el cambio.',
+                    'error'
+                );
+
+                return;
+            }
+
+            state.submitting = true;
+
+            try {
+
+                const items = state.cart.map(item => ({
+                    stock_item_id: item.stock_item_id,
+                    product_unit_id: item.product_unit_id,
+                    quantity: item.quantity,
+                    sale_mode: item.sale_mode || 'unit',
+                    sale_amount: item.sale_amount ?? null,
+                }));
+
                 const response = await fetch(
                     "{{ route('sales.store') }}", {
                         method: 'POST',
+
                         headers: {
                             'Content-Type': 'application/json',
                             'Accept': 'application/json',
@@ -1990,18 +2380,33 @@
                                 )
                                 .content
                         },
+
                         body: JSON.stringify({
+
                             items: items,
-                            payment_method_id: paymentMethod.value,
-                            amount_received: received,
-                            reference: paymentReference.value.trim() || null
+
+                            payments: paymentPayments.map(payment => ({
+                                payment_method_id: payment.payment_method_id,
+
+                                /*
+                                 * IMPORTANTE:
+                                 * El backend necesita recibir
+                                 * lo que realmente entregó el cliente.
+                                 */
+                                amount: payment.amount_received,
+
+                                reference: payment.reference,
+                            }))
+
                         })
                     }
                 );
 
-                const data = await response.json();
+                const data =
+                    await response.json();
 
                 if (!response.ok) {
+
                     const firstError =
                         data.errors ?
                         Object.values(data.errors).flat()[0] :
@@ -2031,6 +2436,7 @@
             } finally {
 
                 state.submitting = false;
+
             }
         }
 
@@ -2084,9 +2490,11 @@
         });
 
 
-        amountReceived.addEventListener(
+        amountReceivedInput.addEventListener(
             'input',
-            updateChange
+            () => {
+                // El cambio se calcula al agregar el pago.
+            }
         );
 
 

@@ -8,6 +8,8 @@ use App\Modules\Identity\Infrastructure\Persistence\Models\Branch;
 use App\Modules\Identity\Infrastructure\Persistence\Models\Register;
 use App\Modules\Operation\Infrastructure\Persistence\Models\CashMovement;
 use App\Modules\Operation\Infrastructure\Persistence\Models\CashSession;
+use App\Modules\Operation\Infrastructure\Persistence\Models\PaymentMethod;
+use App\Modules\Operation\Infrastructure\Persistence\Models\SalePayment;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -51,6 +53,10 @@ final class CashController
 
         $cashSummary = $this->calculateCashSummary($movements);
 
+        $paymentSummary = $activeSession
+            ? $this->calculatePaymentSummary($activeSession)
+            : $this->emptyPaymentSummary();
+
         return view('modules.operation.cash.index', [
             'branches' => $branches,
             'registers' => $registers,
@@ -62,6 +68,13 @@ final class CashController
             'extraIncome' => $cashSummary['extra_income'],
             'cashOut' => $cashSummary['cash_out'],
             'theoreticalCash' => $cashSummary['theoretical_cash'],
+
+            'cashPaymentTotal' => $paymentSummary['cash'],
+            'transferPaymentTotal' => $paymentSummary['transfer'],
+            'mpPointPaymentTotal' => $paymentSummary['mp_point'],
+            'cardPaymentTotal' => $paymentSummary['card'],
+            'digitalPaymentTotal' => $paymentSummary['digital_total'],
+            'grandSalesTotal' => $paymentSummary['grand_total'],
 
         ]);
     }
@@ -436,6 +449,119 @@ final class CashController
             ->sum('amount');
 
         return round($cashIn - $cashOut, 2);
+    }
+    /**
+     * Calcular resumen de ventas por método de pago.
+     *
+     * La fuente de verdad para este resumen es sale_payments.
+     *
+     * No utilizamos cash_movements porque esa tabla representa
+     * únicamente el movimiento físico de efectivo.
+     */
+    private function calculatePaymentSummary(CashSession $session): array
+    {
+        $payments = SalePayment::query()
+            ->select([
+                'payment_methods.code',
+                'sale_payments.amount_applied',
+            ])
+            ->join(
+                'sales',
+                'sales.id',
+                '=',
+                'sale_payments.sale_id'
+            )
+            ->join(
+                'payment_methods',
+                'payment_methods.id',
+                '=',
+                'sale_payments.payment_method_id'
+            )
+            ->where(
+                'sales.organization_id',
+                $session->organization_id
+            )
+            ->where(
+                'sales.branch_id',
+                $session->branch_id
+            )
+            ->where(
+                'sales.cash_session_id',
+                $session->id
+            )
+            ->where(
+                'sales.status',
+                'confirmed'
+            )
+            ->whereIn(
+                'payment_methods.code',
+                [
+                    'CASH',
+                    'CARD',
+                    'TRANSFER',
+                    'MP_POINT',
+                ]
+            )
+            ->get();
+
+        $summary = [
+            'cash' => 0.0,
+            'card' => 0.0,
+            'transfer' => 0.0,
+            'mp_point' => 0.0,
+        ];
+
+        foreach ($payments as $payment) {
+            $amount = (float) $payment->amount_applied;
+
+            switch ($payment->code) {
+                case 'CASH':
+                    $summary['cash'] += $amount;
+                    break;
+
+                case 'CARD':
+                    $summary['card'] += $amount;
+                    break;
+
+                case 'TRANSFER':
+                    $summary['transfer'] += $amount;
+                    break;
+
+                case 'MP_POINT':
+                    $summary['mp_point'] += $amount;
+                    break;
+            }
+        }
+
+        $summary['digital_total'] =
+            $summary['transfer']
+            + $summary['mp_point'];
+
+        $summary['grand_total'] =
+            $summary['cash']
+            + $summary['card']
+            + $summary['transfer']
+            + $summary['mp_point'];
+
+        return array_map(
+            static fn($amount) => round((float) $amount, 2),
+            $summary
+        );
+    }
+
+    /**
+     * Resumen vacío cuando no existe una sesión activa.
+     */
+    private function emptyPaymentSummary(): array
+    {
+        return [
+            'cash' => 0.00,
+            'card' => 0.00,
+            'transfer' => 0.00,
+            'mp_point' => 0.00,
+            'digital_total' => 0.00,
+            'grand_total' => 0.00,
+        ];
     }
 
     /**

@@ -300,6 +300,247 @@
     </div>
 
     {{-- ===================================================== --}}
+    {{-- PAGOS DIGITALES --}}
+    {{-- ===================================================== --}}
+
+    <section class="mt-6">
+
+        <div class="mb-4">
+
+            <h2 class="text-lg font-black tracking-tight text-slate-900">
+                Pagos digitales
+            </h2>
+
+            <p class="mt-1 text-sm text-slate-500">
+                Ventas cobradas mediante métodos que no forman parte del efectivo físico.
+            </p>
+
+        </div>
+
+
+        <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+
+            {{-- Transferencias --}}
+            <x-ui.card>
+
+                <div class="flex items-start justify-between gap-4">
+
+                    <div>
+
+                        <p class="text-xs font-bold uppercase tracking-wider text-slate-500">
+                            Transferencias
+                        </p>
+
+                        <p class="mt-2 text-2xl font-black text-slate-900">
+                            ${{ number_format($transferPaymentTotal, 2) }}
+                        </p>
+
+                    </div>
+
+                    <span class="rounded-xl bg-blue-50 px-3 py-2 text-xs font-black text-blue-700">
+                        TRANSFERENCIAS
+                    </span>
+
+                </div>
+
+                <p class="mt-2 text-xs leading-5 text-slate-500">
+                    Pagos recibidos mediante transferencia bancaria.
+                </p>
+
+            </x-ui.card>
+
+
+            {{-- Mercado Pago Point --}}
+            <x-ui.card>
+
+                <div class="flex items-start justify-between gap-4">
+
+                    <div>
+
+                        <p class="text-xs font-bold uppercase tracking-wider text-slate-500">
+                            Mercado Pago Point
+                        </p>
+
+                        <p class="mt-2 text-2xl font-black text-slate-900">
+                            ${{ number_format($mpPointPaymentTotal, 2) }}
+                        </p>
+
+                    </div>
+
+                    <span class="rounded-xl bg-sky-50 px-3 py-2 text-xs font-black text-sky-700">
+                        MP POINT
+                    </span>
+
+                </div>
+
+                <p class="mt-2 text-xs leading-5 text-slate-500">
+                    Pagos confirmados mediante la terminal Mercado Pago Point.
+                </p>
+
+            </x-ui.card>
+
+
+            {{-- Total digital --}}
+            <x-ui.card class="border-slate-300 bg-slate-50">
+
+                <p class="text-xs font-bold uppercase tracking-wider text-slate-500">
+                    Total digital
+                </p>
+
+                <p class="mt-2 text-2xl font-black text-slate-900">
+                    ${{ number_format($digitalPaymentTotal, 2) }}
+                </p>
+
+                <p class="mt-1 text-xs text-slate-500">
+                    Transferencias + Mercado Pago Point
+                </p>
+
+            </x-ui.card>
+
+        </div>
+
+    </section>
+
+
+    {{-- ===================================================== --}}
+    {{-- RESUMEN DE VENTAS --}}
+    {{-- ===================================================== --}}
+
+    <section class="mt-6">
+
+        <div class="mb-4">
+
+            <h2 class="text-lg font-black tracking-tight text-slate-900">
+                Resumen de ventas
+            </h2>
+
+            <p class="mt-1 text-sm text-slate-500">
+                Total de ventas confirmadas durante esta sesión, agrupadas por método de pago.
+            </p>
+
+        </div>
+
+
+        <x-ui.card padding="p-0">
+
+            <div class="divide-y divide-slate-100">
+
+                {{-- Efectivo --}}
+                <div class="flex items-center justify-between gap-4 px-5 py-4 sm:px-6">
+
+                    <div>
+
+                        <p class="text-sm font-black text-slate-900">
+                            Efectivo
+                        </p>
+
+                        <p class="mt-0.5 text-xs text-slate-500">
+                            Dinero físico recibido
+                        </p>
+
+                    </div>
+
+                    <p class="shrink-0 text-sm font-black tabular-nums text-slate-900">
+                        ${{ number_format($cashPaymentTotal, 2) }}
+                    </p>
+
+                </div>
+
+
+                <!-- {{-- Tarjeta --}}
+                <div class="flex items-center justify-between gap-4 px-5 py-4 sm:px-6">
+
+                    <div>
+
+                        <p class="text-sm font-black text-slate-900">
+                            Tarjeta
+                        </p>
+
+                        <p class="mt-0.5 text-xs text-slate-500">
+                            Pagos con tarjeta
+                        </p>
+
+                    </div>
+
+                    <p class="shrink-0 text-sm font-black tabular-nums text-slate-900">
+                        ${{ number_format($cardPaymentTotal, 2) }}
+                    </p>
+
+                </div> -->
+
+
+                {{-- Transferencia --}}
+                <div class="flex items-center justify-between gap-4 px-5 py-4 sm:px-6">
+
+                    <div>
+
+                        <p class="text-sm font-black text-slate-900">
+                            Transferencia
+                        </p>
+
+                        <p class="mt-0.5 text-xs text-slate-500">
+                            Pagos mediante transferencia bancaria
+                        </p>
+
+                    </div>
+
+                    <p class="shrink-0 text-sm font-black tabular-nums text-slate-900">
+                        ${{ number_format($transferPaymentTotal, 2) }}
+                    </p>
+
+                </div>
+
+
+                {{-- Mercado Pago Point --}}
+                <div class="flex items-center justify-between gap-4 px-5 py-4 sm:px-6">
+
+                    <div>
+
+                        <p class="text-sm font-black text-slate-900">
+                            Mercado Pago Point
+                        </p>
+
+                        <p class="mt-0.5 text-xs text-slate-500">
+                            Pagos mediante terminal Point
+                        </p>
+
+                    </div>
+
+                    <p class="shrink-0 text-sm font-black tabular-nums text-slate-900">
+                        ${{ number_format($mpPointPaymentTotal, 2) }}
+                    </p>
+
+                </div>
+
+
+                {{-- Total --}}
+                <div class="flex items-center justify-between gap-4 bg-slate-50 px-5 py-5 sm:px-6">
+
+                    <div>
+
+                        <p class="text-sm font-black text-slate-900">
+                            Total vendido
+                        </p>
+
+                        <p class="mt-0.5 text-xs text-slate-500">
+                            Todas las ventas confirmadas
+                        </p>
+
+                    </div>
+
+                    <p class="shrink-0 text-xl font-black tabular-nums text-slate-900">
+                        ${{ number_format($grandSalesTotal, 2) }}
+                    </p>
+
+                </div>
+
+            </div>
+
+        </x-ui.card>
+
+    </section>
+
+    {{-- ===================================================== --}}
     {{-- ACCIONES --}}
     {{-- ===================================================== --}}
 

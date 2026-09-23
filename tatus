@@ -1,0 +1,174 @@
+[1mdiff --git a/app/Modules/Operation/Presentation/Http/Controllers/CashController.php b/app/Modules/Operation/Presentation/Http/Controllers/CashController.php[m
+[1mindex 1833310..d19a925 100644[m
+[1m--- a/app/Modules/Operation/Presentation/Http/Controllers/CashController.php[m
+[1m+++ b/app/Modules/Operation/Presentation/Http/Controllers/CashController.php[m
+[36m@@ -8,6 +8,8 @@[m
+ use App\Modules\Identity\Infrastructure\Persistence\Models\Register;[m
+ use App\Modules\Operation\Infrastructure\Persistence\Models\CashMovement;[m
+ use App\Modules\Operation\Infrastructure\Persistence\Models\CashSession;[m
+[32m+[m[32muse App\Modules\Operation\Infrastructure\Persistence\Models\PaymentMethod;[m
+[32m+[m[32muse App\Modules\Operation\Infrastructure\Persistence\Models\SalePayment;[m
+ use Illuminate\Http\RedirectResponse;[m
+ use Illuminate\Http\Request;[m
+ use Illuminate\Support\Facades\DB;[m
+[36m@@ -51,6 +53,10 @@[m [mpublic function index(Request $request): View[m
+ [m
+         $cashSummary = $this->calculateCashSummary($movements);[m
+ [m
+[32m+[m[32m        $paymentSummary = $activeSession[m
+[32m+[m[32m            ? $this->calculatePaymentSummary($activeSession)[m
+[32m+[m[32m            : $this->emptyPaymentSummary();[m
+[32m+[m
+         return view('modules.operation.cash.index', [[m
+             'branches' => $branches,[m
+             'registers' => $registers,[m
+[36m@@ -63,6 +69,13 @@[m [mpublic function index(Request $request): View[m
+             'cashOut' => $cashSummary['cash_out'],[m
+             'theoreticalCash' => $cashSummary['theoretical_cash'],[m
+ [m
+[32m+[m[32m            'cashPaymentTotal' => $paymentSummary['cash'],[m
+[32m+[m[32m            'transferPaymentTotal' => $paymentSummary['transfer'],[m
+[32m+[m[32m            'mpPointPaymentTotal' => $paymentSummary['mp_point'],[m
+[32m+[m[32m            'cardPaymentTotal' => $paymentSummary['card'],[m
+[32m+[m[32m            'digitalPaymentTotal' => $paymentSummary['digital_total'],[m
+[32m+[m[32m            'grandSalesTotal' => $paymentSummary['grand_total'],[m
+[32m+[m
+         ]);[m
+     }[m
+ [m
+[36m@@ -437,6 +450,119 @@[m [mprivate function availableCash(string $cashSessionId): float[m
+ [m
+         return round($cashIn - $cashOut, 2);[m
+     }[m
+[32m+[m[32m    /**[m
+[32m+[m[32m     * Calcular resumen de ventas por método de pago.[m
+[32m+[m[32m     *[m
+[32m+[m[32m     * La fuente de verdad para este resumen es sale_payments.[m
+[32m+[m[32m     *[m
+[32m+[m[32m     * No utilizamos cash_movements porque esa tabla representa[m
+[32m+[m[32m     * únicamente el movimiento físico de efectivo.[m
+[32m+[m[32m     */[m
+[32m+[m[32m    private function calculatePaymentSummary(CashSession $session): array[m
+[32m+[m[32m    {[m
+[32m+[m[32m        $payments = SalePayment::query()[m
+[32m+[m[32m            ->select([[m
+[32m+[m[32m                'payment_methods.code',[m
+[32m+[m[32m                'sale_payments.amount_applied',[m
+[32m+[m[32m            ])[m
+[32m+[m[32m            ->join([m
+[32m+[m[32m                'sales',[m
+[32m+[m[32m                'sales.id',[m
+[32m+[m[32m                '=',[m
+[32m+[m[32m                'sale_payments.sale_id'[m
+[32m+[m[32m            )[m
+[32m+[m[32m            ->join([m
+[32m+[m[32m                'payment_methods',[m
+[32m+[m[32m                'payment_methods.id',[m
+[32m+[m[32m                '=',[m
+[32m+[m[32m                'sale_payments.payment_method_id'[m
+[32m+[m[32m            )[m
+[32m+[m[32m            ->where([m
+[32m+[m[32m                'sales.organization_id',[m
+[32m+[m[32m                $session->organization_id[m
+[32m+[m[32m            )[m
+[32m+[m[32m            ->where([m
+[32m+[m[32m                'sales.branch_id',[m
+[32m+[m[32m                $session->branch_id[m
+[32m+[m[32m            )[m
+[32m+[m[32m            ->where([m
+[32m+[m[32m                'sales.cash_session_id',[m
+[32m+[m[32m                $session->id[m
+[32m+[m[32m            )[m
+[32m+[m[32m            ->where([m
+[32m+[m[32m                'sales.status',[m
+[32m+[m[32m                'confirmed'[m
+[32m+[m[32m            )[m
+[32m+[m[32m            ->whereIn([m
+[32m+[m[32m                'payment_methods.code',[m
+[32m+[m[32m                [[m
+[32m+[m[32m                    'CASH',[m
+[32m+[m[32m                    'CARD',[m
+[32m+[m[32m                    'TRANSFER',[m
+[32m+[m[32m                    'MP_POINT',[m
+[32m+[m[32m                ][m
+[32m+[m[32m            )[m
+[32m+[m[32m            ->get();[m
+[32m+[m
+[32m+[m[32m        $summary = [[m
+[32m+[m[32m            'cash' => 0.0,[m
+[32m+[m[32m            'card' => 0.0,[m
+[32m+[m[32m            'transfer' => 0.0,[m
+[32m+[m[32m            'mp_point' => 0.0,[m
+[32m+[m[32m        ];[m
+[32m+[m
+[32m+[m[32m        foreach ($payments as $payment) {[m
+[32m+[m[32m            $amount = (float) $payment->amount_applied;[m
+[32m+[m
+[32m+[m[32m            switch ($payment->code) {[m
+[32m+[m[32m                case 'CASH':[m
+[32m+[m[32m                    $summary['cash'] += $amount;[m
+[32m+[m[32m                    break;[m
+[32m+[m
+[32m+[m[32m                case 'CARD':[m
+[32m+[m[32m                    $summary['card'] += $amount;[m
+[32m+[m[32m                    break;[m
+[32m+[m
+[32m+[m[32m                case 'TRANSFER':[m
+[32m+[m[32m                    $summary['transfer'] += $amount;[m
+[32m+[m[32m                    break;[m
+[32m+[m
+[32m+[m[32m                case 'MP_POINT':[m
+[32m+[m[32m                    $summary['mp_point'] += $amount;[m
+[32m+[m[32m                    break;[m
+[32m+[m[32m            }[m
+[32m+[m[32m        }[m
+[32m+[m
+[32m+[m[32m        $summary['digital_total'] =[m
+[32m+[m[32m            $summary['transfer'][m
+[32m+[m[32m            + $summary['mp_point'];[m
+[32m+[m
+[32m+[m[32m        $summary['grand_total'] =[m
+[32m+[m[32m            $summary['cash'][m
+[32m+[m[32m            + $summary['card'][m
+[32m+[m[32m            + $summary['transfer'][m
+[32m+[m[32m            + $summary['mp_point'];[m
+[32m+[m
+[32m+[m[32m        return array_map([m
+[32m+[m[32m            static fn($amount) => round((float) $amount, 2),[m
+[32m+[m[32m            $summary[m
+[32m+[m[32m        );[m
+[32m+[m[32m    }[m
+[32m+[m
+[32m+[m[32m    /**[m
+[32m+[m[32m     * Resumen vacío cuando no existe una sesión activa.[m
+[32m+[m[32m     */[m
+[32m+[m[32m    private function emptyPaymentSummary(): array[m
+[32m+[m[32m    {[m
+[32m+[m[32m        return [[m
+[32m+[m[32m            'cash' => 0.00,[m
+[32m+[m[32m            'card' => 0.00,[m
+[32m+[m[32m            'transfer' => 0.00,[m
+[32m+[m[32m            'mp_point' => 0.00,[m
+[32m+[m[32m            'digital_total' => 0.00,[m
+[32m+[m[32m            'grand_total' => 0.00,[m
+[32m+[m[32m        ];[m
+[32m+[m[32m    }[m
+ [m
+     /**[m
+      * Calcular el resumen de efectivo según los movimientos.[m
+[1mdiff --git a/app/Modules/Operation/Presentation/Http/Controllers/SaleController.php b/app/Modules/Operation/Presentation/Http/Controllers/SaleController.php[m
+[1mindex 1d7b3c0..e4c3265 100644[m
+[1m--- a/app/Modules/Operation/Presentation/Http/Controllers/SaleController.php[m
+[1m+++ b/app/Modules/Operation/Presentation/Http/Controllers/SaleController.php[m
+[36m@@ -537,9 +537,24 @@[m [mpublic function store(Request $request): JsonResponse[m
+                 'gt:0',[m
+             ],[m
+ [m
+[31m-            'payment_method_id' => ['required', 'uuid'],[m
+[31m-            'amount_received' => ['required', 'numeric', 'gt:0'],[m
+[31m-            'reference' => ['nullable', 'string', 'max:120'],[m
+[32m+[m[32m            'payments' => ['required', 'array', 'min:1'],[m
+[32m+[m
+[32m+[m[32m            'payments.*.payment_method_id' => [[m
+[32m+[m[32m                'required',[m
+[3

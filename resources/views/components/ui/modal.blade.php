@@ -58,14 +58,14 @@
                         @if ($title)
                             <h2
                                 id="{{ $titleId }}"
-                                class="text-lg font-black tracking-tight text-slate-950 sm:text-xl lg:text-2xl"
+                                class="text-xl font-black tracking-tight text-slate-950 sm:text-2xl lg:text-3xl"
                             >
                                 {{ $title }}
                             </h2>
                         @endif
 
                         @if ($description)
-                            <p class="mt-1 text-sm leading-5 text-slate-500 sm:mt-1.5 sm:leading-6">
+                            <p class="mt-1 text-base leading-6 text-slate-500 sm:text-lg">
                                 {{ $description }}
                             </p>
                         @endif
