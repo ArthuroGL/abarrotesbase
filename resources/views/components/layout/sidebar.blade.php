@@ -26,8 +26,6 @@ $sections = [
 [
 'label' => 'Administración',
 'items' => [
-['label' => 'Clientes', 'route' => null, 'icon' => 'users'],
-['label' => 'Reportes', 'route' => null, 'icon' => 'report'],
 ['label' => 'Configuración', 'route' => null, 'icon' => 'settings'],
 ],
 ],
