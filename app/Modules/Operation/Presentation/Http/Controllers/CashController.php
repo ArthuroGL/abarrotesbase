@@ -8,7 +8,7 @@ use App\Modules\Identity\Infrastructure\Persistence\Models\Branch;
 use App\Modules\Identity\Infrastructure\Persistence\Models\Register;
 use App\Modules\Operation\Infrastructure\Persistence\Models\CashMovement;
 use App\Modules\Operation\Infrastructure\Persistence\Models\CashSession;
-use App\Modules\Operation\Infrastructure\Persistence\Models\PaymentMethod;
+use App\Modules\Identity\Application\Services\CurrentContext;
 use App\Modules\Operation\Infrastructure\Persistence\Models\SalePayment;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -18,17 +18,27 @@ use Throwable;
 
 final class CashController
 {
+
+    public function __construct(
+        private readonly CurrentContext $context,
+    ) {}
     /**
      * Mostrar caja actual.
      */
     public function index(Request $request): View
     {
+        $organizationId = $this->context->organizationId();
+        $branchId = $this->context->branchId();
+
         $branches = Branch::query()
+            ->where('organization_id', $organizationId)
             ->where('is_active', true)
             ->orderBy('name')
             ->get();
 
         $registers = Register::query()
+            ->where('organization_id', $organizationId)
+            ->where('branch_id', $branchId)
             ->where('is_active', true)
             ->orderBy('name')
             ->get();
@@ -39,7 +49,8 @@ final class CashController
                 'register',
                 'responsibleUser',
             ])
-            ->where('responsible_user_id', $request->user()->id)
+            ->where('organization_id', $organizationId)
+            ->where('branch_id', $branchId)
             ->whereIn('status', ['open', 'counting'])
             ->latest('opened_at')
             ->first();
@@ -75,7 +86,6 @@ final class CashController
             'cardPaymentTotal' => $paymentSummary['card'],
             'digitalPaymentTotal' => $paymentSummary['digital_total'],
             'grandSalesTotal' => $paymentSummary['grand_total'],
-
         ]);
     }
 
@@ -84,6 +94,7 @@ final class CashController
      */
     public function open(Request $request): RedirectResponse
     {
+
         $validated = $request->validate([
             'branch_id' => ['required', 'uuid'],
             'register_id' => ['required', 'uuid'],
@@ -91,14 +102,26 @@ final class CashController
             'notes' => ['nullable', 'string', 'max:1000'],
         ]);
 
+
         try {
             DB::transaction(function () use ($request, $validated): void {
+
+                $organizationId = $this->context->organizationId();
+                $branchId = $this->context->branchId();
+
                 $register = Register::query()
                     ->where('id', $validated['register_id'])
+                    ->where('organization_id', $organizationId)
                     ->where('branch_id', $validated['branch_id'])
                     ->where('is_active', true)
                     ->lockForUpdate()
                     ->firstOrFail();
+
+                abort_unless(
+                    $register->branch_id === $branchId,
+                    403,
+                    'La caja seleccionada no pertenece a la sucursal actual.'
+                );
 
                 $existingSession = CashSession::query()
                     ->where('register_id', $register->id)
@@ -196,18 +219,15 @@ final class CashController
              * Bloqueamos la sesión para evitar que dos operaciones
              * modifiquen simultáneamente el mismo saldo de caja.
              */
+                $organizationId = $this->context->organizationId();
+                $branchId = $this->context->branchId();
+
                 $session = CashSession::query()
-                    ->where('responsible_user_id', $request->user()->id)
+                    ->where('organization_id', $organizationId)
+                    ->where('branch_id', $branchId)
                     ->where('status', 'open')
                     ->latest('opened_at')
-                    ->lockForUpdate()
-                    ->first();
-
-                if (!$session) {
-                    throw new \RuntimeException(
-                        'No tienes una sesión de caja abierta.'
-                    );
-                }
+                    ->firstOrFail();
 
                 /*
              * Las salidas manuales no pueden superar
@@ -273,14 +293,21 @@ final class CashController
     public function startCounting(
         Request $request,
         CashSession $cashSession
+
     ): RedirectResponse {
         DB::transaction(function () use ($request, $cashSession): void {
+            $organizationId = $this->context->organizationId();
+            $branchId = $this->context->branchId();
+
             $session = CashSession::query()
                 ->where('id', $cashSession->id)
+                ->where('organization_id', $organizationId)
+                ->where('branch_id', $branchId)
+                ->where('status', 'open')
                 ->lockForUpdate()
                 ->firstOrFail();
 
-            $this->ensureSessionOwner($session, $request);
+
 
             if ($session->status !== 'open') {
                 throw new \RuntimeException(
@@ -330,12 +357,19 @@ final class CashController
             $cashSession,
             $validated
         ): void {
+            $organizationId = $this->context->organizationId();
+            $branchId = $this->context->branchId();
+
             $session = CashSession::query()
                 ->where('id', $cashSession->id)
+                ->where('organization_id', $organizationId)
+                ->where('branch_id', $branchId)
+                ->where('status', 'counting')
                 ->lockForUpdate()
                 ->firstOrFail();
 
-            $this->ensureSessionOwner($session, $request);
+
+
 
             if ($session->status !== 'counting') {
                 throw new \RuntimeException(

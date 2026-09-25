@@ -26,73 +26,129 @@ class DatabaseSeeder extends Seeder
     {
         DB::transaction(function (): void {
             // 1. Organización Base
-            $orgId = (string) Str::uuid();
-            DB::table('organizations')->insert([
-                'id' => $orgId,
-                'legal_name' => 'ABARROTESBASE S.A. DE C.V.',
-                'display_name' => 'ABARROTESBASE',
-                'currency_code' => 'MXN',
-                'timezone' => 'America/Mexico_City',
-                'is_active' => true,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]);
+            $organization = DB::table('organizations')
+                ->where('display_name', 'ABARROTESBASE')
+                ->first();
+
+            if (!$organization) {
+                $orgId = (string) Str::uuid();
+
+                DB::table('organizations')->insert([
+                    'id' => $orgId,
+                    'legal_name' => 'ABARROTESBASE S.A. DE C.V.',
+                    'display_name' => 'ABARROTESBASE',
+                    'currency_code' => 'MXN',
+                    'timezone' => 'America/Mexico_City',
+                    'is_active' => true,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+            } else {
+                $orgId = $organization->id;
+            }
 
             // 2. Sucursal Principal
-            $branchId = (string) Str::uuid();
-            DB::table('branches')->insert([
-                'id' => $branchId,
-                'organization_id' => $orgId,
-                'code' => 'SUC-01',
-                'name' => 'Sucursal Principal',
-                'phone' => '5551234567',
-                'address' => 'Av. Principal #123, Centro',
-                'is_active' => true,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]);
+            $branch = DB::table('branches')
+                ->where('organization_id', $orgId)
+                ->where('code', 'SUC-01')
+                ->first();
+
+            if ($branch) {
+                $branchId = $branch->id;
+            } else {
+                $branchId = (string) Str::uuid();
+
+                DB::table('branches')->insert([
+                    'id' => $branchId,
+                    'organization_id' => $orgId,
+                    'code' => 'SUC-01',
+                    'name' => 'Sucursal Principal',
+                    'phone' => '5551234567',
+                    'address' => 'Av. Principal #123, Centro',
+                    'is_active' => true,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+            }
 
             // 3. Caja Registradora
-            $registerId = (string) Str::uuid();
-            DB::table('registers')->insert([
-                'id' => $registerId,
-                'organization_id' => $orgId,
-                'branch_id' => $branchId,
-                'code' => 'CAJA-01',
-                'name' => 'Caja Principal',
-                'is_active' => true,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]);
+            $register = DB::table('registers')
+                ->where('branch_id', $branchId)
+                ->where('code', 'CAJA-01')
+                ->first();
+
+            if ($register) {
+                $registerId = $register->id;
+            } else {
+                $registerId = (string) Str::uuid();
+
+                DB::table('registers')->insert([
+                    'id' => $registerId,
+                    'organization_id' => $orgId,
+                    'branch_id' => $branchId,
+                    'code' => 'CAJA-01',
+                    'name' => 'Caja Principal',
+                    'is_active' => true,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+            }
 
             // 4. Usuario Administrador
-            $userId = (string) Str::uuid();
-            DB::table('users')->insert([
-                'id' => $userId,
-                'name' => 'Administrador Base',
-                'email' => 'admin@abarrotesbase.com',
-                'password' => Hash::make('password'),
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]);
+            $adminUser = DB::table('users')
+                ->where('email', 'admin@abarrotesbase.com')
+                ->first();
 
-            $orgUserId = (string) Str::uuid();
-            DB::table('organization_users')->insert([
-                'id' => $orgUserId,
-                'organization_id' => $orgId,
-                'user_id' => $userId,
-                'is_active' => true,
-                'joined_at' => now(),
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]);
+            if (!$adminUser) {
+                $userId = (string) Str::uuid();
 
-            DB::table('user_branches')->insert([
-                'organization_user_id' => $orgUserId,
-                'branch_id' => $branchId,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]);
+                DB::table('users')->insert([
+                    'id' => $userId,
+                    'name' => 'Administrador Base',
+                    'email' => 'admin@abarrotesbase.com',
+                    'password' => Hash::make('password'),
+                    'is_active' => true,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+            } else {
+                $userId = $adminUser->id;
+            }
+
+            $organizationUser = DB::table('organization_users')
+                ->where('organization_id', $orgId)
+                ->where('user_id', $userId)
+                ->first();
+
+            if (!$organizationUser) {
+                $orgUserId = (string) Str::uuid();
+
+                DB::table('organization_users')->insert([
+                    'id' => $orgUserId,
+                    'organization_id' => $orgId,
+                    'user_id' => $userId,
+                    'is_active' => true,
+                    'joined_at' => now(),
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+            } else {
+                $orgUserId = $organizationUser->id;
+            }
+
+            $exists = DB::table('user_branches')
+                ->where('organization_user_id', $orgUserId)
+                ->where('branch_id', $branchId)
+                ->exists();
+
+            if (!$exists) {
+                DB::table('user_branches')->insert([
+                    'organization_user_id' => $orgUserId,
+                    'branch_id' => $branchId,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+            }
 
             // 5. Unidades de Medida
             $unitPza = Unit::create([

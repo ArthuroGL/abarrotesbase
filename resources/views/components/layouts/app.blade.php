@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="es" class="h-full bg-slate-50">
+
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -7,12 +8,23 @@
     <title>{{ $title ?? 'ABARROTESBASE' }}</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
+
 <body class="min-h-full font-sans text-slate-900 antialiased">
     <div class="min-h-screen lg:flex">
         <x-layout.sidebar />
 
         <div class="min-w-0 flex-1">
             <x-layout.topbar />
+
+            @if (session('logout_error'))
+            <div class="mx-auto w-full max-w-screen-2xl px-4 pt-4 sm:px-6 lg:px-8">
+                <x-ui.alert
+                    type="error"
+                    title="No se puede cerrar sesión">
+                    {{ session('logout_error') }}
+                </x-ui.alert>
+            </div>
+            @endif
 
             <main class="mx-auto w-full max-w-screen-2xl px-4 py-6 sm:px-6 lg:px-8">
                 {{ $slot }}
@@ -22,4 +34,5 @@
 
     <div id="app-toast-region" class="pointer-events-none fixed inset-x-0 bottom-4 z-50 flex justify-center px-4" aria-live="polite"></div>
 </body>
+
 </html>

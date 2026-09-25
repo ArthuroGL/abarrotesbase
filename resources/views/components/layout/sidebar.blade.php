@@ -1,35 +1,131 @@
 @php
+
 $sections = [
+
 [
 'label' => 'Principal',
 'items' => [
-['label' => 'Inicio Resumen', 'route' => 'dashboard', 'icon' => 'chart'],
+[
+'label' => 'Inicio Resumen',
+'route' => 'dashboard',
+'icon' => 'chart',
+'permission' => null,
 ],
 ],
+],
+
 [
 'label' => 'Operación',
 'items' => [
-['label' => 'Ventas', 'route' => 'sales.index', 'icon' => 'receipt'],
-['label' => 'Caja', 'route' => 'cash.index', 'icon' => 'cash'],
-['label' => 'Gastos', 'route' => 'expenses.index', 'icon' => 'wallet'],
+
+[
+'label' => 'Ventas',
+'route' => 'sales.index',
+'icon' => 'receipt',
+'permission' => 'sales.view',
+],
+
+[
+'label' => 'Caja',
+'route' => 'cash.index',
+'icon' => 'cash',
+'permission' => 'cash.view',
+],
+
+[
+'label' => 'Gastos',
+'route' => 'expenses.index',
+'icon' => 'wallet',
+'permission' => 'expenses.view',
+],
+
 ],
 ],
+
 [
 'label' => 'Inventario',
 'items' => [
-['label' => 'Productos', 'route' => 'products.index', 'icon' => 'cube'],
-['label' => 'Existencias', 'route' => 'stock.index', 'icon' => 'boxes'],
-['label' => 'Compras', 'route' => 'purchases.index', 'icon' => 'cart'],
-['label' => 'Proveedores', 'route' => 'suppliers.index', 'icon' => 'truck'],
+
+[
+'label' => 'Productos',
+'route' => 'products.index',
+'icon' => 'cube',
+'permission' => 'products.view',
+],
+
+[
+'label' => 'Existencias',
+'route' => 'stock.index',
+'icon' => 'boxes',
+'permission' => 'stock.view',
+],
+
+[
+'label' => 'Compras',
+'route' => 'purchases.index',
+'icon' => 'cart',
+'permission' => 'purchases.view',
+],
+
+[
+'label' => 'Proveedores',
+'route' => 'suppliers.index',
+'icon' => 'truck',
+'permission' => 'suppliers.view',
+],
+
 ],
 ],
+
 [
 'label' => 'Administración',
 'items' => [
-['label' => 'Configuración', 'route' => null, 'icon' => 'settings'],
+
+[
+'label' => 'Usuarios',
+'route' => 'users.index',
+'icon' => 'settings',
+'permission' => 'users.view',
+],
+
+[
+'label' => 'Roles y permisos',
+'route' => 'roles.index',
+'icon' => 'settings',
+'permission' => 'roles.view',
+],
+
+[
+'label' => 'Auditoría',
+'route' => 'audit.index',
+'icon' => 'settings',
+'permission' => 'audit.view',
+],
+
 ],
 ],
+
 ];
+
+$currentContext = app(
+\App\Modules\Identity\Application\Services\CurrentContext::class
+);
+
+$allowedPermissions = $currentContext->permissionCodes();
+
+$hasPermission = function (?string $permission) use ($allowedPermissions): bool {
+
+if ($permission === null) {
+return true;
+}
+
+if (in_array('*', $allowedPermissions, true)) {
+return true;
+}
+
+return in_array($permission, $allowedPermissions, true);
+};
+
 @endphp
 
 
@@ -98,6 +194,12 @@ $sections = [
             <div class="space-y-1">
 
                 @foreach ($section['items'] as $item)
+
+                @if (! $hasPermission($item['permission'] ?? null))
+
+                @continue
+
+                @endif
 
                 @php($isActive = $item['route'] && request()->routeIs($item['route']))
 

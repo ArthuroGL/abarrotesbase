@@ -3,21 +3,23 @@
 namespace App\Http\Controllers;
 
 use App\Models\Supplier;
+use App\Modules\Identity\Application\Services\CurrentContext;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Http\JsonResponse;
 
 class SupplierController extends Controller
 {
+
+    public function __construct(
+        private readonly CurrentContext $context,
+    ) {}
     /**
      * Obtiene el ID de la organización del usuario o una por defecto.
      */
     private function getOrganizationId(): string
     {
-        return auth()->user()->organization_id
-            ?? DB::table('organizations')->value('id')
-            ?? throw new \Exception('No hay una organización registrada en el sistema.');
+        return $this->context->organizationId();
     }
 
     public function search(Request $request): JsonResponse
@@ -66,27 +68,15 @@ class SupplierController extends Controller
         $search = $request->input('search');
         $status = $request->input('status');
 
-        $suppliers = Supplier::where('organization_id', $orgId)
+        $suppliers = Supplier::query()
+            ->where('organization_id', $orgId)
             ->when($search, function ($q) use ($search) {
                 $q->where(function ($searchQuery) use ($search) {
                     $searchQuery
-                        ->where(
-                            'purchase_number',
-                            'ilike',
-                            "%{$search}%"
-                        )
-                        ->orWhere(
-                            'supplier_reference',
-                            'ilike',
-                            "%{$search}%"
-                        )
-                        ->orWhereHas('supplier', function ($supplierQuery) use ($search) {
-                            $supplierQuery->where(
-                                'business_name',
-                                'ilike',
-                                "%{$search}%"
-                            );
-                        });
+                        ->where('business_name', 'ilike', "%{$search}%")
+                        ->orWhere('code', 'ilike', "%{$search}%")
+                        ->orWhere('rfc', 'ilike', "%{$search}%")
+                        ->orWhere('contact_name', 'ilike', "%{$search}%");
                 });
             })
             ->when($status !== null && $status !== '', function ($q) use ($status) {
@@ -184,10 +174,12 @@ class SupplierController extends Controller
             404
         );
 
-        $supplier->delete();
+        $supplier->update([
+            'is_active' => false,
+        ]);
 
         return redirect()
             ->route('suppliers.index')
-            ->with('success', 'Proveedor eliminado correctamente.');
+            ->with('success', 'Proveedor desactivado correctamente.');
     }
 }

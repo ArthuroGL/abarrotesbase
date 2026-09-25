@@ -148,12 +148,14 @@ class ExpenseController extends Controller
             $session = null;
 
             if ($method->affects_cash) {
-                $session = CashSession::where('organization_id', $this->org())
-                    ->where('branch_id', $this->branch())
-                    ->where('responsible_user_id', auth()->id())
+                $context = app(CurrentContext::class);
+
+                $session = CashSession::query()
+                    ->where('organization_id', $context->organizationId())
+                    ->where('branch_id', $context->branchId())
                     ->where('status', 'open')
-                    ->lockForUpdate()
-                    ->first();
+                    ->latest('opened_at')
+                    ->firstOrFail();
 
                 if (!$session) {
                     throw ValidationException::withMessages([

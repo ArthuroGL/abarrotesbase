@@ -7,6 +7,7 @@ namespace App\Modules\Operation\Presentation\Http\Controllers;
 use App\Models\ProductPrice;
 use App\Models\ProductUnit;
 use App\Models\StockItem;
+use App\Modules\Identity\Application\Services\CurrentContext;
 use App\Modules\Operation\Infrastructure\Persistence\Models\CashMovement;
 use App\Modules\Operation\Infrastructure\Persistence\Models\CashSession;
 use App\Modules\Operation\Infrastructure\Persistence\Models\PaymentMethod;
@@ -24,12 +25,14 @@ use App\Modules\Payment\Application\Services\MercadoPagoService;
 use App\Modules\Payment\Application\Services\PaymentPointService;
 use App\Modules\Payment\Infrastructure\Persistence\Models\PaymentTransaction;
 use App\Modules\Payment\Application\Services\PointPaymentFinalizer;
+
 use RuntimeException;
 
 final class SaleController
 {
 
     public function __construct(
+        private readonly CurrentContext $context,
         private readonly PaymentPointService $paymentPointService,
         private readonly PointPaymentFinalizer $pointPaymentFinalizer,
     ) {}
@@ -60,7 +63,7 @@ final class SaleController
 
     public function show(Sale $sale): View
     {
-        $orgId = DB::table('organizations')->value('id');
+        $orgId = $this->context->organizationId();
 
         abort_unless(
             $sale->organization_id === $orgId,
@@ -81,7 +84,7 @@ final class SaleController
 
     public function ticket(Sale $sale): View
     {
-        $orgId = DB::table('organizations')->value('id');
+        $orgId = $this->context->organizationId();
 
         abort_unless(
             $sale->organization_id === $orgId,
@@ -214,11 +217,15 @@ final class SaleController
         $user = $request->user();
 
         $result = DB::transaction(function () use ($validated, $user) {
+            $organizationId = app(CurrentContext::class)->organizationId();
+            $branchId = app(CurrentContext::class)->branchId();
+
             $session = CashSession::query()
-                ->where('responsible_user_id', $user->id)
+                ->where('organization_id', $organizationId)
+                ->where('branch_id', $branchId)
                 ->where('status', 'open')
-                ->lockForUpdate()
-                ->first();
+                ->latest('opened_at')
+                ->firstOrFail();
 
             if (!$session) {
                 throw ValidationException::withMessages([
@@ -560,11 +567,15 @@ final class SaleController
         $user = $request->user();
 
         $result = DB::transaction(function () use ($validated, $user) {
+            $organizationId = app(CurrentContext::class)->organizationId();
+            $branchId = app(CurrentContext::class)->branchId();
+
             $session = CashSession::query()
-                ->where('responsible_user_id', $user->id)
+                ->where('organization_id', $organizationId)
+                ->where('branch_id', $branchId)
                 ->where('status', 'open')
-                ->lockForUpdate()
-                ->first();
+                ->latest('opened_at')
+                ->firstOrFail();
 
             if (!$session) {
                 throw ValidationException::withMessages([
@@ -1198,8 +1209,9 @@ final class SaleController
     private function activeCashSession(Request $request): ?CashSession
     {
         return CashSession::query()
-            ->with(['branch', 'register'])
-            ->where('responsible_user_id', $request->user()->id)
+            ->with(['branch', 'register', 'responsibleUser'])
+            ->where('organization_id', $this->context->organizationId())
+            ->where('branch_id', $this->context->branchId())
             ->where('status', 'open')
             ->latest('opened_at')
             ->first();
@@ -1487,12 +1499,15 @@ final class SaleController
                 );
 
             if ($cashPayments->isNotEmpty()) {
+                $organizationId = app(CurrentContext::class)->organizationId();
+                $branchId = app(CurrentContext::class)->branchId();
+
                 $session = CashSession::query()
-                    ->where('responsible_user_id', $user->id)
+                    ->where('organization_id', $organizationId)
+                    ->where('branch_id', $branchId)
                     ->where('status', 'open')
-                    ->where('branch_id', $sale->branch_id)
-                    ->lockForUpdate()
-                    ->first();
+                    ->latest('opened_at')
+                    ->firstOrFail();
 
                 if (!$session) {
                     throw ValidationException::withMessages([

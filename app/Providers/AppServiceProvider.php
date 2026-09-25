@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use App\Modules\Identity\Application\Services\CurrentContext;
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Support\Facades\Blade;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -20,6 +21,9 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        Blade::if('permission', function (string $permission): bool {
+            return app(CurrentContext::class)
+                ->hasPermission($permission);
+        });
     }
 }

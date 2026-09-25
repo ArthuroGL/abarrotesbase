@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Middleware;
 
+use App\Modules\Identity\Application\Services\CurrentContext;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -11,6 +12,11 @@ use Symfony\Component\HttpFoundation\Response;
 
 final class RequirePermission
 {
+    public function __construct(
+        private readonly CurrentContext $context,
+    ) {
+    }
+
     public function handle(
         Request $request,
         Closure $next,
@@ -20,20 +26,23 @@ final class RequirePermission
 
         abort_unless($user, 401);
 
+        $organizationId = $this->context->organizationId();
+
         $isAdmin = DB::table('organization_user_roles as our')
-            ->join(
-                'roles as r',
-                'r.id',
-                '=',
-                'our.role_id'
-            )
             ->join(
                 'organization_users as ou',
                 'ou.id',
                 '=',
                 'our.organization_user_id'
             )
+            ->join(
+                'roles as r',
+                'r.id',
+                '=',
+                'our.role_id'
+            )
             ->where('ou.user_id', $user->id)
+            ->where('ou.organization_id', $organizationId)
             ->where('ou.is_active', true)
             ->whereIn('r.code', ['admin'])
             ->exists();
@@ -68,6 +77,7 @@ final class RequirePermission
                 'rp.permission_id'
             )
             ->where('ou.user_id', $user->id)
+            ->where('ou.organization_id', $organizationId)
             ->where('ou.is_active', true)
             ->whereIn('p.code', $permissions)
             ->exists();

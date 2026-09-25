@@ -18,23 +18,23 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
 use Illuminate\Http\JsonResponse;
+use App\Modules\Identity\Application\Services\CurrentContext;
+use Illuminate\Validation\Rule;
 
 class PurchaseController extends Controller
 {
+
+    public function __construct(
+        private readonly CurrentContext $context,
+    ) {}
     private function getOrganizationId(): string
     {
-        return auth()->user()->organization_id
-            ?? session('current_organization_id')
-            ?? DB::table('organizations')->value('id')
-            ?? throw new \Exception('No hay una organización activa en el sistema.');
+        return $this->context->organizationId();
     }
 
     private function getBranchId(): string
     {
-        return session('current_branch_id')
-            ?? auth()->user()->branch_id
-            ?? DB::table('branches')->where('organization_id', $this->getOrganizationId())->value('id')
-            ?? throw new \Exception('No hay una sucursal registrada en el sistema.');
+        return $this->context->branchId();
     }
     public function search(Request $request): JsonResponse
     {
@@ -130,12 +130,44 @@ class PurchaseController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $validated = $request->validate([
-            'supplier_id' => 'required|uuid|exists:suppliers,id',
+            'supplier_id' => [
+                'required',
+                'uuid',
+                Rule::exists('suppliers', 'id')
+                    ->where(
+                        fn($query) =>
+                        $query
+                            ->where('organization_id', $this->getOrganizationId())
+                            ->where('is_active', true)
+                    ),
+            ],
+            /* 'supplier_id' => 'required|uuid|exists:suppliers,id', */
             'supplier_reference' => 'nullable|string|max:100',
             'notes' => 'nullable|string',
             'items' => 'required|array|min:1',
-            'items.*.stock_item_id' => 'required|uuid|exists:stock_items,id',
-            'items.*.product_unit_id' => 'required|uuid|exists:product_units,id',
+            'items.*.stock_item_id' => [
+                'required',
+                'uuid',
+                Rule::exists('stock_items', 'id')
+                    ->where(
+                        fn($query) =>
+                        $query
+                            ->where('organization_id', $this->getOrganizationId())
+                            ->where('is_active', true)
+                    ),
+            ],
+            /* 'items.*.stock_item_id' => 'required|uuid|exists:stock_items,id', */
+            'items.*.product_unit_id' => [
+                'required',
+                'uuid',
+                Rule::exists('product_units', 'id')
+                    ->where(
+                        fn($query) =>
+                        $query
+                            ->where('organization_id', $this->getOrganizationId())
+                            ->where('is_active', true)
+                    ),
+            ],
             'items.*.quantity' => 'required|numeric|gt:0',
             'items.*.unit_cost' => 'required|numeric|gte:0',
             'items.*.discount' => 'nullable|numeric|gte:0',

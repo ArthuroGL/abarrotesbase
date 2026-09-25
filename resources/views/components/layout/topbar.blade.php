@@ -6,13 +6,11 @@
         id="sidebar-toggle"
         class="grid h-11 w-11 shrink-0 place-items-center rounded-xl text-slate-600 transition hover:bg-slate-100 hover:text-slate-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-600"
         aria-label="Contraer menú"
-        title="Contraer menú"
-    >
+        title="Contraer menú">
         <span
             id="sidebar-toggle-icon"
             class="text-xl leading-none"
-            aria-hidden="true"
-        >
+            aria-hidden="true">
             ☰
         </span>
     </button>
@@ -27,8 +25,7 @@
         <button
             type="button"
             class="mt-0.5 inline-flex items-center gap-2 text-sm font-bold text-slate-800"
-            title="La selección de sucursal se habilitará con el módulo de acceso"
-        >
+            title="La selección de sucursal se habilitará con el módulo de acceso">
             <span class="inline-block h-2 w-2 rounded-full bg-emerald-500"></span>
 
             Sucursal principal
@@ -49,19 +46,16 @@
                 class="app-input h-12 pl-11 pr-20"
                 type="search"
                 autocomplete="off"
-                placeholder="Buscar productos, ventas, compras..."
-            >
+                placeholder="Buscar productos, ventas, compras...">
 
             <span
                 class="pointer-events-none absolute inset-y-0 left-4 grid place-items-center text-slate-400"
-                aria-hidden="true"
-            >
+                aria-hidden="true">
                 ⌕
             </span>
 
             <kbd
-                class="pointer-events-none absolute right-3 top-1/2 hidden -translate-y-1/2 rounded-lg border border-slate-200 bg-white px-2 py-1 text-[10px] font-bold text-slate-400 shadow-sm sm:block"
-            >
+                class="pointer-events-none absolute right-3 top-1/2 hidden -translate-y-1/2 rounded-lg border border-slate-200 bg-white px-2 py-1 text-[10px] font-bold text-slate-400 shadow-sm sm:block">
                 /
             </kbd>
 
@@ -70,8 +64,7 @@
         {{-- Resultados --}}
         <div
             id="global-search-results"
-            class="absolute left-0 right-0 top-[calc(100%+8px)] hidden overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl"
-        >
+            class="absolute left-0 right-0 top-[calc(100%+8px)] hidden overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl">
         </div>
     </div>
 
@@ -81,72 +74,142 @@
         type="button"
         class="grid h-11 w-11 shrink-0 place-items-center rounded-xl text-slate-500 transition hover:bg-slate-100 hover:text-slate-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-600"
         title="Notificaciones próximamente"
-        aria-label="Notificaciones"
-    >
+        aria-label="Notificaciones">
         ◌
     </button>
 
-
     {{-- Usuario --}}
-    <div class="flex shrink-0 items-center gap-3 border-l border-slate-200 pl-3 sm:pl-4">
+    <div class="relative shrink-0 border-l border-slate-200 pl-3 sm:pl-4">
 
-        <span class="grid h-10 w-10 place-items-center rounded-full bg-emerald-100 text-sm font-black text-emerald-800">
-            A
-        </span>
+        <button
+            type="button"
+            id="user-menu-toggle"
+            class="flex items-center gap-3 rounded-xl px-2 py-1.5 transition hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-600"
+            aria-expanded="false"
+            aria-haspopup="true">
 
-        <div class="hidden sm:block">
-            <p class="text-sm font-bold text-slate-800">
-                Administrador
-            </p>
+            <span class="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-emerald-100 text-sm font-black text-emerald-800">
+                A
+            </span>
 
-            <p class="text-xs text-slate-400">
-                Administrador
-            </p>
+            <span class="hidden text-left sm:block">
+                <span class="block text-sm font-bold text-slate-800">
+                    Administrador
+                </span>
+
+                <span class="block text-xs text-slate-400">
+                    Administrador
+                </span>
+            </span>
+
+            <span
+                class="hidden text-sm text-slate-400 sm:block"
+                aria-hidden="true">
+                ▾
+            </span>
+
+        </button>
+
+
+        {{-- Menú de usuario --}}
+        <div
+            id="user-menu"
+            class="absolute right-0 top-[calc(100%+10px)] z-50 hidden w-64 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_20px_50px_rgba(15,23,42,0.16)]">
+
+            <div class="border-b border-slate-100 px-4 py-4">
+
+                <p class="text-sm font-black text-slate-900">
+                    Administrador
+                </p>
+
+                <p class="mt-1 text-xs text-slate-400">
+                    Sesión activa
+                </p>
+
+            </div>
+
+
+            <div class="p-2">
+
+                <button
+                    type="button"
+                    id="open-logout-confirm"
+                    data-confirm-open="logout-confirm"
+                    data-confirm-action="{{ route('logout') }}"
+                    data-confirm-method="POST"
+                    data-confirm-title="Cerrar sesión"
+                    data-confirm-description="Se cerrará tu sesión actual en ABARROTESBASE."
+                    data-confirm-text="Cerrar sesión"
+                    data-confirm-variant="danger"
+                    class="flex w-full items-center rounded-xl px-3 py-3 text-left text-sm font-bold text-rose-600 transition hover:bg-rose-50 hover:text-rose-700">
+                    Cerrar sesión
+                </button>
+
+            </div>
+
         </div>
 
     </div>
 
+
+    <x-ui.confirm
+        id="logout-confirm"
+        size="sm"
+        title="Cerrar sesión"
+        description="Se cerrará tu sesión actual en ABARROTESBASE."
+        confirm-text="Cerrar sesión"
+        cancel-text="Cancelar"
+        variant="danger"
+        confirm-id="confirm-logout"
+        cancel-id="cancel-logout"
+        close-id="close-logout">
+        <p class="text-sm leading-6 text-slate-600">
+            ¿Deseas cerrar tu sesión?
+        </p>
+    </x-ui.confirm>
+
+
 </header>
 
 <script>
-document.addEventListener('DOMContentLoaded', () => {
+    document.addEventListener('DOMContentLoaded', () => {
 
-    const input = document.getElementById('global-search');
-    const results = document.getElementById('global-search-results');
+        const input = document.getElementById('global-search');
+        const results = document.getElementById('global-search-results');
 
-    if (!input || !results) {
-        return;
-    }
+        if (!input || !results) {
+            return;
+        }
 
-    let timer = null;
+        let timer = null;
 
-    const escapeHtml = (value) => {
-        const div = document.createElement('div');
-        div.textContent = value ?? '';
-        return div.innerHTML;
-    };
+        const escapeHtml = (value) => {
+            const div = document.createElement('div');
+            div.textContent = value ?? '';
+            return div.innerHTML;
+        };
 
-    const hideResults = () => {
-        results.classList.add('hidden');
-        results.innerHTML = '';
-    };
+        const hideResults = () => {
+            results.classList.add('hidden');
+            results.innerHTML = '';
+        };
 
-    const showLoading = () => {
-        results.classList.remove('hidden');
+        const showLoading = () => {
+            results.classList.remove('hidden');
 
-        results.innerHTML = `
+            results.innerHTML = `
             <div class="px-5 py-4 text-sm text-slate-500">
                 Buscando...
             </div>
         `;
-    };
+        };
 
-    const renderResults = (items) => {
+        const renderResults = (items) => {
 
-        if (!items.length) {
-            results.classList.remove('hidden');
+            if (!items.length) {
+                results.classList.remove('hidden');
 
-            results.innerHTML = `
+                results.innerHTML = `
                 <div class="px-5 py-6 text-center">
                     <p class="text-sm font-bold text-slate-700">
                         No encontramos resultados
@@ -158,24 +221,24 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>
             `;
 
-            return;
-        }
-
-        const groups = {};
-
-        items.forEach(item => {
-            if (!groups[item.group]) {
-                groups[item.group] = [];
+                return;
             }
 
-            groups[item.group].push(item);
-        });
+            const groups = {};
 
-        let html = '';
+            items.forEach(item => {
+                if (!groups[item.group]) {
+                    groups[item.group] = [];
+                }
 
-        Object.entries(groups).forEach(([group, groupItems]) => {
+                groups[item.group].push(item);
+            });
 
-            html += `
+            let html = '';
+
+            Object.entries(groups).forEach(([group, groupItems]) => {
+
+                html += `
                 <div class="border-b border-slate-100 last:border-b-0">
 
                     <div class="px-5 py-2.5 text-[10px] font-black uppercase tracking-[0.14em] text-slate-400">
@@ -183,9 +246,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     </div>
             `;
 
-            groupItems.forEach(item => {
+                groupItems.forEach(item => {
 
-                html += `
+                    html += `
                     <a
                         href="${item.url}"
                         class="flex items-center gap-3 px-5 py-3 transition hover:bg-slate-50"
@@ -213,124 +276,282 @@ document.addEventListener('DOMContentLoaded', () => {
 
                     </a>
                 `;
+                });
+
+                html += `</div>`;
             });
 
-            html += `</div>`;
-        });
-
-        results.innerHTML = html;
-        results.classList.remove('hidden');
-    };
-
-    const getTypeIcon = (type) => {
-
-        const icons = {
-            product: '◇',
-            sale: '≡',
-            supplier: '▱',
-            expense: '$',
-            purchase: '⊞',
-            customer: '♙',
+            results.innerHTML = html;
+            results.classList.remove('hidden');
         };
 
-        return icons[type] ?? '•';
-    };
+        const getTypeIcon = (type) => {
 
-    const search = async () => {
+            const icons = {
+                product: '◇',
+                sale: '≡',
+                supplier: '▱',
+                expense: '$',
+                purchase: '⊞',
+                customer: '♙',
+            };
 
-        const term = input.value.trim();
+            return icons[type] ?? '•';
+        };
 
-        if (term.length < 2) {
-            hideResults();
-            return;
-        }
+        const search = async () => {
 
-        showLoading();
+            const term = input.value.trim();
 
-        try {
-
-            const response = await fetch(
-                `{{ route('global.search') }}?q=${encodeURIComponent(term)}`,
-                {
-                    headers: {
-                        'Accept': 'application/json',
-                        'X-Requested-With': 'XMLHttpRequest',
-                    }
-                }
-            );
-
-            if (!response.ok) {
-                throw new Error('Error en búsqueda');
+            if (term.length < 2) {
+                hideResults();
+                return;
             }
 
-            const data = await response.json();
+            showLoading();
 
-            renderResults(data.results ?? []);
+            try {
 
-        } catch (error) {
+                const response = await fetch(
+                    `{{ route('global.search') }}?q=${encodeURIComponent(term)}`, {
+                        headers: {
+                            'Accept': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest',
+                        }
+                    }
+                );
 
-            results.classList.remove('hidden');
+                if (!response.ok) {
+                    throw new Error('Error en búsqueda');
+                }
 
-            results.innerHTML = `
+                const data = await response.json();
+
+                renderResults(data.results ?? []);
+
+            } catch (error) {
+
+                results.classList.remove('hidden');
+
+                results.innerHTML = `
                 <div class="px-5 py-5 text-sm text-rose-600">
                     No fue posible realizar la búsqueda.
                 </div>
             `;
 
-            console.error(error);
-        }
-    };
+                console.error(error);
+            }
+        };
 
-    input.addEventListener('input', () => {
+        input.addEventListener('input', () => {
 
-        clearTimeout(timer);
+            clearTimeout(timer);
 
-        timer = setTimeout(search, 250);
+            timer = setTimeout(search, 250);
+
+        });
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | "/" enfoca el buscador
+        |--------------------------------------------------------------------------
+        */
+
+        document.addEventListener('keydown', (event) => {
+
+            if (
+                event.key === '/' &&
+                document.activeElement !== input &&
+                !['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement?.tagName)
+            ) {
+                event.preventDefault();
+                input.focus();
+            }
+
+            if (event.key === 'Escape') {
+                hideResults();
+                input.blur();
+            }
+
+        });
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Cerrar al hacer clic fuera
+        |--------------------------------------------------------------------------
+        */
+
+        document.addEventListener('click', (event) => {
+
+            if (
+                !input.contains(event.target) &&
+                !results.contains(event.target)
+            ) {
+                hideResults();
+            }
+
+        });
 
     });
+</script>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+
+        /*
+        |--------------------------------------------------------------------------
+        | Menú de usuario
+        |--------------------------------------------------------------------------
+        */
+
+        const userMenuToggle = document.getElementById('user-menu-toggle');
+        const userMenu = document.getElementById('user-menu');
+
+        if (userMenuToggle && userMenu) {
+
+            userMenuToggle.addEventListener('click', (event) => {
+
+                event.stopPropagation();
+
+                const isOpen = !userMenu.classList.contains('hidden');
+
+                userMenu.classList.toggle('hidden', isOpen);
+
+                userMenuToggle.setAttribute(
+                    'aria-expanded',
+                    String(!isOpen)
+                );
+            });
 
 
-    /*
-    |--------------------------------------------------------------------------
-    | "/" enfoca el buscador
-    |--------------------------------------------------------------------------
-    */
+            document.addEventListener('click', (event) => {
 
-    document.addEventListener('keydown', (event) => {
+                if (
+                    !userMenu.contains(event.target) &&
+                    !userMenuToggle.contains(event.target)
+                ) {
+                    userMenu.classList.add('hidden');
 
-        if (
-            event.key === '/' &&
-            document.activeElement !== input &&
-            !['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement?.tagName)
-        ) {
-            event.preventDefault();
-            input.focus();
+                    userMenuToggle.setAttribute(
+                        'aria-expanded',
+                        'false'
+                    );
+                }
+
+            });
+
         }
 
-        if (event.key === 'Escape') {
-            hideResults();
-            input.blur();
+
+        /*
+        |--------------------------------------------------------------------------
+        | Confirmación de logout
+        |--------------------------------------------------------------------------
+        */
+
+        const logoutModal = document.getElementById('logout-confirm');
+        const openLogoutConfirm = document.getElementById('open-logout-confirm');
+        const confirmLogout = document.getElementById('confirm-logout');
+        const cancelLogout = document.getElementById('cancel-logout');
+        const closeLogout = document.getElementById('close-logout');
+        const logoutForm = document.getElementById('logout-form');
+
+
+        function openLogoutModal() {
+
+            if (!logoutModal) {
+                return;
+            }
+
+            logoutModal.classList.remove('hidden');
+            logoutModal.classList.add('flex');
+
+            logoutModal.setAttribute('aria-hidden', 'false');
+
+            document.body.classList.add('overflow-hidden');
         }
+
+
+        function closeLogoutModal() {
+
+            if (!logoutModal) {
+                return;
+            }
+
+            logoutModal.classList.add('hidden');
+            logoutModal.classList.remove('flex');
+
+            logoutModal.setAttribute('aria-hidden', 'true');
+
+            document.body.classList.remove('overflow-hidden');
+        }
+
+
+        openLogoutConfirm?.addEventListener('click', () => {
+
+            userMenu?.classList.add('hidden');
+
+            userMenuToggle?.setAttribute(
+                'aria-expanded',
+                'false'
+            );
+
+            openLogoutModal();
+        });
+
+
+        cancelLogout?.addEventListener(
+            'click',
+            closeLogoutModal
+        );
+
+
+        closeLogout?.addEventListener(
+            'click',
+            closeLogoutModal
+        );
+
+
+        confirmLogout?.addEventListener('click', () => {
+
+            if (!logoutForm) {
+                return;
+            }
+
+            confirmLogout.disabled = true;
+            confirmLogout.textContent = 'Cerrando sesión...';
+
+            logoutForm.requestSubmit();
+        });
+
+
+        logoutModal?.addEventListener('click', (event) => {
+
+            if (event.target === logoutModal) {
+                closeLogoutModal();
+            }
+
+        });
+
+
+        document.addEventListener('keydown', (event) => {
+
+            if (event.key === 'Escape') {
+
+                closeLogoutModal();
+
+                userMenu?.classList.add('hidden');
+
+                userMenuToggle?.setAttribute(
+                    'aria-expanded',
+                    'false'
+                );
+
+            }
+
+        });
 
     });
-
-
-    /*
-    |--------------------------------------------------------------------------
-    | Cerrar al hacer clic fuera
-    |--------------------------------------------------------------------------
-    */
-
-    document.addEventListener('click', (event) => {
-
-        if (
-            !input.contains(event.target) &&
-            !results.contains(event.target)
-        ) {
-            hideResults();
-        }
-
-    });
-
-});
 </script>

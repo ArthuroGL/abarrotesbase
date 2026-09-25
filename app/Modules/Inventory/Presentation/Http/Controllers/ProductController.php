@@ -21,10 +21,16 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
+use App\Modules\Identity\Application\Services\CurrentContext;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 final class ProductController extends Controller
 {
+
+    public function __construct(
+        private readonly CurrentContext $context,
+    ) {}
     public function index(Request $request): View
     {
         $search = $request->input('search');
@@ -134,16 +140,53 @@ final class ProductController extends Controller
             'sku' => ['nullable', 'string', 'max:80'],
             /* 'barcode' => ['required', 'string', 'max:80'], */
             'barcode' => ['required', 'string', 'max:80', 'unique:product_barcodes,barcode',],
-            'category_id' => ['nullable', 'uuid', 'exists:categories,id'],
-            'brand_id' => ['nullable', 'uuid', 'exists:brands,id'],
-            'unit_id' => ['required', 'uuid', 'exists:units,id'],
-            'tax_rate_id' => ['nullable', 'uuid', 'exists:tax_rates,id'],
+
+            'category_id' => [
+                'nullable',
+                'uuid',
+                Rule::exists('categories', 'id')
+                    ->where(
+                        fn($query) =>
+                        $query->where('organization_id', $this->context->organizationId())
+                    ),
+            ],
+
+            'brand_id' => [
+                'nullable',
+                'uuid',
+                Rule::exists('brands', 'id')
+                    ->where(
+                        fn($query) =>
+                        $query->where('organization_id', $this->context->organizationId())
+                    ),
+            ],
+
+            'unit_id' => [
+                'required',
+                'uuid',
+                Rule::exists('units', 'id')
+                    ->where(
+                        fn($query) =>
+                        $query->where('organization_id', $this->context->organizationId())
+                    ),
+            ],
+
+            'tax_rate_id' => [
+                'nullable',
+                'uuid',
+                Rule::exists('tax_rates', 'id')
+                    ->where(
+                        fn($query) =>
+                        $query->where('organization_id', $this->context->organizationId())
+                    ),
+            ],
+
             'price' => ['required', 'numeric', 'min:0'],
             'product_type' => ['required', 'string', 'in:simple,bulk'],
         ]);
 
         // Obtenemos la organización del contexto (tomamos la primera activa disponible)
-        $orgId = DB::table('organizations')->value('id');
+        $orgId = $this->context->organizationId();
         $priceListId = PriceList::query()->where('organization_id', $orgId)->value('id');
 
         DB::transaction(function () use ($validated, $orgId, $priceListId) {
@@ -235,10 +278,47 @@ final class ProductController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'sku' => ['nullable', 'string', 'max:80'],
             'barcode' => ['required', 'string', 'max:80'],
-            'category_id' => ['nullable', 'uuid', 'exists:categories,id'],
-            'brand_id' => ['nullable', 'uuid', 'exists:brands,id'],
-            'unit_id' => ['required', 'uuid', 'exists:units,id'],
-            'tax_rate_id' => ['nullable', 'uuid', 'exists:tax_rates,id'],
+
+            'category_id' => [
+                'nullable',
+                'uuid',
+                Rule::exists('categories', 'id')
+                    ->where(
+                        fn($query) =>
+                        $query->where('organization_id', $this->context->organizationId())
+                    ),
+            ],
+
+            'brand_id' => [
+                'nullable',
+                'uuid',
+                Rule::exists('brands', 'id')
+                    ->where(
+                        fn($query) =>
+                        $query->where('organization_id', $this->context->organizationId())
+                    ),
+            ],
+
+            'unit_id' => [
+                'required',
+                'uuid',
+                Rule::exists('units', 'id')
+                    ->where(
+                        fn($query) =>
+                        $query->where('organization_id', $this->context->organizationId())
+                    ),
+            ],
+
+            'tax_rate_id' => [
+                'nullable',
+                'uuid',
+                Rule::exists('tax_rates', 'id')
+                    ->where(
+                        fn($query) =>
+                        $query->where('organization_id', $this->context->organizationId())
+                    ),
+            ],
+
             'price' => ['required', 'numeric', 'min:0'],
             'product_type' => ['required', 'string', 'in:simple,bulk'],
             'is_active' => ['nullable', 'boolean'],
@@ -348,7 +428,7 @@ final class ProductController extends Controller
             ]);
         }
 
-        $orgId = DB::table('organizations')->value('id');
+        $orgId = $this->context->organizationId();
 
         $items = StockItem::query()
             ->where('organization_id', $orgId)

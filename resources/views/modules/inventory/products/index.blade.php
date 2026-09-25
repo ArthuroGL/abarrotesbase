@@ -6,6 +6,7 @@
         {{-- HEADER --}}
         {{-- ========================================================= --}}
 
+
         <x-layout.page-header
             eyebrow="Inventario"
             title="Productos"

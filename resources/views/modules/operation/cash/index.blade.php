@@ -15,14 +15,14 @@
         title="Caja"
         description="Administra la sesión de caja, movimientos, arqueo y cierre de operación.">
         <x-slot:actions>
-
+            @permission('cash.history')
             <x-ui.button
                 variant="secondary"
                 type="button"
                 onclick="window.location.href='{{ route('cash.history') }}'">
                 Historial
             </x-ui.button>
-
+            @endpermission
 
             @if ($activeSession)
 
@@ -146,14 +146,14 @@
             </p>
 
             <div class="mt-6">
-
+@permission('cash.open')
                 <x-ui.button
                     variant="primary"
                     type="button"
                     id="open-cash-modal">
                     Abrir caja
                 </x-ui.button>
-
+@endpermission
             </div>
 
         </div>
@@ -817,6 +817,7 @@
         title="Abrir sesión de caja"
         description="Define la sucursal, caja y fondo inicial de la operación."
         close-id="close-cash-modal">
+
 
         <form
             id="open-cash-form"

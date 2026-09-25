@@ -1,0 +1,928 @@
+<x-layouts.app title="Editar usuario | ABARROTESBASE">
+
+
+    <div class="space-y-6">
+
+
+        {{-- ========================================================= --}}
+
+        {{-- HEADER --}}
+
+        {{-- ========================================================= --}}
+
+
+        <x-layout.page-header
+
+            eyebrow="Administración · Usuarios"
+
+            title="Editar usuario"
+
+            description="Actualiza los datos, rol, sucursal y estado de la cuenta."
+
+        >
+
+            <x-slot:actions>
+
+
+                <a
+
+                    href="{{ route('users.index') }}"
+
+                    class="inline-flex min-h-11 items-center justify-center rounded-xl border border-slate-200 bg-white px-5 text-sm font-bold text-slate-700 transition hover:bg-slate-50"
+
+                >
+
+                    Volver a usuarios
+
+                </a>
+
+
+            </x-slot:actions>
+
+        </x-layout.page-header>
+
+
+        {{-- ========================================================= --}}
+
+        {{-- ERRORES --}}
+
+        {{-- ========================================================= --}}
+
+
+        @if ($errors->any())
+
+
+            <div class="rounded-2xl border border-rose-200 bg-rose-50 px-5 py-4">
+
+
+                <p class="text-sm font-black text-rose-900">
+
+                    Revisa la información capturada.
+
+                </p>
+
+
+                <ul class="mt-2 list-disc space-y-1 pl-5 text-sm text-rose-700">
+
+
+                    @foreach ($errors->all() as $error)
+
+                        <li>{{ $error }}</li>
+
+                    @endforeach
+
+
+                </ul>
+
+
+            </div>
+
+
+        @endif
+
+
+        {{-- ========================================================= --}}
+
+        {{-- FORMULARIO --}}
+
+        {{-- ========================================================= --}}
+
+
+        <form
+
+            method="POST"
+
+            action="{{ route('users.update', $user->id) }}"
+
+            class="space-y-6"
+
+        >
+
+
+            @csrf
+
+            @method('PUT')
+
+
+            {{-- ===================================================== --}}
+
+            {{-- INFORMACIÓN --}}
+
+            {{-- ===================================================== --}}
+
+
+            <x-ui.card>
+
+
+                <div class="border-b border-slate-200 pb-5">
+
+
+                    <h2 class="text-base font-black text-slate-900">
+
+                        Información del usuario
+
+                    </h2>
+
+
+                    <p class="mt-1 text-sm text-slate-500">
+
+                        Actualiza los datos principales de la cuenta.
+
+                    </p>
+
+
+                </div>
+
+
+                <div class="mt-6 grid gap-5 md:grid-cols-2">
+
+
+                    {{-- Nombre --}}
+
+
+                    <div class="md:col-span-2">
+
+
+                        <label
+
+                            for="name"
+
+                            class="mb-2 block text-sm font-bold text-slate-800"
+
+                        >
+
+                            Nombre completo
+
+                        </label>
+
+
+                        <x-ui.input
+
+                            id="name"
+
+                            name="name"
+
+                            type="text"
+
+                            value="{{ old('name', $user->name) }}"
+
+                            autocomplete="name"
+
+                            required
+
+                        />
+
+
+                        @error('name')
+
+                            <p class="mt-1.5 text-sm font-semibold text-rose-600">
+
+                                {{ $message }}
+
+                            </p>
+
+                        @enderror
+
+
+                    </div>
+
+
+                    {{-- Correo --}}
+
+
+                    <div>
+
+
+                        <label
+
+                            for="email"
+
+                            class="mb-2 block text-sm font-bold text-slate-800"
+
+                        >
+
+                            Correo electrónico
+
+                        </label>
+
+
+                        <x-ui.input
+
+                            id="email"
+
+                            name="email"
+
+                            type="email"
+
+                            value="{{ old('email', $user->email) }}"
+
+                            autocomplete="email"
+
+                            required
+
+                        />
+
+
+                        @error('email')
+
+                            <p class="mt-1.5 text-sm font-semibold text-rose-600">
+
+                                {{ $message }}
+
+                            </p>
+
+                        @enderror
+
+
+                    </div>
+
+
+                    {{-- Estado --}}
+
+
+                    <div>
+
+
+                        <label
+
+                            for="is_active"
+
+                            class="mb-2 block text-sm font-bold text-slate-800"
+
+                        >
+
+                            Estado
+
+                        </label>
+
+
+                        <select
+
+                            id="is_active"
+
+                            name="is_active"
+
+                            required
+
+                            class="block min-h-12 w-full rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-800 shadow-sm outline-none transition focus:border-slate-400 focus:ring-2 focus:ring-slate-200"
+
+                            @disabled($user->id === auth()->id())
+
+                        >
+
+
+                            <option
+
+                                value="1"
+
+                                @selected((string) old('is_active', $user->is_active ? '1' : '0') === '1')
+
+                            >
+
+                                Activo
+
+                            </option>
+
+
+                            <option
+
+                                value="0"
+
+                                @selected((string) old('is_active', $user->is_active ? '1' : '0') === '0')
+
+                            >
+
+                                Inactivo
+
+                            </option>
+
+
+                        </select>
+
+
+                        @if ($user->id === auth()->id())
+
+
+                            <input
+
+                                type="hidden"
+
+                                name="is_active"
+
+                                value="1"
+
+                            >
+
+
+                            <p class="mt-1.5 text-xs font-semibold text-slate-500">
+
+                                No puedes desactivar tu propia cuenta.
+
+                            </p>
+
+
+                        @endif
+
+
+                        @error('is_active')
+
+                            <p class="mt-1.5 text-sm font-semibold text-rose-600">
+
+                                {{ $message }}
+
+                            </p>
+
+                        @enderror
+
+
+                    </div>
+
+
+                </div>
+
+
+            </x-ui.card>
+
+
+            {{-- ===================================================== --}}
+
+            {{-- CONTRASEÑA --}}
+
+            {{-- ===================================================== --}}
+
+
+            <x-ui.card>
+
+
+                <div class="border-b border-slate-200 pb-5">
+
+
+                    <h2 class="text-base font-black text-slate-900">
+
+                        Cambiar contraseña
+
+                    </h2>
+
+
+                    <p class="mt-1 text-sm text-slate-500">
+
+                        Déjala vacía si no deseas modificar la contraseña actual.
+
+                    </p>
+
+
+                </div>
+
+
+                <div class="mt-6 grid gap-5 md:grid-cols-2">
+
+
+                    <div>
+
+
+                        <label
+
+                            for="password"
+
+                            class="mb-2 block text-sm font-bold text-slate-800"
+
+                        >
+
+                            Nueva contraseña
+
+                        </label>
+
+
+                        <x-ui.input
+
+                            id="password"
+
+                            name="password"
+
+                            type="password"
+
+                            placeholder="Mínimo 8 caracteres"
+
+                            autocomplete="new-password"
+
+                        />
+
+
+                        @error('password')
+
+                            <p class="mt-1.5 text-sm font-semibold text-rose-600">
+
+                                {{ $message }}
+
+                            </p>
+
+                        @enderror
+
+
+                    </div>
+
+
+                    <div>
+
+
+                        <label
+
+                            for="password_confirmation"
+
+                            class="mb-2 block text-sm font-bold text-slate-800"
+
+                        >
+
+                            Confirmar nueva contraseña
+
+                        </label>
+
+
+                        <x-ui.input
+
+                            id="password_confirmation"
+
+                            name="password_confirmation"
+
+                            type="password"
+
+                            placeholder="Repite la nueva contraseña"
+
+                            autocomplete="new-password"
+
+                        />
+
+
+                    </div>
+
+
+                </div>
+
+
+            </x-ui.card>
+
+
+            {{-- ===================================================== --}}
+
+            {{-- ACCESO --}}
+
+            {{-- ===================================================== --}}
+
+
+            <x-ui.card>
+
+
+                <div class="border-b border-slate-200 pb-5">
+
+
+                    <h2 class="text-base font-black text-slate-900">
+
+                        Acceso y operación
+
+                    </h2>
+
+
+                    <p class="mt-1 text-sm text-slate-500">
+
+                        Modifica el rol y la sucursal asignados.
+
+                    </p>
+
+
+                </div>
+
+
+                <div class="mt-6 grid gap-5 md:grid-cols-2">
+
+
+                    {{-- Rol --}}
+
+
+                    <div>
+
+
+                        <label
+
+                            for="role_id"
+
+                            class="mb-2 block text-sm font-bold text-slate-800"
+
+                        >
+
+                            Rol
+
+                        </label>
+
+
+                        <select
+
+                            id="role_id"
+
+                            name="role_id"
+
+                            required
+
+                            class="block min-h-12 w-full rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-800 shadow-sm outline-none transition focus:border-slate-400 focus:ring-2 focus:ring-slate-200"
+
+                        >
+
+
+                            <option value="">
+
+                                Selecciona un rol
+
+                            </option>
+
+
+                            @foreach ($roles as $role)
+
+
+                                <option
+
+                                    value="{{ $role->id }}"
+
+                                    @selected(old('role_id', $currentRole) === $role->id)
+
+                                >
+
+                                    {{ $role->name }}
+
+                                </option>
+
+
+                            @endforeach
+
+
+                        </select>
+
+
+                        @error('role_id')
+
+                            <p class="mt-1.5 text-sm font-semibold text-rose-600">
+
+                                {{ $message }}
+
+                            </p>
+
+                        @enderror
+
+
+                    </div>
+
+
+                    {{-- Sucursal --}}
+
+
+                    <div>
+
+
+                        <label
+
+                            for="branch_id"
+
+                            class="mb-2 block text-sm font-bold text-slate-800"
+
+                        >
+
+                            Sucursal
+
+                        </label>
+
+
+                        <select
+
+                            id="branch_id"
+
+                            name="branch_id"
+
+                            required
+
+                            class="block min-h-12 w-full rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-800 shadow-sm outline-none transition focus:border-slate-400 focus:ring-2 focus:ring-slate-200"
+
+                        >
+
+
+                            <option value="">
+
+                                Selecciona una sucursal
+
+                            </option>
+
+
+                            @foreach ($branches as $branch)
+
+
+                                <option
+
+                                    value="{{ $branch->id }}"
+
+                                    @selected(old('branch_id', $currentBranch) === $branch->id)
+
+                                >
+
+                                    {{ $branch->name }}
+
+                                    @if ($branch->code)
+
+                                        · {{ $branch->code }}
+
+                                    @endif
+
+                                </option>
+
+
+                            @endforeach
+
+
+                        </select>
+
+
+                        @error('branch_id')
+
+                            <p class="mt-1.5 text-sm font-semibold text-rose-600">
+
+                                {{ $message }}
+
+                            </p>
+
+                        @enderror
+
+
+                    </div>
+
+
+                </div>
+
+
+                <div class="mt-6 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
+
+
+                    <p class="text-sm font-black text-slate-800">
+
+                        Los permisos dependen del rol
+
+                    </p>
+
+
+                    <p class="mt-1 text-sm leading-6 text-slate-600">
+
+                        Al cambiar el rol, los permisos efectivos del usuario
+
+                        cambiarán automáticamente.
+
+                    </p>
+
+
+                </div>
+
+
+            </x-ui.card>
+
+
+            {{-- ===================================================== --}}
+
+            {{-- ACCIONES --}}
+
+            {{-- ===================================================== --}}
+
+
+            <div class="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+
+
+                <a
+
+                    href="{{ route('users.index') }}"
+
+                    class="inline-flex min-h-12 items-center justify-center rounded-xl border border-slate-200 bg-white px-6 text-sm font-bold text-slate-700 transition hover:bg-slate-50"
+
+                >
+
+                    Cancelar
+
+                </a>
+
+
+                <x-ui.button
+
+                    type="submit"
+
+                    variant="primary"
+
+                >
+
+                    Guardar cambios
+
+                </x-ui.button>
+
+
+            </div>
+
+
+        </form>
+
+
+        {{-- ========================================================= --}}
+
+        {{-- ZONA DE DESACTIVACIÓN --}}
+
+        {{-- ========================================================= --}}
+
+
+        @if ($user->id !== auth()->id() && $user->is_active)
+
+
+            <x-ui.card>
+
+
+                <div class="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+
+
+                    <div>
+
+
+                        <h2 class="text-base font-black text-slate-900">
+
+                            Desactivar cuenta
+
+                        </h2>
+
+
+                        <p class="mt-1 max-w-2xl text-sm leading-6 text-slate-500">
+
+                            El usuario dejará de poder iniciar sesión, pero su
+
+                            historial permanecerá disponible para conservar la
+
+                            trazabilidad de las operaciones realizadas.
+
+                        </p>
+
+
+                    </div>
+
+
+                    <form
+                        id="deactivate-user-form"
+                        method="POST"
+                        action="{{ route('users.destroy', $user->id) }}"
+                    >
+
+                        @csrf
+
+                        @method('DELETE')
+
+
+                        <x-ui.button
+                            id="open-deactivate-user-confirm"
+                            type="button"
+                            variant="danger"
+                        >
+                            Desactivar cuenta
+                        </x-ui.button>
+
+
+                    </form>
+
+
+                </div>
+
+
+            </x-ui.card>
+
+
+        @endif
+
+
+        {{-- ========================================================= --}}
+        {{-- CONFIRMACIÓN DE DESACTIVACIÓN --}}
+        {{-- ========================================================= --}}
+
+        <x-ui.confirm
+            id="deactivate-user-confirm"
+            size="sm"
+            title="Desactivar cuenta"
+            description="El usuario dejará de poder iniciar sesión, pero su historial permanecerá disponible."
+            variant="danger"
+            confirm-text="Desactivar cuenta"
+            cancel-text="Cancelar"
+            confirm-id="confirm-deactivate-user"
+            cancel-id="cancel-deactivate-user"
+            close-id="close-deactivate-user"
+        >
+            <p class="text-sm leading-6 text-slate-600">
+                ¿Deseas desactivar al usuario
+                <span class="font-black text-slate-900">
+                    {{ $user->name }}
+                </span>?
+            </p>
+        </x-ui.confirm>
+
+
+        {{-- ========================================================= --}}
+        {{-- JAVASCRIPT DE CONFIRMACIÓN --}}
+        {{-- ========================================================= --}}
+
+        <script>
+            document.addEventListener('DOMContentLoaded', () => {
+
+                const modal = document.getElementById(
+                    'deactivate-user-confirm'
+                );
+
+                const openButton = document.getElementById(
+                    'open-deactivate-user-confirm'
+                );
+
+                const confirmButton = document.getElementById(
+                    'confirm-deactivate-user'
+                );
+
+                const cancelButton = document.getElementById(
+                    'cancel-deactivate-user'
+                );
+
+                const closeButton = document.getElementById(
+                    'close-deactivate-user'
+                );
+
+                const form = document.getElementById(
+                    'deactivate-user-form'
+                );
+
+
+                if (
+                    !modal ||
+                    !openButton ||
+                    !confirmButton ||
+                    !cancelButton ||
+                    !closeButton ||
+                    !form
+                ) {
+                    return;
+                }
+
+
+                function openConfirm() {
+
+                    modal.classList.remove('hidden');
+                    modal.classList.add('flex');
+
+                    modal.setAttribute('aria-hidden', 'false');
+
+                    document.body.classList.add('overflow-hidden');
+                }
+
+
+                function closeConfirm() {
+
+                    modal.classList.add('hidden');
+                    modal.classList.remove('flex');
+
+                    modal.setAttribute('aria-hidden', 'true');
+
+                    document.body.classList.remove('overflow-hidden');
+                }
+
+
+                openButton.addEventListener('click', () => {
+                    openConfirm();
+                });
+
+
+                cancelButton.addEventListener('click', () => {
+                    closeConfirm();
+                });
+
+
+                closeButton.addEventListener('click', () => {
+                    closeConfirm();
+                });
+
+
+                confirmButton.addEventListener('click', () => {
+
+                    confirmButton.disabled = true;
+
+                    form.requestSubmit();
+                });
+
+
+                document.addEventListener('keydown', (event) => {
+
+                    if (
+                        event.key === 'Escape' &&
+                        !modal.classList.contains('hidden')
+                    ) {
+                        closeConfirm();
+                    }
+
+                });
+
+            });
+        </script>
+
+
+    </div>
+
+
+</x-layouts.app>

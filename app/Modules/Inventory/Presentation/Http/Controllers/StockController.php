@@ -8,25 +8,27 @@ use App\Http\Controllers\Controller;
 use App\Models\Category;
 use App\Models\InventoryMovement;
 use App\Models\StockItem;
+use App\Modules\Identity\Application\Services\CurrentContext;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 final class StockController extends Controller
 {
+
+    public function __construct(
+        private readonly CurrentContext $context,
+    ) {}
     public function index(Request $request): View
     {
         $search = trim((string) $request->input('search', ''));
         $categoryId = $request->input('category_id');
         $stockStatus = $request->input('status');
 
-        $orgId = DB::table('organizations')->value('id');
-
-        $branchId = session('current_branch_id')
-            ?? DB::table('branches')
-            ->where('organization_id', $orgId)
-            ->value('id');
+        $orgId = $this->context->organizationId();
+        $branchId = $this->context->branchId();
 
         $query = StockItem::query()
             ->where('stock_items.organization_id', $orgId)
@@ -202,16 +204,25 @@ final class StockController extends Controller
     public function adjust(Request $request): RedirectResponse
     {
         $validated = $request->validate([
-            'stock_item_id' => ['required', 'uuid', 'exists:stock_items,id'],
+            'stock_item_id' => [
+                'required',
+                'uuid',
+                Rule::exists('stock_items', 'id')
+                    ->where(
+                        fn($query) =>
+                        $query
+                            ->where('organization_id', $this->context->organizationId())
+                            ->where('is_active', true)
+                    ),
+            ],
             'movement_type' => ['required', 'string', 'in:initial_load,adjustment_in,adjustment_out'],
             'quantity' => ['required', 'numeric', 'gt:0'],
             'unit_cost' => ['nullable', 'numeric', 'min:0'],
             'notes' => ['nullable', 'string', 'max:500'],
         ]);
 
-        $orgId = DB::table('organizations')->value('id');
-        $branchId = session('current_branch_id')
-            ?? DB::table('branches')->where('organization_id', $orgId)->value('id');
+        $orgId = $this->context->organizationId();
+        $branchId = $this->context->branchId();
 
         $stockItem = StockItem::query()
             ->where('organization_id', $orgId)
