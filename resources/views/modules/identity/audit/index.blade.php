@@ -9,37 +9,70 @@
         <x-layout.page-header
             eyebrow="Administración"
             title="Auditoría"
-            description="Consulta el historial de acciones administrativas realizadas en el sistema."
-        >
+            description="Consulta el historial de acciones administrativas realizadas en el sistema.">
         </x-layout.page-header>
 
-
         {{-- ========================================================= --}}
-        {{-- FILTRO --}}
+        {{-- FILTROS --}}
         {{-- ========================================================= --}}
 
-        <x-ui.card>
+        <x-ui.card padding="p-0" class="relative z-30 overflow-visible">
+
+            <div class="border-b border-slate-200 bg-slate-50/70 px-5 py-4 sm:px-6">
+
+                <div class="flex flex-col gap-1">
+
+                    <h2 class="text-base font-black text-slate-900">
+                        Buscar en auditoría
+                    </h2>
+
+                    <p class="text-sm text-slate-500">
+                        Busca acciones, usuarios, registros o direcciones IP.
+                    </p>
+
+                </div>
+
+            </div>
+
 
             <form
                 method="GET"
                 action="{{ route('audit.index') }}"
-                class="grid gap-4 sm:grid-cols-2 lg:grid-cols-[1fr_auto]"
-            >
+                class="grid gap-4 p-5 sm:p-6 lg:grid-cols-12">
 
-                <div>
+                {{-- BUSCADOR --}}
+                <div class="lg:col-span-7">
+
+                    <label
+                        for="audit-search"
+                        class="mb-2 block text-sm font-bold text-slate-800">
+                        Buscar
+                    </label>
+
+                    <x-ui.input
+                        id="audit-search"
+                        name="search"
+                        type="search"
+                        :value="$search"
+                        placeholder="Usuario, correo, acción, registro o IP..."
+                        autocomplete="off" />
+
+                </div>
+
+
+                {{-- ACCIÓN --}}
+                <div class="lg:col-span-3">
 
                     <label
                         for="action"
-                        class="mb-2 block text-sm font-bold text-slate-800"
-                    >
+                        class="mb-2 block text-sm font-bold text-slate-800">
                         Tipo de acción
                     </label>
 
                     <select
                         id="action"
                         name="action"
-                        class="block min-h-12 w-full rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-800 outline-none transition focus:border-slate-400 focus:ring-2 focus:ring-slate-200"
-                    >
+                        class="app-input">
 
                         <option value="">
                             Todas las acciones
@@ -47,12 +80,11 @@
 
                         @foreach ($actions as $availableAction)
 
-                            <option
-                                value="{{ $availableAction }}"
-                                @selected($action === $availableAction)
-                            >
-                                {{ $availableAction }}
-                            </option>
+                        <option
+                            value="{{ $availableAction }}"
+                            @selected($action===$availableAction)>
+                            {{ $availableAction }}
+                        </option>
 
                         @endforeach
 
@@ -61,15 +93,24 @@
                 </div>
 
 
-                <div class="flex items-end">
+                {{-- BOTONES --}}
+                <div class="flex items-end gap-3 lg:col-span-2">
 
-                    <x-ui.button
+                    <button
                         type="submit"
-                        variant="secondary"
-                        class="w-full sm:w-auto"
-                    >
-                        Filtrar
-                    </x-ui.button>
+                        class="inline-flex min-h-11 flex-1 items-center justify-center rounded-xl bg-slate-950 px-5 text-sm font-black text-white transition hover:bg-slate-800">
+                        Buscar
+                    </button>
+
+                    @if ($search || $action)
+
+                    <a
+                        href="{{ route('audit.index') }}"
+                        class="inline-flex min-h-11 items-center justify-center rounded-xl border border-slate-300 bg-white px-4 text-sm font-bold text-slate-700 transition hover:bg-slate-50">
+                        Limpiar
+                    </a>
+
+                    @endif
 
                 </div>
 
@@ -84,250 +125,245 @@
 
         <x-ui.card padding="p-0" class="overflow-hidden">
 
-            <div class="hidden overflow-x-auto md:block">
+            {{-- CABECERA --}}
 
-                <table class="min-w-full divide-y divide-slate-200">
+            <div class="flex flex-col gap-3 border-b border-slate-200 bg-white px-5 py-5 sm:flex-row sm:items-center sm:justify-between sm:px-6">
 
-                    <thead class="bg-slate-50">
+                <div>
+
+                    <p class="text-xs font-black uppercase tracking-[0.14em] text-emerald-700">
+                        Historial
+                    </p>
+
+                    <h2 class="mt-1 text-lg font-black text-slate-900">
+                        Acciones registradas
+                    </h2>
+
+                    <p class="mt-1 text-sm text-slate-500">
+                        Consulta las operaciones realizadas dentro del sistema.
+                    </p>
+
+                </div>
+
+
+                <div class="shrink-0">
+
+                    <span class="inline-flex min-h-9 items-center rounded-full bg-slate-100 px-3 text-sm font-bold text-slate-600">
+                        {{ $logs->total() }}
+                        {{ $logs->total() === 1 ? 'registro' : 'registros' }}
+                    </span>
+
+                </div>
+
+            </div>
+
+
+            {{-- TABLA --}}
+
+            <div class="min-w-0 px-3 py-3 sm:px-5">
+
+                <x-ui.table
+                    caption="Historial de auditoría"
+                    maxHeight="clamp(320px, calc(100vh - 500px), 620px)">
+
+                    <x-slot:head>
 
                         <tr>
 
-                            <th class="px-6 py-4 text-left text-xs font-black uppercase tracking-wider text-slate-500">
+                            <th
+                                scope="col"
+                                class="whitespace-nowrap px-4 py-3.5 text-left text-xs font-black uppercase tracking-wider text-slate-500 sm:px-5">
                                 Fecha
                             </th>
 
-                            <th class="px-6 py-4 text-left text-xs font-black uppercase tracking-wider text-slate-500">
+                            <th
+                                scope="col"
+                                class="whitespace-nowrap px-4 py-3.5 text-left text-xs font-black uppercase tracking-wider text-slate-500 sm:px-5">
                                 Usuario
                             </th>
 
-                            <th class="px-6 py-4 text-left text-xs font-black uppercase tracking-wider text-slate-500">
+                            <th
+                                scope="col"
+                                class="whitespace-nowrap px-4 py-3.5 text-left text-xs font-black uppercase tracking-wider text-slate-500 sm:px-5">
                                 Acción
                             </th>
 
-                            <th class="px-6 py-4 text-left text-xs font-black uppercase tracking-wider text-slate-500">
+                            <th
+                                scope="col"
+                                class="whitespace-nowrap px-4 py-3.5 text-left text-xs font-black uppercase tracking-wider text-slate-500 sm:px-5">
                                 Registro
                             </th>
 
-                            <th class="px-6 py-4 text-left text-xs font-black uppercase tracking-wider text-slate-500">
+                            <th
+                                scope="col"
+                                class="whitespace-nowrap px-4 py-3.5 text-left text-xs font-black uppercase tracking-wider text-slate-500 sm:px-5">
                                 IP
                             </th>
 
-                            <th class="px-6 py-4 text-right text-xs font-black uppercase tracking-wider text-slate-500">
+                            <th
+                                scope="col"
+                                class="whitespace-nowrap px-4 py-3.5 text-right text-xs font-black uppercase tracking-wider text-slate-500 sm:px-5">
                                 Detalle
                             </th>
 
                         </tr>
 
-                    </thead>
+                    </x-slot:head>
 
 
-                    <tbody class="divide-y divide-slate-100 bg-white">
+                    @forelse ($logs as $log)
 
-                        @forelse ($logs as $log)
+                    <tr class="group transition hover:bg-slate-50/70">
 
-                            <tr class="hover:bg-slate-50">
+                        {{-- FECHA --}}
 
-                                <td class="whitespace-nowrap px-6 py-4 text-sm text-slate-600">
+                        <td class="whitespace-nowrap px-5 py-4">
 
-                                    {{ \Carbon\Carbon::parse($log->occurred_at)->format('d/m/Y H:i:s') }}
+                            <p class="text-sm font-bold text-slate-700">
+                                {{ \Carbon\Carbon::parse($log->occurred_at)->format('d/m/Y') }}
+                            </p>
 
-                                </td>
+                            <p class="mt-0.5 text-xs font-semibold text-slate-400">
+                                {{ \Carbon\Carbon::parse($log->occurred_at)->format('H:i:s') }}
+                            </p>
 
-
-                                <td class="px-6 py-4">
-
-                                    <p class="font-black text-slate-900">
-                                        {{ $log->actor_name ?? 'Sistema' }}
-                                    </p>
-
-                                    @if ($log->actor_email)
-
-                                        <p class="mt-0.5 text-xs text-slate-500">
-                                            {{ $log->actor_email }}
-                                        </p>
-
-                                    @endif
-
-                                </td>
+                        </td>
 
 
-                                <td class="px-6 py-4">
+                        {{-- USUARIO --}}
 
-                                    <span class="inline-flex rounded-full bg-slate-100 px-3 py-1 text-xs font-black text-slate-700">
-                                        {{ $log->action }}
-                                    </span>
+                        <td class="px-5 py-4">
 
-                                </td>
+                            <div class="min-w-0">
 
-
-                                <td class="px-6 py-4">
-
-                                    <p class="text-sm font-bold text-slate-700">
-                                        {{ $log->auditable_type ?? '—' }}
-                                    </p>
-
-                                    @if ($log->auditable_id)
-
-                                        <p class="mt-0.5 max-w-48 truncate font-mono text-xs text-slate-400">
-                                            {{ $log->auditable_id }}
-                                        </p>
-
-                                    @endif
-
-                                </td>
-
-
-                                <td class="whitespace-nowrap px-6 py-4 text-sm text-slate-500">
-                                    {{ $log->ip_address ?? '—' }}
-                                </td>
-
-
-                                <td class="px-6 py-4 text-right">
-
-                                    <button
-                                        type="button"
-                                        class="inline-flex min-h-10 items-center justify-center rounded-xl border border-slate-200 bg-white px-4 text-sm font-bold text-slate-700 transition hover:bg-slate-50"
-                                        data-audit-open
-                                        data-before='@json($log->before ? json_decode($log->before, true) : null)'
-                                        data-after='@json($log->after ? json_decode($log->after, true) : null)'
-                                        data-action="{{ $log->action }}"
-                                    >
-                                        Ver detalle
-                                    </button>
-
-                                </td>
-
-                            </tr>
-
-                        @empty
-
-                            <tr>
-
-                                <td
-                                    colspan="6"
-                                    class="px-6 py-14 text-center"
-                                >
-
-                                    <p class="font-black text-slate-900">
-                                        No hay registros de auditoría
-                                    </p>
-
-                                    <p class="mt-1 text-sm text-slate-500">
-                                        Las acciones registradas aparecerán aquí.
-                                    </p>
-
-                                </td>
-
-                            </tr>
-
-                        @endforelse
-
-                    </tbody>
-
-                </table>
-
-            </div>
-
-
-            {{-- ===================================================== --}}
-            {{-- MOBILE --}}
-            {{-- ===================================================== --}}
-
-            <div class="divide-y divide-slate-200 md:hidden">
-
-                @forelse ($logs as $log)
-
-                    <div class="space-y-4 p-5">
-
-                        <div class="flex items-start justify-between gap-4">
-
-                            <div>
-
-                                <p class="font-black text-slate-900">
-                                    {{ $log->action }}
-                                </p>
-
-                                <p class="mt-1 text-xs text-slate-500">
-                                    {{ \Carbon\Carbon::parse($log->occurred_at)->format('d/m/Y H:i:s') }}
-                                </p>
-
-                            </div>
-
-                            <span class="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-bold text-slate-600">
-                                {{ $log->auditable_type ?? 'Sistema' }}
-                            </span>
-
-                        </div>
-
-
-                        <div class="grid gap-3 sm:grid-cols-2">
-
-                            <div>
-
-                                <p class="text-xs font-black uppercase tracking-wider text-slate-400">
-                                    Usuario
-                                </p>
-
-                                <p class="mt-1 text-sm font-bold text-slate-700">
+                                <p class="truncate text-sm font-black text-slate-900">
                                     {{ $log->actor_name ?? 'Sistema' }}
                                 </p>
 
-                            </div>
+                                @if ($log->actor_email)
 
-
-                            <div>
-
-                                <p class="text-xs font-black uppercase tracking-wider text-slate-400">
-                                    IP
+                                <p class="mt-1 max-w-48 truncate text-xs font-semibold text-slate-400">
+                                    {{ $log->actor_email }}
                                 </p>
 
-                                <p class="mt-1 text-sm text-slate-600">
-                                    {{ $log->ip_address ?? '—' }}
-                                </p>
+                                @endif
 
                             </div>
 
-                        </div>
+                        </td>
 
 
-                        <button
-                            type="button"
-                            class="inline-flex min-h-11 w-full items-center justify-center rounded-xl border border-slate-200 bg-white px-4 text-sm font-bold text-slate-700"
-                            data-audit-open
-                            data-before='@json($log->before ? json_decode($log->before, true) : null)'
-                            data-after='@json($log->after ? json_decode($log->after, true) : null)'
-                            data-action="{{ $log->action }}"
-                        >
-                            Ver detalle
-                        </button>
+                        {{-- ACCIÓN --}}
 
-                    </div>
+                        <td class="px-5 py-4">
 
-                @empty
+                            <span class="inline-flex max-w-48 truncate rounded-full bg-slate-100 px-3 py-1.5 text-xs font-black text-slate-700">
+                                {{ $log->action }}
+                            </span>
 
-                    <div class="px-5 py-14 text-center">
+                        </td>
 
-                        <p class="font-black text-slate-900">
-                            No hay registros de auditoría
-                        </p>
 
-                    </div>
+                        {{-- REGISTRO --}}
 
-                @endforelse
+                        <td class="px-5 py-4">
+
+                            <p class="text-sm font-bold text-slate-700">
+                                {{ $log->auditable_type ?? '—' }}
+                            </p>
+
+                            @if ($log->auditable_id)
+
+                            <p class="mt-1 max-w-48 truncate font-mono text-xs font-semibold text-slate-400">
+                                {{ $log->auditable_id }}
+                            </p>
+
+                            @endif
+
+                        </td>
+
+
+                        {{-- IP --}}
+
+                        <td class="whitespace-nowrap px-5 py-4">
+
+                            <span class="font-mono text-xs font-semibold text-slate-500">
+                                {{ $log->ip_address ?? '—' }}
+                            </span>
+
+                        </td>
+
+
+                        {{-- DETALLE --}}
+
+                        <td class="px-5 py-4 text-right">
+
+                            <button
+                                type="button"
+                                class="inline-flex min-h-10 items-center justify-center rounded-xl border border-slate-200 bg-white px-4 text-sm font-bold text-slate-700 transition hover:bg-slate-50"
+                                data-audit-open
+                                data-before='@json($log->before ? json_decode($log->before, true) : null)'
+                                data-after='@json($log->after ? json_decode($log->after, true) : null)'
+                                data-action="{{ $log->action }}">
+                                Ver detalle
+                            </button>
+
+                        </td>
+
+                    </tr>
+
+                    @empty
+
+                    <tr>
+
+                        <td
+                            colspan="6"
+                            class="px-6 py-16 text-center">
+
+                            <div class="mx-auto max-w-md">
+
+                                <div class="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-slate-100 text-xl font-black text-slate-400">
+                                    —
+                                </div>
+
+                                <h3 class="mt-4 text-base font-black text-slate-900">
+                                    No hay registros de auditoría
+                                </h3>
+
+                                <p class="mt-1 text-sm leading-6 text-slate-500">
+                                    No encontramos acciones que coincidan con los filtros actuales.
+                                </p>
+
+                                @if ($search || $action)
+
+                                <a
+                                    href="{{ route('audit.index') }}"
+                                    class="mt-4 inline-flex min-h-11 items-center justify-center rounded-xl border border-slate-300 bg-white px-5 text-sm font-bold text-slate-700 transition hover:bg-slate-50">
+                                    Limpiar filtros
+                                </a>
+
+                                @endif
+
+                            </div>
+
+                        </td>
+
+                    </tr>
+
+                    @endforelse
+
+                </x-ui.table>
 
             </div>
 
+
+            {{-- PAGINACIÓN --}}
+
+            <x-ui.table-pagination
+                :paginator="$logs"
+                :per-page-options="[10, 25, 50, 100]" />
+
         </x-ui.card>
-
-
-        {{-- ========================================================= --}}
-        {{-- PAGINACIÓN --}}
-        {{-- ========================================================= --}}
-
-        <div>
-            {{ $logs->links() }}
-        </div>
-
 
         {{-- ========================================================= --}}
         {{-- MODAL --}}
@@ -336,13 +372,11 @@
         <div
             id="audit-modal"
             class="fixed inset-0 z-50 hidden"
-            aria-hidden="true"
-        >
+            aria-hidden="true">
 
             <div
                 class="absolute inset-0 bg-slate-950/50"
-                data-audit-close
-            ></div>
+                data-audit-close></div>
 
 
             <div class="relative mx-auto flex min-h-full max-w-3xl items-center p-4">
@@ -359,8 +393,7 @@
 
                             <h2
                                 id="audit-modal-title"
-                                class="mt-1 text-lg font-black text-slate-900"
-                            >
+                                class="mt-1 text-lg font-black text-slate-900">
                                 Detalle
                             </h2>
 
@@ -371,8 +404,7 @@
                             type="button"
                             class="grid h-10 w-10 place-items-center rounded-xl text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
                             data-audit-close
-                            aria-label="Cerrar"
-                        >
+                            aria-label="Cerrar">
                             ×
                         </button>
 
@@ -389,8 +421,7 @@
 
                             <pre
                                 id="audit-before"
-                                class="mt-2 max-h-96 overflow-auto rounded-xl bg-slate-950 p-4 text-xs leading-5 text-slate-200"
-                            ></pre>
+                                class="mt-2 max-h-96 overflow-auto rounded-xl bg-slate-950 p-4 text-xs leading-5 text-slate-200"></pre>
 
                         </div>
 
@@ -403,8 +434,7 @@
 
                             <pre
                                 id="audit-after"
-                                class="mt-2 max-h-96 overflow-auto rounded-xl bg-slate-950 p-4 text-xs leading-5 text-slate-200"
-                            ></pre>
+                                class="mt-2 max-h-96 overflow-auto rounded-xl bg-slate-950 p-4 text-xs leading-5 text-slate-200"></pre>
 
                         </div>
 
@@ -467,15 +497,15 @@
 
 
                         before.textContent =
-                            beforeData !== null
-                                ? JSON.stringify(beforeData, null, 2)
-                                : 'Sin información';
+                            beforeData !== null ?
+                            JSON.stringify(beforeData, null, 2) :
+                            'Sin información';
 
 
                         after.textContent =
-                            afterData !== null
-                                ? JSON.stringify(afterData, null, 2)
-                                : 'Sin información';
+                            afterData !== null ?
+                            JSON.stringify(afterData, null, 2) :
+                            'Sin información';
 
 
                         modal.classList.remove('hidden');

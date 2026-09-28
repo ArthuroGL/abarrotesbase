@@ -6,6 +6,7 @@ namespace App\Modules\Inventory\Presentation\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Models\Brand;
+use App\Modules\Identity\Application\Services\CurrentContext;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -14,6 +15,10 @@ use Illuminate\View\View;
 
 final class BrandController extends Controller
 {
+
+    public function __construct(
+        private readonly CurrentContext $context,
+    ) {}
     public function index(): View
     {
         $brands = Brand::query()
@@ -58,6 +63,37 @@ final class BrandController extends Controller
         return response()->json([
             'success' => true,
             'brand' => $brand,
+        ]);
+    }
+
+    public function search(Request $request): JsonResponse
+    {
+        $search = trim((string) $request->input('q', ''));
+
+        if ($search === '') {
+            return response()->json([
+                'items' => [],
+            ]);
+        }
+
+        $items = Brand::query()
+            ->where(
+                'organization_id',
+                $this->context->organizationId()
+            )
+            ->where('is_active', true)
+            ->where('name', 'ilike', "%{$search}%")
+            ->orderBy('name')
+            ->limit(8)
+            ->get();
+
+        return response()->json([
+            'items' => $items->map(
+                fn(Brand $brand) => [
+                    'id' => $brand->id,
+                    'name' => $brand->name,
+                ]
+            )->values(),
         ]);
     }
 }

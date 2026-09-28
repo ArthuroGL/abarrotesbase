@@ -147,6 +147,16 @@ Route::middleware('auth')->group(function () {
         ->middleware('permission:products.update')
         ->name('products.update');
 
+    Route::get(
+        '/categories/search',
+        [CategoryController::class, 'search']
+    )->name('categories.search');
+
+    Route::get(
+        '/brands/search',
+        [BrandController::class, 'search']
+    )->name('brands.search');
+
     /*
     |--------------------------------------------------------------------------
     | API PRODUCTOS

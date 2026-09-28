@@ -8,13 +8,11 @@
         <x-layout.page-header
             eyebrow="Inventario"
             title="Nuevo producto"
-            description="Registra la información necesaria para identificar, vender y controlar este producto."
-        >
+            description="Registra la información necesaria para identificar, vender y controlar este producto.">
             <x-slot:actions>
                 <a
                     href="{{ route('products.index') }}"
-                    class="inline-flex min-h-11 items-center justify-center rounded-xl border border-slate-300 bg-white px-4 text-sm font-bold text-slate-700 transition hover:bg-slate-50"
-                >
+                    class="inline-flex min-h-11 items-center justify-center rounded-xl border border-slate-300 bg-white px-4 text-sm font-bold text-slate-700 transition hover:bg-slate-50">
                     ← Volver al catálogo
                 </a>
             </x-slot:actions>
@@ -23,23 +21,22 @@
 
         {{-- MENSAJE GENERAL DE ERRORES --}}
         @if ($errors->any())
-            <div class="rounded-2xl border border-rose-200 bg-rose-50 px-5 py-4">
-                <p class="font-bold text-rose-800">
-                    Revisa la información del producto.
-                </p>
+        <div class="rounded-2xl border border-rose-200 bg-rose-50 px-5 py-4">
+            <p class="font-bold text-rose-800">
+                Revisa la información del producto.
+            </p>
 
-                <p class="mt-1 text-sm text-rose-700">
-                    Hay uno o más campos que necesitan corrección antes de guardar.
-                </p>
-            </div>
+            <p class="mt-1 text-sm text-rose-700">
+                Hay uno o más campos que necesitan corrección antes de guardar.
+            </p>
+        </div>
         @endif
 
 
         <form
             method="POST"
             action="{{ route('products.store') }}"
-            class="space-y-6"
-        >
+            class="space-y-6">
             @csrf
 
             {{-- ========================================================= --}}
@@ -69,8 +66,7 @@
                         <div class="mb-2 flex flex-wrap items-center justify-between gap-2">
                             <label
                                 for="barcode"
-                                class="text-sm font-bold text-slate-800"
-                            >
+                                class="text-sm font-bold text-slate-800">
                                 Código de barras
                                 <span class="text-rose-600">*</span>
                             </label>
@@ -78,8 +74,7 @@
                             <button
                                 type="button"
                                 id="open-scanner"
-                                class="inline-flex min-h-10 items-center justify-center rounded-xl border border-emerald-200 bg-emerald-50 px-3 text-sm font-bold text-emerald-700 transition hover:bg-emerald-100"
-                            >
+                                class="inline-flex min-h-10 items-center justify-center rounded-xl border border-emerald-200 bg-emerald-50 px-3 text-sm font-bold text-emerald-700 transition hover:bg-emerald-100">
                                 Escanear con cámara
                             </button>
                         </div>
@@ -94,13 +89,11 @@
                                 inputmode="numeric"
                                 placeholder="Escanea o escribe el código..."
                                 class="pr-12 font-mono text-lg font-bold"
-                                :error="$errors->has('barcode')"
-                            />
+                                :error="$errors->has('barcode')" />
 
                             <div
                                 id="barcode-loader"
-                                class="pointer-events-none absolute inset-y-0 right-4 hidden items-center"
-                            >
+                                class="pointer-events-none absolute inset-y-0 right-4 hidden items-center">
                                 <span class="h-5 w-5 animate-spin rounded-full border-2 border-slate-200 border-t-emerald-600"></span>
                             </div>
                         </div>
@@ -110,9 +103,9 @@
                         </p>
 
                         @error('barcode')
-                            <p class="mt-2 text-sm font-semibold text-rose-600">
-                                {{ $message }}
-                            </p>
+                        <p class="mt-2 text-sm font-semibold text-rose-600">
+                            {{ $message }}
+                        </p>
                         @enderror
                     </div>
 
@@ -120,23 +113,20 @@
                     {{-- ESTADO DE CONSULTA --}}
                     <div
                         id="lookup-status"
-                        class="hidden rounded-xl border px-4 py-3 text-sm"
-                    ></div>
+                        class="hidden rounded-xl border px-4 py-3 text-sm"></div>
 
 
                     {{-- PREVIEW EXTERNO --}}
                     <div
                         id="product-preview"
-                        class="hidden rounded-2xl border border-slate-200 bg-slate-50 p-4"
-                    >
+                        class="hidden rounded-2xl border border-slate-200 bg-slate-50 p-4">
                         <div class="flex items-center gap-4">
 
                             <img
                                 id="product-preview-image"
                                 src=""
                                 alt=""
-                                class="hidden h-16 w-16 shrink-0 rounded-xl border border-slate-200 bg-white object-contain"
-                            >
+                                class="hidden h-16 w-16 shrink-0 rounded-xl border border-slate-200 bg-white object-contain">
 
                             <div class="min-w-0">
                                 <p class="font-bold text-slate-900">
@@ -145,8 +135,7 @@
 
                                 <p
                                     id="product-preview-description"
-                                    class="mt-1 text-sm text-slate-600"
-                                ></p>
+                                    class="mt-1 text-sm text-slate-600"></p>
 
                                 <p class="mt-1 text-xs text-slate-400">
                                     Verifica los datos antes de guardar el producto.
@@ -163,8 +152,7 @@
                         <div class="sm:col-span-2">
                             <label
                                 for="name"
-                                class="mb-2 block text-sm font-bold text-slate-800"
-                            >
+                                class="mb-2 block text-sm font-bold text-slate-800">
                                 Nombre del producto
                                 <span class="text-rose-600">*</span>
                             </label>
@@ -175,13 +163,12 @@
                                 :value="old('name')"
                                 required
                                 placeholder="Ej. Coca-Cola Original 600 ml"
-                                :error="$errors->has('name')"
-                            />
+                                :error="$errors->has('name')" />
 
                             @error('name')
-                                <p class="mt-2 text-sm font-semibold text-rose-600">
-                                    {{ $message }}
-                                </p>
+                            <p class="mt-2 text-sm font-semibold text-rose-600">
+                                {{ $message }}
+                            </p>
                             @enderror
                         </div>
 
@@ -190,8 +177,7 @@
                         <div>
                             <label
                                 for="sku"
-                                class="mb-2 block text-sm font-bold text-slate-800"
-                            >
+                                class="mb-2 block text-sm font-bold text-slate-800">
                                 Código interno / SKU
                             </label>
 
@@ -200,17 +186,16 @@
                                 name="sku"
                                 :value="old('sku')"
                                 placeholder="Ej. COC-7890"
-                                :error="$errors->has('sku')"
-                            />
+                                :error="$errors->has('sku')" />
 
                             <p class="mt-2 text-xs text-slate-500">
                                 Si lo dejas vacío durante la consulta, intentaremos generar uno.
                             </p>
 
                             @error('sku')
-                                <p class="mt-2 text-sm font-semibold text-rose-600">
-                                    {{ $message }}
-                                </p>
+                            <p class="mt-2 text-sm font-semibold text-rose-600">
+                                {{ $message }}
+                            </p>
                             @enderror
                         </div>
 
@@ -246,75 +231,67 @@
                     <div>
                         <div class="mb-2 flex items-center justify-between gap-3">
                             <label
-                                for="category_id"
-                                class="text-sm font-bold text-slate-800"
-                            >
+                                for="category-search"
+                                class="text-sm font-bold text-slate-800">
                                 Categoría
                             </label>
 
                             <button
                                 type="button"
                                 data-quick-create="category"
-                                class="text-sm font-bold text-emerald-700 hover:text-emerald-800"
-                            >
+                                class="text-sm font-bold text-emerald-700 hover:text-emerald-800">
                                 + Nueva
                             </button>
                         </div>
 
-                        <select
-                            id="category_id"
-                            name="category_id"
-                            class="app-input"
-                        >
-                            <option value="">Sin categoría</option>
+                        <div class="relative z-40">
+                            <x-ui.search
+                                id="category-search"
+                                name="category_search"
+                                endpoint="{{ route('categories.search') }}"
+                                placeholder="Buscar categoría..."
+                                :value="$initialCategory?->name ?? ''"
+                                :aria-label="'Buscar categoría'" />
 
-                            @foreach ($categories as $category)
-                                <option
-                                    value="{{ $category->id }}"
-                                    @selected(old('category_id') === $category->id)
-                                >
-                                    {{ $category->name }}
-                                </option>
-                            @endforeach
-                        </select>
+                            <input
+                                type="hidden"
+                                id="category_id"
+                                name="category_id"
+                                value="{{ old('category_id', $initialCategory?->id ?? '') }}">
+                        </div>
                     </div>
-
-
                     {{-- MARCA --}}
                     <div>
                         <div class="mb-2 flex items-center justify-between gap-3">
                             <label
-                                for="brand_id"
-                                class="text-sm font-bold text-slate-800"
-                            >
+                                for="brand-search"
+                                class="text-sm font-bold text-slate-800">
                                 Marca
                             </label>
 
                             <button
                                 type="button"
                                 data-quick-create="brand"
-                                class="text-sm font-bold text-emerald-700 hover:text-emerald-800"
-                            >
+                                class="text-sm font-bold text-emerald-700 hover:text-emerald-800">
                                 + Nueva
                             </button>
                         </div>
 
-                        <select
-                            id="brand_id"
-                            name="brand_id"
-                            class="app-input"
-                        >
-                            <option value="">Sin marca</option>
+                        <div class="relative z-40">
+                            <x-ui.search
+                                id="brand-search"
+                                name="brand_search"
+                                endpoint="{{ route('brands.search') }}"
+                                placeholder="Buscar marca..."
+                                :value="$initialBrand?->name ?? ''"
+                                :aria-label="'Buscar marca'" />
 
-                            @foreach ($brands as $brand)
-                                <option
-                                    value="{{ $brand->id }}"
-                                    @selected(old('brand_id') === $brand->id)
-                                >
-                                    {{ $brand->name }}
-                                </option>
-                            @endforeach
-                        </select>
+                            <input
+                                type="hidden"
+                                id="brand_id"
+                                name="brand_id"
+                                value="{{ old('brand_id', $initialBrand?->id ?? '') }}">
+                        </div>
                     </div>
 
 
@@ -322,8 +299,7 @@
                     <div>
                         <label
                             for="unit_id"
-                            class="mb-2 block text-sm font-bold text-slate-800"
-                        >
+                            class="mb-2 block text-sm font-bold text-slate-800">
                             Unidad de venta
                             <span class="text-rose-600">*</span>
                         </label>
@@ -332,15 +308,14 @@
                             id="unit_id"
                             name="unit_id"
                             required
-                            class="app-input"
-                        >
+                            class="app-input">
                             @foreach ($units as $unit)
-                                <option
-                                    value="{{ $unit->id }}"
-                                    @selected(old('unit_id') === $unit->id)
+                            <option
+                                value="{{ $unit->id }}"
+                                @selected(old('unit_id')===$unit->id)
                                 >
-                                    {{ $unit->name }} ({{ $unit->code }})
-                                </option>
+                                {{ $unit->name }} ({{ $unit->code }})
+                            </option>
                             @endforeach
                         </select>
                     </div>
@@ -350,8 +325,7 @@
                     <div>
                         <label
                             for="product_type"
-                            class="mb-2 block text-sm font-bold text-slate-800"
-                        >
+                            class="mb-2 block text-sm font-bold text-slate-800">
                             Forma de venta
                             <span class="text-rose-600">*</span>
                         </label>
@@ -360,19 +334,16 @@
                             id="product_type"
                             name="product_type"
                             required
-                            class="app-input"
-                        >
+                            class="app-input">
                             <option
                                 value="simple"
-                                @selected(old('product_type', 'simple') === 'simple')
-                            >
+                                @selected(old('product_type', 'simple' )==='simple' )>
                                 Por pieza
                             </option>
 
                             <option
                                 value="bulk"
-                                @selected(old('product_type') === 'bulk')
-                            >
+                                @selected(old('product_type')==='bulk' )>
                                 A granel / permite decimales
                             </option>
                         </select>
@@ -383,8 +354,7 @@
                     <div>
                         <label
                             for="price"
-                            class="mb-2 block text-sm font-bold text-slate-800"
-                        >
+                            class="mb-2 block text-sm font-bold text-slate-800">
                             Precio público
                             <span class="text-rose-600">*</span>
                         </label>
@@ -404,8 +374,7 @@
                                 required
                                 placeholder="0.00"
                                 class="pl-9 text-lg font-black"
-                                :error="$errors->has('price')"
-                            />
+                                :error="$errors->has('price')" />
                         </div>
 
                         <p class="mt-2 text-xs font-semibold text-slate-500">
@@ -413,9 +382,9 @@
                         </p>
 
                         @error('price')
-                            <p class="mt-2 text-sm font-semibold text-rose-600">
-                                {{ $message }}
-                            </p>
+                        <p class="mt-2 text-sm font-semibold text-rose-600">
+                            {{ $message }}
+                        </p>
                         @enderror
                     </div>
 
@@ -424,25 +393,23 @@
                     <div>
                         <label
                             for="tax_rate_id"
-                            class="mb-2 block text-sm font-bold text-slate-800"
-                        >
+                            class="mb-2 block text-sm font-bold text-slate-800">
                             Impuesto
                         </label>
 
                         <select
                             id="tax_rate_id"
                             name="tax_rate_id"
-                            class="app-input"
-                        >
+                            class="app-input">
                             <option value="">Sin impuesto aplicable</option>
 
                             @foreach ($taxRates as $tax)
-                                <option
-                                    value="{{ $tax->id }}"
-                                    @selected(old('tax_rate_id') === $tax->id)
+                            <option
+                                value="{{ $tax->id }}"
+                                @selected(old('tax_rate_id')===$tax->id)
                                 >
-                                    {{ $tax->name }}
-                                </option>
+                                {{ $tax->name }}
+                            </option>
                             @endforeach
                         </select>
                     </div>
@@ -456,8 +423,7 @@
 
                 <a
                     href="{{ route('products.index') }}"
-                    class="inline-flex min-h-12 items-center justify-center rounded-xl border border-slate-300 bg-white px-5 text-base font-bold text-slate-700 transition hover:bg-slate-50"
-                >
+                    class="inline-flex min-h-12 items-center justify-center rounded-xl border border-slate-300 bg-white px-5 text-base font-bold text-slate-700 transition hover:bg-slate-50">
                     Cancelar
                 </a>
 
@@ -465,8 +431,7 @@
                     type="submit"
                     variant="primary"
                     size="md"
-                    class="sm:min-w-48"
-                >
+                    class="sm:min-w-48">
                     Guardar producto
                 </x-ui.button>
 
@@ -484,21 +449,18 @@
         size="sm"
         title="Escanear código de barras"
         description="Coloca el código de barras frente a la cámara."
-        close-id="close-scanner"
-    >
+        close-id="close-scanner">
         <div class="space-y-4 p-5 sm:p-6">
 
             <div class="relative flex min-h-[260px] items-center justify-center overflow-hidden rounded-2xl bg-slate-950">
                 <div
                     id="reader"
-                    class="w-full [&>video]:max-h-[320px] [&>video]:object-cover"
-                ></div>
+                    class="w-full [&>video]:max-h-[320px] [&>video]:object-cover"></div>
             </div>
 
             <div
                 id="scanner-feedback"
-                class="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-center text-sm font-semibold text-slate-600"
-            >
+                class="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-center text-sm font-semibold text-slate-600">
                 Apunta al código de barras.
             </div>
 
@@ -508,8 +470,7 @@
             <button
                 type="button"
                 id="cancel-scanner"
-                class="inline-flex min-h-11 w-full items-center justify-center rounded-xl border border-slate-300 bg-white px-4 text-sm font-bold text-slate-700 transition hover:bg-slate-100"
-            >
+                class="inline-flex min-h-11 w-full items-center justify-center rounded-xl border border-slate-300 bg-white px-4 text-sm font-bold text-slate-700 transition hover:bg-slate-100">
                 Cerrar escáner
             </button>
         </x-slot:footer>
@@ -524,14 +485,12 @@
         size="sm"
         title="Nuevo registro"
         description="Agrega el registro sin abandonar el producto."
-        close-id="close-quick-modal"
-    >
+        close-id="close-quick-modal">
         <div class="p-5 sm:p-6">
 
             <label
                 for="quick-modal-input"
-                class="mb-2 block text-sm font-bold text-slate-800"
-            >
+                class="mb-2 block text-sm font-bold text-slate-800">
                 Nombre
             </label>
 
@@ -539,13 +498,11 @@
                 id="quick-modal-input"
                 type="text"
                 placeholder="Escribe el nombre..."
-                autocomplete="off"
-            />
+                autocomplete="off" />
 
             <p
                 id="quick-modal-error"
-                class="mt-2 hidden text-sm font-semibold text-rose-600"
-            ></p>
+                class="mt-2 hidden text-sm font-semibold text-rose-600"></p>
 
         </div>
 
@@ -555,8 +512,7 @@
                 <button
                     type="button"
                     id="cancel-quick-modal"
-                    class="inline-flex min-h-11 items-center justify-center rounded-xl border border-slate-300 bg-white px-4 text-sm font-bold text-slate-700 transition hover:bg-slate-100"
-                >
+                    class="inline-flex min-h-11 items-center justify-center rounded-xl border border-slate-300 bg-white px-4 text-sm font-bold text-slate-700 transition hover:bg-slate-100">
                     Cancelar
                 </button>
 
@@ -564,8 +520,7 @@
                     type="button"
                     id="save-quick-modal"
                     variant="primary"
-                    size="sm"
-                >
+                    size="sm">
                     Guardar
                 </x-ui.button>
 
@@ -592,6 +547,49 @@
             let activeQuickType = null;
 
 
+            const categorySearch = document.getElementById('category-search');
+            const categoryIdInput = document.getElementById('category_id');
+
+            const brandSearch = document.getElementById('brand-search');
+            const brandIdInput = document.getElementById('brand_id');
+
+
+            function setCatalogSelection(type, item) {
+                if (!item) {
+                    return;
+                }
+
+                if (type === 'category') {
+                    categoryIdInput.value = item.id ?? '';
+                    categorySearch.querySelector('input').value = item.name ?? '';
+                    return;
+                }
+
+                if (type === 'brand') {
+                    brandIdInput.value = item.id ?? '';
+                    brandSearch.querySelector('input').value = item.name ?? '';
+                }
+            }
+
+            categorySearch.addEventListener(
+                'ui-search-selected',
+                event => {
+                    setCatalogSelection(
+                        'category',
+                        event.detail
+                    );
+                }
+            );
+
+            brandSearch.addEventListener(
+                'ui-search-selected',
+                event => {
+                    setCatalogSelection(
+                        'brand',
+                        event.detail
+                    );
+                }
+            );
             /*
              * ---------------------------------------------------------
              * HELPERS DE MODAL
@@ -617,6 +615,74 @@
              * ---------------------------------------------------------
              */
 
+            async function resolveCatalogItem(
+                endpoint,
+                value
+            ) {
+                const search = String(value || '').trim();
+
+                if (!search) {
+                    return null;
+                }
+
+                try {
+                    const url = new URL(
+                        endpoint,
+                        window.location.origin
+                    );
+
+                    url.searchParams.set('q', search);
+
+                    const response = await fetch(url, {
+                        headers: {
+                            'Accept': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
+                    });
+
+                    if (!response.ok) {
+                        return null;
+                    }
+
+                    const data = await response.json();
+
+                    const items = Array.isArray(data.items) ?
+                        data.items : [];
+
+                    if (!items.length) {
+                        return null;
+                    }
+
+                    const target = normalize(search);
+
+                    // Primero buscamos coincidencia exacta.
+                    const exact = items.find(item =>
+                        normalize(item.name) === target
+                    );
+
+                    if (exact) {
+                        return exact;
+                    }
+
+                    // Después una coincidencia contenida.
+                    return items.find(item => {
+                        const name = normalize(item.name);
+
+                        return (
+                            name.includes(target) ||
+                            target.includes(name)
+                        );
+                    }) ?? null;
+
+                } catch (error) {
+                    console.error(
+                        'Error resolviendo catálogo:',
+                        error
+                    );
+
+                    return null;
+                }
+            }
             async function fetchProductInfo(rawBarcode) {
 
                 const barcode = String(rawBarcode || '').trim();
@@ -633,8 +699,7 @@
                 try {
 
                     const response = await fetch(
-                        `/api/products/lookup/${encodeURIComponent(barcode)}`,
-                        {
+                        `/api/products/lookup/${encodeURIComponent(barcode)}`, {
                             headers: {
                                 'Accept': 'application/json'
                             }
@@ -694,22 +759,25 @@
                     }
 
 
-                    /*
-                     * Marca
-                     */
-                    selectMatchingOption(
-                        document.getElementById('brand_id'),
-                        data.brand
-                    );
+                    await Promise.all([
+                        resolveCatalogItem(
+                            "{{ route('brands.search') }}",
+                            data.brand
+                        ).then(item => {
+                            if (item) {
+                                setCatalogSelection('brand', item);
+                            }
+                        }),
 
-
-                    /*
-                     * Categoría
-                     */
-                    selectMatchingOption(
-                        document.getElementById('category_id'),
-                        data.category_suggestion
-                    );
+                        resolveCatalogItem(
+                            "{{ route('categories.search') }}",
+                            data.category_suggestion
+                        ).then(item => {
+                            if (item) {
+                                setCatalogSelection('category', item);
+                            }
+                        })
+                    ]);
 
 
                     /*
@@ -721,9 +789,9 @@
 
                         const text = normalize(option.text);
 
-                        return text.includes('pieza')
-                            || text.includes('pza')
-                            || text.includes('unidad');
+                        return text.includes('pieza') ||
+                            text.includes('pza') ||
+                            text.includes('unidad');
                     });
 
                     if (pieceOption) {
@@ -775,9 +843,9 @@
 
                     const text = normalize(item.text);
 
-                    return text === target
-                        || text.includes(target)
-                        || target.includes(text);
+                    return text === target ||
+                        text.includes(target) ||
+                        target.includes(text);
                 });
 
                 if (option && option.value) {
@@ -799,9 +867,9 @@
                 ].filter(Boolean);
 
                 description.textContent =
-                    details.length
-                        ? details.join(' · ')
-                        : 'Se encontró información asociada al código.';
+                    details.length ?
+                    details.join(' · ') :
+                    'Se encontró información asociada al código.';
 
                 if (data.image) {
                     image.src = data.image;
@@ -859,11 +927,9 @@
                         html5QrCode = new Html5Qrcode('reader');
                     }
 
-                    await html5QrCode.start(
-                        {
+                    await html5QrCode.start({
                             facingMode: 'environment'
-                        },
-                        {
+                        }, {
                             fps: 15,
                             qrbox: {
                                 width: 240,
@@ -872,19 +938,19 @@
                         },
                         async decodedText => {
 
-                            scannerFeedback.className =
-                                'rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-center text-sm font-bold text-emerald-700';
+                                scannerFeedback.className =
+                                    'rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-center text-sm font-bold text-emerald-700';
 
-                            scannerFeedback.textContent =
-                                `Código leído: ${decodedText}`;
+                                scannerFeedback.textContent =
+                                    `Código leído: ${decodedText}`;
 
-                            barcodeInput.value = decodedText;
+                                barcodeInput.value = decodedText;
 
-                            await stopScanner();
+                                await stopScanner();
 
-                            fetchProductInfo(decodedText);
-                        },
-                        () => {}
+                                fetchProductInfo(decodedText);
+                            },
+                            () => {}
                     );
 
                 } catch (error) {
@@ -982,9 +1048,9 @@
                     return;
                 }
 
-                const url = activeQuickType === 'category'
-                    ? "{{ route('categories.quick-store') }}"
-                    : "{{ route('brands.quick-store') }}";
+                const url = activeQuickType === 'category' ?
+                    "{{ route('categories.quick-store') }}" :
+                    "{{ route('brands.quick-store') }}";
 
                 try {
 
@@ -1010,22 +1076,13 @@
                         );
                     }
 
-                    const select = document.getElementById(
-                        activeQuickType === 'category'
-                            ? 'category_id'
-                            : 'brand_id'
-                    );
-
                     const record = data[activeQuickType];
 
-                    select.add(
-                        new Option(
-                            record.name,
-                            record.id,
-                            true,
-                            true
-                        )
-                    );
+                    if (!record?.id) {
+                        throw new Error('El servidor no devolvió el registro creado.');
+                    }
+
+                    setCatalogSelection(activeQuickType, record);
 
                     closeQuickModal();
 

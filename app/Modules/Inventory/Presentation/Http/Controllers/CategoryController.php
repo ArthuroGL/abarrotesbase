@@ -6,6 +6,7 @@ namespace App\Modules\Inventory\Presentation\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Models\Category;
+use App\Modules\Identity\Application\Services\CurrentContext;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -14,6 +15,9 @@ use Illuminate\View\View;
 
 final class CategoryController extends Controller
 {
+    public function __construct(
+        private readonly CurrentContext $context,
+    ) {}
     public function index(Request $request): View
     {
         $categories = Category::query()
@@ -63,6 +67,37 @@ final class CategoryController extends Controller
         return response()->json([
             'success' => true,
             'category' => $category,
+        ]);
+    }
+
+    public function search(Request $request): JsonResponse
+    {
+        $search = trim((string) $request->input('q', ''));
+
+        if ($search === '') {
+            return response()->json([
+                'items' => [],
+            ]);
+        }
+
+        $items = Category::query()
+            ->where(
+                'organization_id',
+                $this->context->organizationId()
+            )
+            ->where('is_active', true)
+            ->where('name', 'ilike', "%{$search}%")
+            ->orderBy('name')
+            ->limit(8)
+            ->get();
+
+        return response()->json([
+            'items' => $items->map(
+                fn(Category $category) => [
+                    'id' => $category->id,
+                    'name' => $category->name,
+                ]
+            )->values(),
         ]);
     }
 }

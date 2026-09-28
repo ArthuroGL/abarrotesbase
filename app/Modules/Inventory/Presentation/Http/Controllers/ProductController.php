@@ -93,16 +93,6 @@ final class ProductController extends Controller
 
     public function create(Request $request): View
     {
-        $categories = Category::query()
-            ->where('is_active', true)
-            ->orderBy('name')
-            ->get();
-
-        $brands = Brand::query()
-            ->where('is_active', true)
-            ->orderBy('name')
-            ->get();
-
         $units = Unit::query()
             ->where('is_active', true)
             ->orderBy('name')
@@ -112,26 +102,39 @@ final class ProductController extends Controller
             ->where('is_active', true)
             ->get();
 
-        $initialBarcode = trim((string) $request->query('barcode', ''));
+        $initialBarcode = trim(
+            (string) $request->query('barcode', '')
+        );
 
-        return view('modules.inventory.products.create', compact(
-            'categories',
-            'brands',
-            'units',
-            'taxRates',
-            'initialBarcode'
-        ));
+        $initialCategory = null;
+
+        if ($categoryId = old('category_id')) {
+            $initialCategory = Category::query()
+                ->where('organization_id', $this->context->organizationId())
+                ->where('is_active', true)
+                ->find($categoryId);
+        }
+
+        $initialBrand = null;
+
+        if ($brandId = old('brand_id')) {
+            $initialBrand = Brand::query()
+                ->where('organization_id', $this->context->organizationId())
+                ->where('is_active', true)
+                ->find($brandId);
+        }
+
+        return view(
+            'modules.inventory.products.create',
+            compact(
+                'units',
+                'taxRates',
+                'initialBarcode',
+                'initialCategory',
+                'initialBrand'
+            )
+        );
     }
-
-    /* public function create(): View
-    {
-        $categories = Category::query()->where('is_active', true)->orderBy('name')->get();
-        $brands = Brand::query()->where('is_active', true)->orderBy('name')->get();
-        $units = Unit::query()->where('is_active', true)->orderBy('name')->get();
-        $taxRates = TaxRate::query()->where('is_active', true)->get();
-
-        return view('modules.inventory.products.create', compact('categories', 'brands', 'units', 'taxRates'));
-    } */
 
     public function store(Request $request): RedirectResponse
     {

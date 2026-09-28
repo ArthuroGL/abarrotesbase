@@ -7,8 +7,8 @@ namespace App\Modules\Identity\Presentation\Http\Controllers;
 use App\Http\Controllers\Controller;
 use App\Modules\Identity\Application\Services\CurrentContext;
 use Illuminate\Http\Request;
-use Illuminate\View\View;
 use Illuminate\Support\Facades\DB;
+use Illuminate\View\View;
 
 final class AuditController extends Controller
 {
@@ -20,7 +20,14 @@ final class AuditController extends Controller
     {
         $organizationId = $this->context->organizationId();
 
+        $search = trim((string) $request->input('search'));
         $action = trim((string) $request->input('action'));
+
+        $perPage = (int) $request->input('per_page', 10);
+
+        $perPage = in_array($perPage, [10, 25, 50, 100], true)
+            ? $perPage
+            : 10;
 
         $logs = DB::table('audit_logs as a')
             ->leftJoin(
@@ -30,10 +37,29 @@ final class AuditController extends Controller
                 'a.actor_id'
             )
             ->where('a.organization_id', $organizationId)
+
+            /*
+             * BUSCADOR GENERAL
+             */
+            ->when($search !== '', function ($query) use ($search) {
+                $query->where(function ($q) use ($search) {
+                    $q->where('u.name', 'ilike', "%{$search}%")
+                        ->orWhere('u.email', 'ilike', "%{$search}%")
+                        ->orWhere('a.action', 'ilike', "%{$search}%")
+                        ->orWhere('a.auditable_type', 'ilike', "%{$search}%")
+                        ->orWhere('a.auditable_id', 'ilike', "%{$search}%")
+                        ->orWhere('a.ip_address', 'ilike', "%{$search}%");
+                });
+            })
+
+            /*
+             * FILTRO POR ACCIÓN
+             */
             ->when(
                 $action !== '',
-                fn($query) => $query->where('a.action', $action)
+                fn ($query) => $query->where('a.action', $action)
             )
+
             ->select([
                 'a.id',
                 'a.action',
@@ -46,8 +72,11 @@ final class AuditController extends Controller
                 'u.name as actor_name',
                 'u.email as actor_email',
             ])
+
             ->orderByDesc('a.occurred_at')
-            ->paginate(30)
+
+            ->paginate($perPage)
+
             ->withQueryString();
 
         $actions = DB::table('audit_logs')
@@ -59,7 +88,9 @@ final class AuditController extends Controller
         return view('modules.identity.audit.index', [
             'logs' => $logs,
             'actions' => $actions,
+            'search' => $search,
             'action' => $action,
+            'perPage' => $perPage,
         ]);
     }
 }
