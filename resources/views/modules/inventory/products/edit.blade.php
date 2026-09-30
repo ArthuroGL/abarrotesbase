@@ -91,31 +91,6 @@
 
 
                             {{-- Estado --}}
-                            <label
-                                class="flex min-h-12 cursor-pointer items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 transition hover:border-slate-300"
-                            >
-
-                                <input
-                                    type="checkbox"
-                                    name="is_active"
-                                    value="1"
-                                    @checked(old('is_active', $product->is_active))
-                                    class="h-5 w-5 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
-                                >
-
-                                <span>
-
-                                    <span class="block text-sm font-black text-slate-800">
-                                        Producto activo
-                                    </span>
-
-                                    <span class="block text-xs font-medium text-slate-500">
-                                        Disponible para venta
-                                    </span>
-
-                                </span>
-
-                            </label>
 
                         </div>
 

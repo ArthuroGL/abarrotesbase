@@ -1,39 +1,93 @@
 <x-layouts.guest title="ABARROTESBASE - Iniciar Sesión">
-    <div class="space-y-6">
 
-        <!-- Branding del Sistema -->
-        <div class="flex flex-col items-center justify-center text-center">
-            <span class="grid h-12 w-12 place-items-center rounded-2xl bg-emerald-500 font-black text-xl text-slate-950 shadow-md shadow-emerald-500/20 ring-4 ring-emerald-500/10">A</span>
+    <div class="mx-auto w-full max-w-md space-y-6">
+
+        {{-- Branding --}}
+        <div class="flex flex-col items-center text-center">
+
+            <span
+                class="grid h-14 w-14 place-items-center rounded-2xl
+                       bg-emerald-500 font-black text-xl text-slate-950
+                       shadow-lg shadow-emerald-500/20
+                       ring-4 ring-emerald-500/10"
+                aria-hidden="true"
+            >
+                A
+            </span>
+
             <div class="mt-3">
-                <span class="block text-base font-black tracking-[0.18em] text-slate-900">ABARROTES</span>
-                <span class="block text-xs font-bold tracking-[0.22em] text-emerald-600">MARGARITA</span>
+                <span
+                    class="block text-base font-black tracking-[0.18em] text-slate-900"
+                >
+                    ABARROTES
+                </span>
+
+                <span
+                    class="block text-xs font-bold tracking-[0.22em] text-emerald-600"
+                >
+                    MARGARITA
+                </span>
             </div>
+
         </div>
 
-        <!-- Tarjeta del Formulario (Ancho controlado) -->
-        <x-ui.card padding="p-12 sm:p-8" class="shadow-xl ring-slate-900/5">
-            <div class="mb-6 text-center">
-                <h2 class="text-xs font-bold uppercase tracking-wider text-slate-500">
+
+        {{-- Login --}}
+        <x-ui.card
+            padding="p-6 sm:p-8"
+            class="shadow-xl shadow-slate-900/5"
+        >
+
+            <div class="mb-7 text-center">
+
+                <h1 class="text-base font-black text-slate-900">
                     Acceso al sistema
-                </h2>
-                <p class="mt-1 text-xs text-slate-400">Ingresa tus credenciales para continuar</p>
+                </h1>
+
+                <p class="mt-1 text-sm text-slate-500">
+                    Ingresa tus credenciales para continuar
+                </p>
+
             </div>
 
-            <!-- Status de Sesión -->
+
+            {{-- Status --}}
             @if (session('status'))
-                <div class="mb-5 rounded-xl border border-emerald-200 bg-emerald-50 p-3.5 text-xs font-semibold text-emerald-800">
+
+                <div
+                    class="mb-5 rounded-xl border border-emerald-200
+                           bg-emerald-50 px-4 py-3 text-sm font-semibold
+                           text-emerald-800"
+                    role="status"
+                >
                     {{ session('status') }}
                 </div>
+
             @endif
 
-            <form method="POST" action="{{ route('login') }}" class="space-y-4">
+
+            <form
+                method="POST"
+                action="{{ route('login') }}"
+                class="space-y-5"
+                novalidate
+            >
+
                 @csrf
 
-                <!-- Email -->
+
+                {{-- Email --}}
                 <div>
-                    <label for="email" class="block text-[11px] font-bold uppercase tracking-wider text-slate-600 mb-1.5">
-                        Correo Electrónico
+
+                    <label
+                        for="email"
+                        class="mb-2 block text-xs font-black
+                               uppercase tracking-[0.08em]
+                               text-slate-600"
+                    >
+                        Correo electrónico
                     </label>
+
                     <x-ui.input
                         id="email"
                         type="email"
@@ -41,56 +95,116 @@
                         :value="old('email')"
                         required
                         autofocus
+                        autocomplete="username"
+                        inputmode="email"
                         placeholder="usuario@abarrotesbase.com"
                         :error="$errors->has('email')"
+                        aria-describedby="{{ $errors->has('email') ? 'email-error' : '' }}"
                     />
+
                     @error('email')
-                        <p class="mt-1.5 text-xs font-medium text-rose-600">{{ $message }}</p>
+                        <p
+                            id="email-error"
+                            class="mt-2 text-sm font-semibold text-rose-600"
+                            role="alert"
+                        >
+                            {{ $message }}
+                        </p>
                     @enderror
+
                 </div>
 
-                <!-- Password -->
+
+                {{-- Password --}}
                 <div>
-                    <label for="password" class="block text-[11px] font-bold uppercase tracking-wider text-slate-600 mb-1.5">
+
+                    <label
+                        for="password"
+                        class="mb-2 block text-xs font-black
+                               uppercase tracking-[0.08em]
+                               text-slate-600"
+                    >
                         Contraseña
                     </label>
+
                     <x-ui.input
                         id="password"
                         type="password"
                         name="password"
                         required
+                        autocomplete="current-password"
                         placeholder="••••••••"
                         :error="$errors->has('password')"
+                        aria-describedby="{{ $errors->has('password') ? 'password-error' : '' }}"
                     />
+
                     @error('password')
-                        <p class="mt-1.5 text-xs font-medium text-rose-600">{{ $message }}</p>
+                        <p
+                            id="password-error"
+                            class="mt-2 text-sm font-semibold text-rose-600"
+                            role="alert"
+                        >
+                            {{ $message }}
+                        </p>
                     @enderror
+
                 </div>
 
-                <!-- Remember Me -->
-                <div class="flex items-center justify-between pt-1">
-                    <label class="flex items-center space-x-2.5 cursor-pointer select-none">
+
+                {{-- Remember --}}
+                <div class="flex items-center pt-1">
+
+                    <label
+                        for="remember"
+                        class="flex cursor-pointer select-none
+                               items-center gap-2.5"
+                    >
+
                         <input
+                            id="remember"
                             type="checkbox"
                             name="remember"
-                            class="h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 focus:ring-offset-0"
+                            value="1"
+                            @checked(old('remember'))
+                            class="h-4 w-4 rounded border-slate-300
+                                   text-emerald-600
+                                   focus:ring-2 focus:ring-emerald-500
+                                   focus:ring-offset-0"
                         >
-                        <span class="text-xs font-medium text-slate-600">Recordar sesión</span>
+
+                        <span class="text-sm font-medium text-slate-600">
+                            Recordar sesión
+                        </span>
+
                     </label>
+
                 </div>
 
-                <!-- Botón de Ingreso -->
-                <div class="pt-2">
-                    <x-ui.button type="submit" variant="primary" class="w-full justify-center shadow-md shadow-emerald-600/15">
-                        Ingresar al Panel
+
+                {{-- Submit --}}
+                <div class="pt-1">
+
+                    <x-ui.button
+                        type="submit"
+                        variant="primary"
+                        class="w-full justify-center
+                               shadow-md shadow-emerald-600/15"
+                    >
+                        Ingresar al panel
                     </x-ui.button>
+
                 </div>
+
             </form>
+
         </x-ui.card>
 
-        <!-- Footer -->
+
+        {{-- Footer --}}
         <p class="text-center text-xs font-medium text-slate-400">
-            Fundación técnica Laravel 12 · PostgreSQL
+            Laravel 12 · PostgreSQL
         </p>
+
     </div>
+
 </x-layouts.guest>

@@ -260,6 +260,12 @@
                                 Acciones
                             </th>
 
+                            <th
+                                scope="col"
+                                class="whitespace-nowrap px-4 py-3.5 text-center text-xs font-black uppercase tracking-wider text-slate-500 sm:px-5">
+                                Existencia
+                            </th>
+
                         </tr>
 
                     </x-slot:head>
@@ -277,6 +283,10 @@
 
                     $priceAmount =
                     $stockItem?->prices->first()?->amount;
+
+                    $stockQuantity = (float) (
+                    $stockQuantities[$stockItem?->id] ?? 0
+                    );
                     @endphp
 
 
@@ -434,14 +444,80 @@
 
                             <div class="flex items-center justify-end gap-2">
 
+                                {{-- Editar --}}
                                 <a
                                     href="{{ route('products.edit', $product) }}"
                                     class="inline-flex min-h-10 items-center justify-center rounded-lg border border-slate-300 bg-white px-3 text-sm font-bold text-slate-700 transition hover:border-slate-400 hover:bg-slate-50 hover:text-slate-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-600">
                                     Editar
                                 </a>
+                                @if ($product->is_active)
+
+                                @if ($stockQuantity > 0)
+
+                                {{-- No se puede desactivar porque tiene existencia --}}
+                                <button
+                                    type="button"
+                                    data-confirm-open="product-confirm-modal"
+                                    data-confirm-title="No se puede desactivar"
+                                    data-confirm-description="El producto {{ $product->name }} tiene actualmente {{ number_format($stockQuantity, 2) }} unidades en existencia. Primero debes realizar un ajuste de salida para dejar su existencia en 0."
+                                    data-confirm-action="{{ route('products.deactivate', $product) }}"
+                                    data-confirm-method="PATCH"
+                                    data-confirm-text="Entendido"
+                                    data-confirm-variant="warning"
+                                    class="inline-flex min-h-10 items-center justify-center rounded-lg border border-amber-200 bg-white px-3 text-sm font-bold text-amber-600 transition hover:border-amber-300 hover:bg-amber-50 hover:text-amber-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-600">
+                                    Desactivar
+                                </button>
+
+                                @else
+
+                                {{-- Se puede desactivar --}}
+                                <button
+                                    type="button"
+                                    data-confirm-open="product-confirm-modal"
+                                    data-confirm-title="Desactivar producto"
+                                    data-confirm-description="¿Deseas desactivar el producto {{ $product->name }}? Dejará de estar disponible para nuevas ventas, pero su historial permanecerá disponible."
+                                    data-confirm-action="{{ route('products.deactivate', $product) }}"
+                                    data-confirm-method="PATCH"
+                                    data-confirm-text="Desactivar"
+                                    data-confirm-variant="danger"
+                                    class="inline-flex min-h-10 items-center justify-center rounded-lg border border-rose-200 bg-white px-3 text-sm font-bold text-rose-600 transition hover:border-rose-300 hover:bg-rose-50 hover:text-rose-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rose-600">
+                                    Desactivar
+                                </button>
+
+                                @endif
+
+                                @else
+
+                                {{-- Reactivar --}}
+                                <button
+                                    type="button"
+                                    data-confirm-open="product-confirm-modal"
+                                    data-confirm-title="Reactivar producto"
+                                    data-confirm-description="¿Deseas reactivar el producto {{ $product->name }}? Volverá a estar disponible para nuevas ventas."
+                                    data-confirm-action="{{ route('products.reactivate', $product) }}"
+                                    data-confirm-method="PATCH"
+                                    data-confirm-text="Reactivar"
+                                    data-confirm-variant="primary"
+                                    class="inline-flex min-h-10 items-center justify-center rounded-lg border border-emerald-200 bg-white px-3 text-sm font-bold text-emerald-600 transition hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-600">
+                                    Reactivar
+                                </button>
+
+                                @endif
 
                             </div>
 
+                        </td>
+
+                        <td class="px-5 py-4 text-center">
+                            @if ($stockQuantity > 0)
+                            <span class="inline-flex items-center rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-black text-emerald-700">
+                                {{ number_format($stockQuantity, 2) }}
+                            </span>
+                            @else
+                            <span class="inline-flex items-center rounded-full border border-slate-200 bg-slate-100 px-3 py-1.5 text-xs font-black text-slate-500">
+                                0.00
+                            </span>
+                            @endif
                         </td>
 
                     </tr>
@@ -451,7 +527,7 @@
                     <tr>
 
                         <td
-                            colspan="6"
+                            colspan="7"
                             class="px-6 py-16 text-center">
 
                             <div class="mx-auto max-w-md">
@@ -507,6 +583,22 @@
 
         </x-ui.card>
 
+        {{-- ========================================================= --}}
+        {{-- CONFIRMACIÓN DE PRODUCTO --}}
+        {{-- ========================================================= --}}
+
+        <x-ui.confirm
+            id="product-confirm-modal"
+            size="sm"
+            title="Confirmar acción"
+            description=""
+            variant="danger"
+            confirm-text="Confirmar"
+            cancel-text="Cancelar"
+            confirm-id="confirm-product-action"
+            cancel-id="cancel-product-action"
+            close-id="close-product-action" />
+
     </div>
 
     <script>
@@ -523,5 +615,6 @@
             });
         });
     </script>
+
 
 </x-layouts.app>

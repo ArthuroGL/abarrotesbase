@@ -147,6 +147,14 @@ Route::middleware('auth')->group(function () {
         ->middleware('permission:products.update')
         ->name('products.update');
 
+    Route::patch('/products/{product}/deactivate', [ProductController::class, 'deactivate'])
+        ->middleware('permission:products.update')
+        ->name('products.deactivate');
+
+    Route::patch('/products/{product}/reactivate', [ProductController::class, 'reactivate'])
+        ->middleware('permission:products.update')
+        ->name('products.reactivate');
+
     Route::get(
         '/categories/search',
         [CategoryController::class, 'search']

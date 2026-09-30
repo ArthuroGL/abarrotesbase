@@ -73,22 +73,40 @@ final class ProductController extends Controller
             ->latest()
             ->paginate($perPage)
             ->withQueryString();
+        $stockItemIds = $products->getCollection()
+            ->pluck('stockItem.id')
+            ->filter()
+            ->values();
+
+        $stockQuantities = DB::table('inventory_balances')
+            ->where('organization_id', $this->context->organizationId())
+            ->whereIn('stock_item_id', $stockItemIds)
+            ->select(
+                'stock_item_id',
+                DB::raw('SUM(on_hand_quantity) as quantity')
+            )
+            ->groupBy('stock_item_id')
+            ->pluck('quantity', 'stock_item_id');
 
         $categories = Category::query()->where('is_active', true)->orderBy('name')->get();
         // Cargamos las marcas para el filtro
         $brands = Brand::query()->where('is_active', true)->orderBy('name')->get();
 
         // IMPORTANTE: Asegúrate de incluir 'brandId' y 'stockFilter' en el compact
-        return view('modules.inventory.products.index', compact(
-            'products',
-            'categories',
-            'brands', // <--- Agregada
-            'search',
-            'categoryId',
-            'brandId', // <--- Agregada
-            'stockFilter', // <--- ESTA ES LA QUE FALTABA
-            'perPage'
-        ));
+        return view(
+            'modules.inventory.products.index',
+            compact(
+                'products',
+                'categories',
+                'brands',
+                'search',
+                'categoryId',
+                'brandId',
+                'stockFilter',
+                'perPage',
+                'stockQuantities'
+            )
+        );
     }
 
     public function create(Request $request): View
@@ -288,7 +306,10 @@ final class ProductController extends Controller
                 Rule::exists('categories', 'id')
                     ->where(
                         fn($query) =>
-                        $query->where('organization_id', $this->context->organizationId())
+                        $query->where(
+                            'organization_id',
+                            $this->context->organizationId()
+                        )
                     ),
             ],
 
@@ -298,7 +319,10 @@ final class ProductController extends Controller
                 Rule::exists('brands', 'id')
                     ->where(
                         fn($query) =>
-                        $query->where('organization_id', $this->context->organizationId())
+                        $query->where(
+                            'organization_id',
+                            $this->context->organizationId()
+                        )
                     ),
             ],
 
@@ -308,7 +332,10 @@ final class ProductController extends Controller
                 Rule::exists('units', 'id')
                     ->where(
                         fn($query) =>
-                        $query->where('organization_id', $this->context->organizationId())
+                        $query->where(
+                            'organization_id',
+                            $this->context->organizationId()
+                        )
                     ),
             ],
 
@@ -318,13 +345,15 @@ final class ProductController extends Controller
                 Rule::exists('tax_rates', 'id')
                     ->where(
                         fn($query) =>
-                        $query->where('organization_id', $this->context->organizationId())
+                        $query->where(
+                            'organization_id',
+                            $this->context->organizationId()
+                        )
                     ),
             ],
 
             'price' => ['required', 'numeric', 'min:0'],
             'product_type' => ['required', 'string', 'in:simple,bulk'],
-            'is_active' => ['nullable', 'boolean'],
         ]);
 
         DB::transaction(function () use ($validated, $product) {
@@ -336,8 +365,6 @@ final class ProductController extends Controller
                 'sku' => $validated['sku'] ?? null,
                 'name' => $validated['name'],
                 'product_type' => $validated['product_type'],
-                'is_active' => $validated['is_active'] ?? false,
-                /* 'is_active' => $request->has('is_active'), */
             ]);
 
             // 2. Obtener / Actualizar Stock Item
@@ -421,6 +448,66 @@ final class ProductController extends Controller
         return redirect()->route('products.index')->with('status', 'Producto actualizado correctamente.');
     }
 
+    public function deactivate(Product $product): RedirectResponse
+    {
+        if ($product->organization_id !== $this->context->organizationId()) {
+            abort(403);
+        }
+
+        if (!$product->is_active) {
+            return redirect()
+                ->route('products.index')
+                ->with('status', 'El producto ya está inactivo.');
+        }
+
+        $stockItem = $product->stockItem;
+
+        if ($stockItem) {
+            $stockQuantity = DB::table('inventory_balances')
+                ->where('organization_id', $product->organization_id)
+                ->where('stock_item_id', $stockItem->id)
+                ->sum('on_hand_quantity');
+
+            if ((float) $stockQuantity > 0) {
+                return redirect()
+                    ->route('products.index')
+                    ->with(
+                        'error',
+                        "No se puede desactivar el producto porque tiene {$stockQuantity} unidades en existencia. Primero realiza un ajuste de salida."
+                    );
+            }
+        }
+
+        $product->update([
+            'is_active' => false,
+        ]);
+
+        return redirect()
+            ->route('products.index')
+            ->with('status', 'Producto desactivado correctamente.');
+    }
+
+    public function reactivate(Product $product): RedirectResponse
+    {
+        if ($product->organization_id !== $this->context->organizationId()) {
+            abort(403);
+        }
+
+        if ($product->is_active) {
+            return redirect()
+                ->route('products.index')
+                ->with('status', 'El producto ya está activo.');
+        }
+
+        $product->update([
+            'is_active' => true,
+        ]);
+
+        return redirect()
+            ->route('products.index')
+            ->with('status', 'Producto reactivado correctamente.');
+    }
+
     public function search(Request $request): JsonResponse
     {
         $search = trim((string) $request->input('q', ''));
@@ -436,6 +523,9 @@ final class ProductController extends Controller
         $items = StockItem::query()
             ->where('organization_id', $orgId)
             ->where('is_active', true)
+            ->whereHas('product', function ($query) {
+                $query->where('is_active', true);
+            })
             ->with([
                 'product',
                 'inventoryUnit',
@@ -518,29 +608,5 @@ final class ProductController extends Controller
 
         return response()->json(['found' => false]);
     }
-    /* public function lookup(string $barcode): JsonResponse
-    {
-        try {
-            $response = Http::timeout(3)
-                ->get("https://world.openfoodfacts.org/api/v0/product/{$barcode}.json");
 
-            if ($response->successful() && $response->json('status') === 1) {
-                $productData = $response->json('product');
-
-                // Intentamos obtener el nombre en español o en su defecto el general
-                $name = $productData['product_name_es']
-                    ?? $productData['product_name']
-                    ?? null;
-
-                return response()->json([
-                    'found' => true,
-                    'name' => $name,
-                ]);
-            }
-        } catch (\Throwable $e) {
-            // Si falla la API externa, no interrumpimos el flujo
-        }
-
-        return response()->json(['found' => false]);
-    } */
 }
